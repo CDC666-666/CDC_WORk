@@ -1,0 +1,88 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 200 10% 5%;
+    --foreground: 180 7% 91%;
+    --card: 200 9% 7%;
+    --card-foreground: 180 7% 91%;
+    --popover: 200 9% 7%;
+    --popover-foreground: 180 7% 91%;
+    --primary: 188 86% 47%;
+    --primary-foreground: 198 38% 7%;
+    --secondary: 200 8% 12%;
+    --secondary-foreground: 180 6% 86%;
+    --muted: 200 7% 13%;
+    --muted-foreground: 190 5% 59%;
+    --accent: 42 92% 56%;
+    --accent-foreground: 37 80% 9%;
+    --destructive: 350 79% 63%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 195 7% 18%;
+    --input: 195 7% 20%;
+    --ring: 188 86% 47%;
+    --radius: 0.25rem;
+  }
+
+  * {
+    @apply border-border;
+    letter-spacing: 0;
+  }
+
+  html {
+    color-scheme: dark;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    min-height: 100vh;
+    background-color: hsl(var(--background));
+    font-feature-settings: "tnum" 1, "ss01" 1;
+  }
+
+  ::selection {
+    background: rgba(34, 211, 238, 0.24);
+    color: #ecfeff;
+  }
+}
+
+@layer utilities {
+  .workspace-grid {
+    background-image:
+      linear-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px);
+    background-size: 28px 28px;
+  }
+
+  .panel-topline {
+    position: relative;
+  }
+
+  .panel-topline::before {
+    position: absolute;
+    top: -1px;
+    left: 0;
+    width: 64px;
+    height: 1px;
+    content: "";
+    background: hsl(var(--primary));
+  }
+
+  .scrollbar-thin {
+    scrollbar-color: hsl(var(--border)) transparent;
+    scrollbar-width: thin;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
