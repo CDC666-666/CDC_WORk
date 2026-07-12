@@ -7,6 +7,20 @@ export function toLocalDateKey(value: Date = new Date()): string {
   return `${year}-${month}-${day}`;
 }
 
+export function addLocalDays(value: Date, days: number): Date {
+  const result = new Date(value);
+  result.setDate(result.getDate() + days);
+  return result;
+}
+
+export function localDateKeyWithOffset(base: Date, days: number): string {
+  return toLocalDateKey(addLocalDays(base, days));
+}
+
+export function localDateTimeWithOffset(base: Date, days: number, time: string): string {
+  return combineDateAndTime(localDateKeyWithOffset(base, days), time);
+}
+
 export function isIsoDate(value: string): boolean {
   return DATE_PATTERN.test(value) && !Number.isNaN(new Date(`${value}T00:00:00`).getTime());
 }

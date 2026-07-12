@@ -1,4 +1,7 @@
 import type { ContentItem, TechnicalTag } from "@/types/content";
+import { localDateTimeWithOffset } from "@/lib/date";
+
+const contentNow = new Date();
 
 export const technicalTags: Record<string, TechnicalTag> = {
   robomaster: { id: "robomaster", label: "RoboMaster", direction: "robomaster" },
@@ -50,7 +53,7 @@ export const mockContentItems: ContentItem[] = [
     isFavorite: true,
     isInKnowledgeBase: false,
     isInStudyPlan: true,
-    addedAt: "2026-07-12T09:20:00+08:00",
+    addedAt: localDateTimeWithOffset(contentNow, 0, "09:20"),
   },
   {
     id: "content-cboard-starter",
@@ -134,7 +137,7 @@ export const mockContentItems: ContentItem[] = [
     isFavorite: false,
     isInKnowledgeBase: false,
     isInStudyPlan: false,
-    addedAt: "2026-07-12T08:50:00+08:00",
+    addedAt: localDateTimeWithOffset(contentNow, 0, "08:50"),
   },
   {
     id: "content-omni-kinematics",

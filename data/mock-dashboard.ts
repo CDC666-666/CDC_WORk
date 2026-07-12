@@ -1,5 +1,8 @@
 import { initialWorkspaceData } from "@/data/initial-workspace-data";
+import { localDateTimeWithOffset } from "@/lib/date";
 import type { DashboardData } from "@/types/dashboard";
+
+const dashboardNow = new Date();
 
 export const mockDashboardData: DashboardData = {
   user: {
@@ -79,7 +82,7 @@ export const mockDashboardData: DashboardData = {
       progress: 42,
       description: "完成底盘控制、超级电容、力控与自瞄接口的工程联调。",
       moduleIds: ["motor", "supercap", "force-chassis", "auto-aim", "review"],
-      updatedAt: "2026-07-12T10:30:00+08:00",
+      updatedAt: localDateTimeWithOffset(dashboardNow, 0, "10:30"),
       domain: "机器人研发",
       nextMilestone: "完成底盘速度环带载复测",
       accent: "blue",
@@ -94,7 +97,7 @@ export const mockDashboardData: DashboardData = {
       progress: 31,
       description: "统一管理学习、项目、内容、知识和个人成长的 AI 工作台。",
       moduleIds: ["dashboard", "content", "knowledge", "reports"],
-      updatedAt: "2026-07-12T11:00:00+08:00",
+      updatedAt: localDateTimeWithOffset(dashboardNow, 0, "11:00"),
       domain: "个人产品",
       nextMilestone: "完成 Sprint 1 信息架构与内容中心",
       accent: "green",

@@ -3,14 +3,14 @@
 import { createContext, useCallback, useEffect, useMemo, useReducer, useState } from "react";
 
 import { ActionToast, type ToastNotice } from "@/components/layout/action-toast";
-import { createInitialWorkspaceData } from "@/data/initial-workspace-data";
+import { createEmptyWorkspaceData } from "@/data/initial-workspace-data";
 import { combineDateAndTime, toLocalDateKey } from "@/lib/date";
 import {
   loadWorkspaceData,
   resetWorkspaceData,
   saveWorkspaceData,
 } from "@/services/workspace-repository";
-import { createWorkspaceId, workspaceReducer } from "@/services/workspace-service";
+import { createWorkspaceId, workspaceReducer, type WorkspaceAction } from "@/services/workspace-service";
 import type { StudyPlan, StudyPlanDraft, StudySessionDraft } from "@/types/learning";
 import type { ReadingItem, ReadingItemDraft } from "@/types/reading";
 import type { Task, TaskDraft } from "@/types/task";
@@ -19,6 +19,7 @@ import type { WorkspaceData } from "@/types/workspace";
 export interface WorkspaceDataContextValue {
   data: WorkspaceData;
   isHydrated: boolean;
+  dispatch: React.Dispatch<WorkspaceAction>;
   addTask: (draft: TaskDraft) => Task;
   updateTask: (task: Task) => void;
   deleteTask: (taskId: string) => void;
@@ -44,7 +45,7 @@ function normalizeStudyPlan(plan: StudyPlan): StudyPlan {
 }
 
 export function WorkspaceDataProvider({ children }: { children: React.ReactNode }) {
-  const [data, dispatch] = useReducer(workspaceReducer, undefined, () => createInitialWorkspaceData(new Date("2026-07-12T00:00:00+08:00")));
+  const [data, dispatch] = useReducer(workspaceReducer, undefined, createEmptyWorkspaceData);
   const [isHydrated, setIsHydrated] = useState(false);
   const [notice, setNotice] = useState<ToastNotice | null>(null);
 
@@ -176,6 +177,7 @@ export function WorkspaceDataProvider({ children }: { children: React.ReactNode 
   const value = useMemo<WorkspaceDataContextValue>(() => ({
     data,
     isHydrated,
+    dispatch,
     addTask,
     updateTask,
     deleteTask,

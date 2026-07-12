@@ -1,14 +1,23 @@
 import type { WorkspaceBackup, WorkspaceData } from "@/types/workspace";
 
-export const WORKSPACE_STORAGE_KEY = "cdc-workspace-data-v2";
+export const WORKSPACE_STORAGE_KEY = "cdc-workspace-data-v3";
+export const LEGACY_WORKSPACE_STORAGE_KEY = "cdc-workspace-data-v2";
 
-export function readWorkspaceStorage(): string | null {
+function readStorageKey(key: string): string | null {
   if (typeof window === "undefined") return null;
   try {
-    return window.localStorage.getItem(WORKSPACE_STORAGE_KEY);
+    return window.localStorage.getItem(key);
   } catch {
     return null;
   }
+}
+
+export function readWorkspaceStorage(): string | null {
+  return readStorageKey(WORKSPACE_STORAGE_KEY);
+}
+
+export function readLegacyWorkspaceStorage(): string | null {
+  return readStorageKey(LEGACY_WORKSPACE_STORAGE_KEY);
 }
 
 export function writeWorkspaceStorage(data: WorkspaceData): boolean {
@@ -25,6 +34,15 @@ export function removeWorkspaceStorage(): void {
   if (typeof window === "undefined") return;
   try {
     window.localStorage.removeItem(WORKSPACE_STORAGE_KEY);
+  } catch {
+    // Storage may be unavailable in strict browser privacy modes.
+  }
+}
+
+export function removeLegacyWorkspaceStorage(): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.removeItem(LEGACY_WORKSPACE_STORAGE_KEY);
   } catch {
     // Storage may be unavailable in strict browser privacy modes.
   }

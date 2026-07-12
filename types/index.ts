@@ -34,6 +34,15 @@ export type {
   WorkspaceMetadata,
   WorkspaceRecoveryKind,
 } from "@/types/workspace";
+export type * from "@/types/calendar";
+export type * from "@/types/engineering-log";
+export type * from "@/types/finance";
+export type * from "@/types/knowledge";
+export type * from "@/types/project";
+export type * from "@/types/report";
+export type * from "@/types/resume";
+export type * from "@/types/skill";
+export type * from "@/types/testing";
 
 export type ModuleStatus = "开发中" | "验证中" | "待规划" | "稳定";
 export type WorkLogResult = "完成" | "部分完成" | "受阻";

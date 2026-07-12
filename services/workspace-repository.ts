@@ -2,15 +2,20 @@ import { createInitialWorkspaceData } from "@/data/initial-workspace-data";
 import {
   LEGACY_TASK_STORAGE_KEY,
   migrateLegacyTaskState,
+  migrateWorkspaceV2,
 } from "@/lib/storage/workspace-migration";
 import {
+  readLegacyWorkspaceStorage,
   readWorkspaceStorage,
+  removeLegacyWorkspaceStorage,
   removeWorkspaceStorage,
   writeWorkspaceStorage,
 } from "@/lib/storage/workspace-storage";
 import {
   isWorkspaceBackup,
+  isWorkspaceBackupV2,
   isWorkspaceData,
+  isWorkspaceDataV2,
 } from "@/lib/storage/workspace-validation";
 import type { WorkspaceBackup, WorkspaceData, WorkspaceLoadResult } from "@/types/workspace";
 
@@ -26,12 +31,36 @@ export function loadWorkspaceData(): WorkspaceLoadResult {
       // Invalid data is handled by the explicit recovery result below.
     }
 
+  }
+
+  const rawV2 = readLegacyWorkspaceStorage();
+  if (rawV2) {
+    try {
+      const parsedV2: unknown = JSON.parse(rawV2);
+      if (isWorkspaceDataV2(parsedV2)) {
+        const migrated = migrateWorkspaceV2(parsedV2);
+        const wasSaved = writeWorkspaceStorage(migrated);
+        if (wasSaved) removeLegacyWorkspaceStorage();
+        return {
+          data: migrated,
+          recoveryKind: "migration",
+          message: wasSaved
+            ? "Sprint 2 本地数据已完整迁移到 Workspace schema v3。"
+            : "数据已在内存中升级，但浏览器阻止了本地保存；旧数据仍保留。",
+        };
+      }
+    } catch {
+      // The legacy value is preserved and recovery continues safely.
+    }
+  }
+
+  if (rawWorkspace || rawV2) {
     const fallback = createInitialWorkspaceData();
     writeWorkspaceStorage(fallback);
     return {
       data: fallback,
       recoveryKind: "invalid-data",
-      message: "本地数据格式无效，已安全恢复为演示数据。你可以在设置中导入备份。",
+      message: "本地数据格式无效，旧数据未删除，当前已安全加载演示数据。",
     };
   }
 
@@ -68,6 +97,7 @@ export function saveWorkspaceData(data: WorkspaceData): void {
 
 export function resetWorkspaceData(): WorkspaceData {
   removeWorkspaceStorage();
+  removeLegacyWorkspaceStorage();
   if (typeof window !== "undefined") {
     try {
       window.localStorage.removeItem(LEGACY_TASK_STORAGE_KEY);
@@ -87,8 +117,14 @@ export function parseWorkspaceBackup(rawValue: string): WorkspaceBackup {
   } catch {
     throw new Error("文件不是有效的 JSON。请确认选择了 CDC Workspace 备份文件。");
   }
-  if (!isWorkspaceBackup(parsed)) {
-    throw new Error("备份结构或 schema version 不受支持，未修改当前数据。");
+  if (isWorkspaceBackup(parsed)) return parsed;
+  if (isWorkspaceBackupV2(parsed)) {
+    return {
+      app: "CDC AI Workspace",
+      schemaVersion: 3,
+      exportedAt: new Date().toISOString(),
+      data: migrateWorkspaceV2(parsed.data),
+    };
   }
-  return parsed;
+  throw new Error("备份结构或 schema version 不受支持，未修改当前数据。");
 }
