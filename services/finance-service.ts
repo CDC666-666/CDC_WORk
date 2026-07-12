@@ -1,0 +1,2 @@
+import { createWorkspaceId } from "@/services/workspace-service"; import type { FinanceTransaction, FinanceTransactionDraft } from "@/types/finance";
+export function createFinanceTransaction(draft: FinanceTransactionDraft, now = new Date()): FinanceTransaction { if (!Number.isFinite(draft.amount) || draft.amount <= 0) throw new Error("金额必须大于 0。"); const timestamp = now.toISOString(); return { ...draft, id: createWorkspaceId("finance"), createdAt: timestamp, updatedAt: timestamp }; }

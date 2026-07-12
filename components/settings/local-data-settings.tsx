@@ -63,6 +63,12 @@ export function LocalDataSettings() {
     ["任务数量", workspace.data.tasks.length],
     ["学习计划数量", workspace.data.studyPlans.length],
     ["阅读条目数量", workspace.data.readingItems.length],
+    ["项目 / 模块", `${workspace.data.projects.length} / ${workspace.data.projectModules.length}`],
+    ["日志 / 测试", `${workspace.data.workLogs.length} / ${workspace.data.testRecords.length}`],
+    ["问题 / 知识", `${workspace.data.technicalIssues.length} / ${workspace.data.knowledgeItems.length}`],
+    ["技能 / 证据", `${workspace.data.skills.length} / ${workspace.data.skillEvidence.length}`],
+    ["报告 / 简历素材", `${workspace.data.reports.length} / ${workspace.data.resumeMaterials.length}`],
+    ["日程 / 收支", `${workspace.data.calendarEvents.length} / ${workspace.data.financeTransactions.length}`],
   ];
 
   return <div className="space-y-5 lg:space-y-6">

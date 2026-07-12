@@ -1,0 +1,1 @@
+import type { Metadata } from "next"; import { FinanceCenter } from "@/components/finance/finance-center"; export const metadata: Metadata = { title: "理财记录" }; export default function FinancePage() { return <FinanceCenter />; }

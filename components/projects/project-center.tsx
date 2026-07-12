@@ -17,10 +17,10 @@ import { cn } from "@/lib/utils";
 import { createProject, getProjectImpact, updateProject } from "@/services/project-service";
 import type { Project, ProjectCategory, ProjectDraft, ProjectStatus } from "@/types/project";
 
-export function ProjectCenter() {
+export function ProjectCenter({ openCreate = false }: { openCreate?: boolean }) {
   const { data, dispatch } = useWorkspaceData();
   const [query, setQuery] = useState(""); const [category, setCategory] = useState<ProjectCategory | "全部">("全部"); const [status, setStatus] = useState<ProjectStatus | "全部">("全部"); const [view, setView] = useState<"card" | "list">("card");
-  const [editing, setEditing] = useState<Project | null>(null); const [formOpen, setFormOpen] = useState(false); const [deleting, setDeleting] = useState<Project | null>(null); const [notice, setNotice] = useState<ToastNotice | null>(null);
+  const [editing, setEditing] = useState<Project | null>(null); const [formOpen, setFormOpen] = useState(openCreate); const [deleting, setDeleting] = useState<Project | null>(null); const [notice, setNotice] = useState<ToastNotice | null>(null);
   const projects = useMemo(() => data.projects.filter((project) => (!query || `${project.name} ${project.code} ${project.description}`.toLowerCase().includes(query.toLowerCase())) && (category === "全部" || project.category === category) && (status === "全部" || project.status === status)).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)), [category, data.projects, query, status]);
   const save = (draft: ProjectDraft, current: Project | null) => { if (current) dispatch({ type: "project/updated", project: updateProject({ ...current, ...draft }) }); else dispatch({ type: "project/added", project: createProject(draft) }); setNotice({ id: Date.now(), title: current ? "项目已更新" : "项目已创建", description: "项目数据已同步到统一 Workspace。" }); };
   const impact = deleting ? getProjectImpact(data, deleting.id) : null;
@@ -31,4 +31,3 @@ export function ProjectCenter() {
     <ConfirmDialog open={Boolean(deleting)} title="删除项目及关联数据" description={impact ? `将删除 ${impact.tasks} 个任务、${impact.logs} 条日志、${impact.tests} 条测试、${impact.issues} 个问题、${impact.knowledge} 条知识、${impact.modules} 个模块和 ${impact.milestones} 个里程碑。` : "确认删除该项目？"} confirmLabel="确认级联删除" onCancel={() => setDeleting(null)} onConfirm={() => { if (deleting) dispatch({ type: "project/deleted", projectId: deleting.id }); setDeleting(null); setNotice({ id: Date.now(), title: "项目已删除", description: "仅项目专属关联数据被删除，学习、阅读和财务数据未受影响。" }); }} />
     <ActionToast notice={notice} onDismiss={() => setNotice(null)} /></div>;
 }
-

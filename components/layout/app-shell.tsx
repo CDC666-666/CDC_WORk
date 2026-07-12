@@ -1,11 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
-
-import {
-  ActionToast,
-  type ToastNotice,
-} from "@/components/layout/action-toast";
+import { useState } from "react";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Topbar } from "@/components/layout/topbar";
 import { cn } from "@/lib/utils";
@@ -17,13 +12,6 @@ interface AppShellProps {
 export function AppShell({ children }: AppShellProps) {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [notice, setNotice] = useState<ToastNotice | null>(null);
-
-  const dismissNotice = useCallback(() => setNotice(null), []);
-
-  const showNotice = useCallback((title: string, description: string) => {
-    setNotice({ id: Date.now(), title, description });
-  }, []);
 
   return (
     <div className="min-h-screen bg-background">
@@ -41,7 +29,6 @@ export function AppShell({ children }: AppShellProps) {
         <Topbar
           isSidebarCollapsed={isSidebarCollapsed}
           onMenuClick={() => setIsMobileSidebarOpen(true)}
-          onNotify={showNotice}
           onToggleSidebar={() => setIsSidebarCollapsed((collapsed) => !collapsed)}
         />
         <main className="workspace-grid min-h-[calc(100vh-64px)]">
@@ -50,7 +37,6 @@ export function AppShell({ children }: AppShellProps) {
           </div>
         </main>
       </div>
-      <ActionToast notice={notice} onDismiss={dismissNotice} />
     </div>
   );
 }

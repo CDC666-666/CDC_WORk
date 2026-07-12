@@ -42,6 +42,10 @@ export function buildDashboardMetrics(
     .reduce((total, session) => total + session.durationMinutes, 0);
   const unread = workspace.readingItems.filter((item) => item.status !== "已完成").length;
   const readingNow = workspace.readingItems.filter((item) => item.status === "阅读中").length;
+  const month = today.slice(0, 7);
+  const monthlyFinance = workspace.financeTransactions.filter((item) => item.date.startsWith(month));
+  const income = monthlyFinance.filter((item) => item.type === "收入").reduce((sum, item) => sum + item.amount, 0);
+  const expense = monthlyFinance.filter((item) => item.type === "支出").reduce((sum, item) => sum + item.amount, 0);
 
   return baseMetrics.map((metric) => {
     if (metric.id === "today-tasks") {
@@ -60,6 +64,9 @@ export function buildDashboardMetrics(
     }
     if (metric.id === "reading") {
       return { ...metric, value: String(unread), helper: `${readingNow} 本正在阅读` };
+    }
+    if (metric.id === "finance") {
+      return { ...metric, value: (income - expense).toFixed(0), helper: `收入 ¥${income.toFixed(0)} · 支出 ¥${expense.toFixed(0)}` };
     }
     return metric;
   });

@@ -29,7 +29,7 @@ const views: { id: TaskView; label: string }[] = [
   { id: "all", label: "全部" },
 ];
 
-export function TaskManager() {
+export function TaskManager({ openCreate = false }: { openCreate?: boolean }) {
   const workspace = useWorkspaceData();
   const [view, setView] = useState<TaskView>("today");
   const [status, setStatus] = useState<TaskStatus | "全部">("全部");
@@ -39,7 +39,7 @@ export function TaskManager() {
   const [tag, setTag] = useState("");
   const [sort, setSort] = useState<TaskSort>("due");
   const [editingTask, setEditingTask] = useState<Task | null>(null);
-  const [formOpen, setFormOpen] = useState(false);
+  const [formOpen, setFormOpen] = useState(openCreate);
   const [deletingTask, setDeletingTask] = useState<Task | null>(null);
   const [notice, setNotice] = useState<ToastNotice | null>(null);
   const [quickTitle, setQuickTitle] = useState("");
