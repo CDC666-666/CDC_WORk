@@ -13,6 +13,7 @@ import {
 import { EmptyState } from "@/components/shared/empty-state";
 import { PageHeader } from "@/components/shared/page-header";
 import { useWorkspaceData } from "@/hooks/use-workspace-data";
+import { knowledgeFromContent } from "@/services/knowledge-service";
 import {
   defaultContentFilters,
   filterAndSortContent,
@@ -117,8 +118,12 @@ export function ContentCenter({ initialItems, tags }: ContentCenterProps) {
   };
 
   const addToKnowledgeBase = (itemId: string) => {
+    const content = items.find((item) => item.id === itemId);
+    if (content && !workspace.data.knowledgeItems.some((item) => item.sourceType === "content" && item.sourceId === content.id)) {
+      workspace.dispatch({ type: "knowledge/added", item: knowledgeFromContent(content) });
+    }
     updateItem(itemId, (item) => ({ ...item, isInKnowledgeBase: true }));
-    showNotice("已加入知识库", "当前保存为本地演示状态，后续将生成结构化知识条目。");
+    showNotice("已加入知识库", content ? "已创建可追溯的视频或文章知识条目。" : "没有找到对应内容。");
   };
 
   const addToStudyPlan = (itemId: string) => {
