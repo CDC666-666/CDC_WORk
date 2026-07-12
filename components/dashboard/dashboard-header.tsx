@@ -1,50 +1,85 @@
-import { BatteryCharging, Cpu, RadioTower } from "lucide-react";
+"use client";
 
-import { Badge } from "@/components/ui/badge";
-import { activeProject, projectModules, userProfile } from "@/data/mock-data";
+import { useEffect, useState } from "react";
+import { ArrowRight, CalendarCheck2, CircleDot } from "lucide-react";
 
-export function DashboardHeader() {
+import type { Task, UserProfile } from "@/types/dashboard";
+
+interface DashboardHeaderProps {
+  user: UserProfile;
+  tasks: Task[];
+}
+
+function getGreeting() {
+  const hour = new Date().getHours();
+  if (hour < 11) return "早上好";
+  if (hour < 14) return "中午好";
+  if (hour < 18) return "下午好";
+  return "晚上好";
+}
+
+export function DashboardHeader({ user, tasks }: DashboardHeaderProps) {
+  const [greeting, setGreeting] = useState("你好");
+
+  useEffect(() => setGreeting(getGreeting()), []);
+
+  const importantTasks = tasks
+    .filter((task) => task.status !== "已完成")
+    .sort((left, right) => {
+      const rank = { 高: 0, 中: 1, 低: 2 };
+      return rank[left.priority] - rank[right.priority];
+    })
+    .slice(0, 3);
+
   return (
-    <section className="mb-5 border-b border-border pb-6 lg:mb-6 lg:pb-7">
-      <div className="flex flex-col justify-between gap-6 xl:flex-row xl:items-end">
+    <section className="border-b border-border bg-white px-5 py-6 sm:px-6 lg:px-8">
+      <div className="flex flex-col justify-between gap-7 lg:flex-row lg:items-end">
         <div className="min-w-0">
           <div className="mb-3 flex flex-wrap items-center gap-2">
-            <Badge variant="success">系统就绪</Badge>
-            <span className="font-mono text-[10px] text-muted-foreground">
-              {activeProject.code} / {activeProject.season}
+            <span className="rounded border border-blue-200 bg-blue-50 px-2 py-1 text-[10px] font-semibold text-blue-700">
+              SPRINT 1
             </span>
+            <span className="text-xs text-slate-500">{user.studentStatus ?? user.grade}</span>
+            <span className="text-slate-300">/</span>
+            <span className="text-xs text-slate-500">{user.role}</span>
           </div>
-          <p className="mb-1 text-sm text-muted-foreground">
-            欢迎回来，{userProfile.name}
-          </p>
-          <h1 className="max-w-4xl text-2xl font-semibold leading-tight text-foreground sm:text-3xl lg:text-[34px]">
-            {activeProject.name}
+          <h1 className="text-2xl font-semibold text-slate-950 sm:text-3xl">
+            {greeting}，{user.name}
           </h1>
-          <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-muted-foreground">
-            <span className="flex items-center gap-2">
-              <Cpu className="h-3.5 w-3.5 text-cyan-300" />
-              {userProfile.primaryController}
-            </span>
-            <span className="flex items-center gap-2">
-              <RadioTower className="h-3.5 w-3.5 text-emerald-300" />
-              {userProfile.role}
-            </span>
-            <span className="flex items-center gap-2">
-              <BatteryCharging className="h-3.5 w-3.5 text-amber-300" />
-              {projectModules.length} 个重点模块
-            </span>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
+            {user.headline ?? "今天继续推进学习和工程项目。"}
+          </p>
+          <div className="mt-5 flex flex-wrap gap-2">
+            {user.focusAreas.map((area) => (
+              <span
+                key={area}
+                className="rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] text-slate-600"
+              >
+                {area}
+              </span>
+            ))}
           </div>
         </div>
 
-        <div className="w-full border-l-2 border-cyan-300/60 pl-4 xl:w-[330px]">
-          <div className="mb-2 flex items-center justify-between gap-4">
-            <p className="font-mono text-[10px] text-muted-foreground">CURRENT FOCUS</p>
-            <span className="text-xs text-amber-300">高优先级</span>
+        <div className="w-full max-w-xl border-l-2 border-blue-500 pl-4 lg:pl-5">
+          <div className="mb-3 flex items-center justify-between">
+            <p className="flex items-center gap-2 text-xs font-semibold text-slate-800">
+              <CalendarCheck2 className="h-4 w-4 text-blue-600" />
+              今天最重要的三件事
+            </p>
+            <ArrowRight className="h-4 w-4 text-slate-400" />
           </div>
-          <p className="text-sm font-medium text-foreground">M3508 双环参数复测</p>
-          <p className="mt-1 text-xs leading-5 text-muted-foreground">
-            采集速度环阶跃响应，完成带载工况参数对比。
-          </p>
+          <ol className="space-y-2.5">
+            {importantTasks.map((task, index) => (
+              <li key={task.id} className="flex items-start gap-3 text-sm">
+                <span className="grid h-5 w-5 shrink-0 place-items-center rounded bg-slate-100 text-[10px] font-semibold text-slate-600">
+                  {index + 1}
+                </span>
+                <span className="min-w-0 flex-1 text-slate-700">{task.title}</span>
+                <CircleDot className="mt-0.5 h-3.5 w-3.5 shrink-0 text-blue-500" />
+              </li>
+            ))}
+          </ol>
         </div>
       </div>
     </section>

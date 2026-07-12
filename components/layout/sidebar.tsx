@@ -1,54 +1,71 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
-  Archive,
+  BookOpen,
   Bot,
   BrainCircuit,
-  ClipboardCheck,
+  BriefcaseBusiness,
+  CalendarDays,
+  ChartNoAxesColumnIncreasing,
+  CheckSquare2,
+  FileChartColumn,
+  FlaskConical,
   FolderKanban,
-  Gauge,
+  GraduationCap,
+  Home,
   Library,
-  ListTodo,
   NotebookPen,
-  ShieldAlert,
-  Wrench,
+  PlaySquare,
+  Settings,
+  Sparkles,
+  WalletCards,
+  Workflow,
   X,
   type LucideIcon,
 } from "lucide-react";
 
-import { userProfile } from "@/data/mock-data";
+import { navigationGroups, type NavigationIconKey } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
 
 interface SidebarProps {
+  isCollapsed: boolean;
   isOpen: boolean;
   onClose: () => void;
 }
 
-interface NavigationItem {
-  label: string;
-  icon: LucideIcon;
-  active?: boolean;
-}
+const navigationIcons: Record<NavigationIconKey, LucideIcon> = {
+  home: Home,
+  sparkles: Sparkles,
+  checkSquare: CheckSquare2,
+  graduationCap: GraduationCap,
+  bookOpen: BookOpen,
+  playSquare: PlaySquare,
+  library: Library,
+  chartNoAxesColumnIncreasing: ChartNoAxesColumnIncreasing,
+  folderKanban: FolderKanban,
+  bot: Bot,
+  notebookPen: NotebookPen,
+  flaskConical: FlaskConical,
+  calendarDays: CalendarDays,
+  fileChartColumn: FileChartColumn,
+  briefcaseBusiness: BriefcaseBusiness,
+  walletCards: WalletCards,
+  workflow: Workflow,
+  settings: Settings,
+};
 
-const navigationItems: NavigationItem[] = [
-  { label: "工作台", icon: Gauge, active: true },
-  { label: "RoboMaster 项目", icon: FolderKanban },
-  { label: "任务", icon: ListTodo },
-  { label: "工程日志", icon: NotebookPen },
-  { label: "测试记录", icon: ClipboardCheck },
-  { label: "问题复盘", icon: ShieldAlert },
-  { label: "知识库", icon: Library },
-  { label: "技能树", icon: BrainCircuit },
-  { label: "报告中心", icon: Archive },
-  { label: "AI 助手", icon: Bot },
-];
+export function Sidebar({ isCollapsed, isOpen, onClose }: SidebarProps) {
+  const pathname = usePathname();
 
-export function Sidebar({ isOpen, onClose }: SidebarProps) {
   return (
     <>
       <button
         type="button"
         aria-label="关闭导航遮罩"
         className={cn(
-          "fixed inset-0 z-40 bg-black/70 transition-opacity lg:hidden",
+          "fixed inset-0 z-40 bg-slate-950/35 transition-opacity lg:hidden",
           isOpen ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0",
         )}
         onClick={onClose}
@@ -56,23 +73,28 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 flex w-[252px] flex-col border-r border-border bg-[#0b0e0f] transition-transform duration-200 lg:translate-x-0",
+          "fixed inset-y-0 left-0 z-50 flex w-[260px] flex-col border-r border-border bg-white transition-[width,transform] duration-200 lg:translate-x-0",
           isOpen ? "translate-x-0" : "-translate-x-full",
+          isCollapsed && "lg:w-[76px]",
         )}
       >
-        <div className="flex h-16 shrink-0 items-center justify-between border-b border-border px-4">
-          <div className="flex min-w-0 items-center gap-3">
-            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-sm border border-cyan-300/25 bg-cyan-300/10 text-cyan-300">
-              <Wrench className="h-[18px] w-[18px]" />
+        <div className="flex h-16 shrink-0 items-center border-b border-border px-4">
+          <Link
+            href="/"
+            className="flex min-w-0 flex-1 items-center gap-3 rounded-sm"
+            onClick={onClose}
+          >
+            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-blue-600 text-white shadow-sm">
+              <BrainCircuit className="h-[18px] w-[18px]" />
             </div>
-            <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-foreground">RM 工程台</p>
-              <p className="font-mono text-[10px] text-muted-foreground">CONTROL DESK / 00</p>
+            <div className={cn("min-w-0", isCollapsed && "lg:hidden")}>
+              <p className="truncate text-sm font-semibold text-slate-900">CDC AI Workspace</p>
+              <p className="mt-0.5 truncate text-[10px] text-slate-500">个人学习与工程工作台</p>
             </div>
-          </div>
+          </Link>
           <button
             type="button"
-            className="grid h-8 w-8 place-items-center rounded-sm text-muted-foreground hover:bg-secondary hover:text-foreground lg:hidden"
+            className="grid h-8 w-8 place-items-center rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-900 lg:hidden"
             aria-label="关闭导航"
             title="关闭导航"
             onClick={onClose}
@@ -81,81 +103,73 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           </button>
         </div>
 
-        <div className="border-b border-border px-4 py-3">
-          <div className="flex items-center justify-between text-[10px] text-muted-foreground">
-            <span className="font-mono">WORKSPACE STATUS</span>
-            <span className="flex items-center gap-1.5 text-emerald-300">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-              本地就绪
-            </span>
+        <nav aria-label="主导航" className="scrollbar-thin flex-1 overflow-y-auto px-3 py-4">
+          <div className="space-y-5">
+            {navigationGroups.map((group) => (
+              <div key={group.label}>
+                <p
+                  className={cn(
+                    "mb-1.5 px-2 text-[10px] font-medium text-slate-400",
+                    isCollapsed && "lg:hidden",
+                  )}
+                >
+                  {group.label}
+                </p>
+                <ul className="space-y-1">
+                  {group.items.map((item) => {
+                    const Icon = navigationIcons[item.icon];
+                    const isActive = pathname === item.href;
+
+                    return (
+                      <li key={item.href}>
+                        <Link
+                          href={item.href}
+                          title={isCollapsed ? item.label : undefined}
+                          className={cn(
+                            "group flex h-10 items-center gap-3 rounded-md border border-transparent px-3 text-sm font-medium transition-colors",
+                            isActive
+                              ? "border-blue-100 bg-blue-50 text-blue-700"
+                              : "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
+                            isCollapsed && "lg:justify-center lg:px-0",
+                          )}
+                          onClick={onClose}
+                        >
+                          <Icon
+                            className={cn(
+                              "h-4 w-4 shrink-0",
+                              isActive ? "text-blue-600" : "text-slate-400 group-hover:text-slate-700",
+                            )}
+                          />
+                          <span className={cn("truncate", isCollapsed && "lg:hidden")}>
+                            {item.label}
+                          </span>
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            ))}
           </div>
-        </div>
-
-        <nav
-          aria-label="主导航"
-          className="scrollbar-thin flex-1 overflow-y-auto px-3 py-4"
-        >
-          <p className="mb-2 px-2 font-mono text-[10px] text-muted-foreground">
-            工程管理
-          </p>
-          <ul className="space-y-1">
-            {navigationItems.map((item) => {
-              const Icon = item.icon;
-
-              return (
-                <li key={item.label}>
-                  <button
-                    type="button"
-                    aria-current={item.active ? "page" : undefined}
-                    aria-disabled={!item.active}
-                    title={item.active ? item.label : `${item.label}（后续 Sprint 开放）`}
-                    className={cn(
-                      "group flex h-10 w-full items-center gap-3 rounded-sm border px-3 text-left text-sm transition-colors",
-                      item.active
-                        ? "border-cyan-300/20 bg-cyan-300/10 text-cyan-100"
-                        : "border-transparent text-muted-foreground hover:border-border hover:bg-secondary/60 hover:text-foreground",
-                    )}
-                    onClick={item.active ? onClose : undefined}
-                  >
-                    <Icon
-                      className={cn(
-                        "h-4 w-4 shrink-0",
-                        item.active
-                          ? "text-cyan-300"
-                          : "text-muted-foreground group-hover:text-foreground",
-                      )}
-                    />
-                    <span className="min-w-0 flex-1 truncate">{item.label}</span>
-                    {!item.active && (
-                      <span className="font-mono text-[9px] text-muted-foreground/60">
-                        01+
-                      </span>
-                    )}
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
         </nav>
 
-        <div className="shrink-0 border-t border-border p-4">
-          <div className="mb-3 flex items-center gap-3">
-            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-sm bg-amber-300/10 font-mono text-xs font-bold text-amber-300">
-              {userProfile.initials}
+        <div className="shrink-0 border-t border-border p-3">
+          <Link
+            href="/settings"
+            className={cn(
+              "flex items-center gap-3 rounded-md p-2 hover:bg-slate-100",
+              isCollapsed && "lg:justify-center",
+            )}
+            title={isCollapsed ? "CDC · 大一学生" : undefined}
+          >
+            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-slate-900 text-[11px] font-semibold text-white">
+              CDC
             </div>
-            <div className="min-w-0">
-              <p className="truncate text-sm font-medium text-foreground">
-                {userProfile.name}
-              </p>
-              <p className="truncate text-xs text-muted-foreground">
-                {userProfile.grade} · {userProfile.role}
-              </p>
+            <div className={cn("min-w-0", isCollapsed && "lg:hidden")}>
+              <p className="truncate text-sm font-medium text-slate-900">CDC</p>
+              <p className="truncate text-[11px] text-slate-500">大一学生 · 电控负责人</p>
             </div>
-          </div>
-          <div className="flex items-center justify-between border-t border-border/70 pt-3 font-mono text-[10px] text-muted-foreground">
-            <span>SPRINT 0</span>
-            <span>MOCK DATA</span>
-          </div>
+          </Link>
         </div>
       </aside>
     </>

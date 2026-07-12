@@ -1,10 +1,7 @@
 import { Dashboard } from "@/components/dashboard/dashboard";
-import { AppShell } from "@/components/layout/app-shell";
+import { getDashboardData } from "@/services/dashboard-service";
 
-export default function Home() {
-  return (
-    <AppShell>
-      <Dashboard />
-    </AppShell>
-  );
+export default async function Home() {
+  const data = await getDashboardData();
+  return <Dashboard data={data} />;
 }

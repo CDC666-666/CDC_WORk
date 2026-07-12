@@ -1,85 +1,66 @@
-import { Boxes, CalendarDays, CircleGauge, ShieldAlert } from "lucide-react";
+import { ArrowUpRight, FolderKanban, Target } from "lucide-react";
 
-import { PanelHeader } from "@/components/dashboard/panel-header";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
+import { SectionHeader } from "@/components/shared/section-header";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import {
-  activeProject,
-  projectModules,
-  technicalIssues,
-  userProfile,
-} from "@/data/mock-data";
+import type { Project } from "@/types/dashboard";
 
-export function ProjectOverview() {
-  const openIssues = technicalIssues.filter((issue) => issue.status !== "已解决").length;
+interface ProjectOverviewProps {
+  projects: Project[];
+}
 
+const accentClasses = {
+  blue: "bg-blue-600",
+  green: "bg-emerald-600",
+  amber: "bg-amber-500",
+};
+
+export function ProjectOverview({ projects }: ProjectOverviewProps) {
   return (
-    <Card className="panel-topline h-full animate-panel-enter overflow-hidden motion-reduce:animate-none">
-      <PanelHeader
-        index="01 / PROJECT"
-        title="当前 RoboMaster 项目"
-        icon={Boxes}
-        trailing={<Badge variant="success">{activeProject.status}</Badge>}
-      />
-      <CardContent className="p-5">
-        <div className="flex flex-col justify-between gap-5 md:flex-row md:items-start">
-          <div className="min-w-0 max-w-2xl">
-            <div className="mb-2 flex flex-wrap items-center gap-3">
-              <h2 className="text-xl font-semibold text-foreground">
-                {activeProject.name}
-              </h2>
-              <span className="font-mono text-[10px] text-cyan-300">
-                {activeProject.code}
+    <Card className="h-full rounded-lg bg-white shadow-sm">
+      <CardHeader className="border-b border-border p-5">
+        <SectionHeader
+          title="项目进展"
+          description="机器人研发与个人产品并行推进"
+          action={<FolderKanban className="h-4 w-4 text-blue-600" />}
+        />
+      </CardHeader>
+      <CardContent className="divide-y divide-border p-0">
+        {projects.map((project) => (
+          <article key={project.id} className="px-5 py-5">
+            <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span
+                    className={`h-2 w-2 rounded-full ${accentClasses[project.accent ?? "blue"]}`}
+                  />
+                  <h3 className="text-sm font-semibold text-slate-900">{project.name}</h3>
+                  <span className="rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[9px] text-slate-500">
+                    {project.code}
+                  </span>
+                </div>
+                <p className="mt-2 text-xs leading-5 text-slate-500">{project.description}</p>
+              </div>
+              <div className="w-full shrink-0 sm:w-36">
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="text-[10px] text-slate-400">完成进度</span>
+                  <span className="text-sm font-semibold text-slate-900">{project.progress}%</span>
+                </div>
+                <Progress value={project.progress} className="h-1.5 bg-slate-100" />
+              </div>
+            </div>
+            <div className="mt-4 flex flex-col justify-between gap-2 border-t border-slate-100 pt-3 text-[11px] sm:flex-row sm:items-center">
+              <span className="flex min-w-0 items-center gap-1.5 text-slate-500">
+                <Target className="h-3.5 w-3.5 shrink-0 text-emerald-600" />
+                <span className="truncate">下一节点：{project.nextMilestone}</span>
+              </span>
+              <span className="flex shrink-0 items-center gap-1 text-slate-500">
+                {project.role}
+                <ArrowUpRight className="h-3 w-3" />
               </span>
             </div>
-            <p className="text-sm leading-6 text-muted-foreground">
-              {activeProject.description}
-            </p>
-          </div>
-          <div className="shrink-0 md:w-44">
-            <div className="mb-2 flex items-end justify-between">
-              <span className="text-xs text-muted-foreground">项目进度</span>
-              <span className="font-mono text-2xl font-semibold text-cyan-200">
-                {activeProject.progress}%
-              </span>
-            </div>
-            <Progress value={activeProject.progress} />
-          </div>
-        </div>
-
-        <div className="mt-6 grid grid-cols-2 border-y border-border sm:grid-cols-4">
-          <div className="border-b border-r border-border px-3 py-4 sm:border-b-0">
-            <CalendarDays className="mb-2 h-4 w-4 text-muted-foreground" />
-            <p className="text-xs text-muted-foreground">赛季</p>
-            <p className="mt-1 text-sm font-medium text-foreground">{activeProject.season}</p>
-          </div>
-          <div className="border-b border-border px-3 py-4 sm:border-b-0 sm:border-r">
-            <CircleGauge className="mb-2 h-4 w-4 text-cyan-300" />
-            <p className="text-xs text-muted-foreground">工程模块</p>
-            <p className="mt-1 text-sm font-medium text-foreground">
-              {projectModules.length} 个模块
-            </p>
-          </div>
-          <div className="border-r border-border px-3 py-4">
-            <ShieldAlert className="mb-2 h-4 w-4 text-amber-300" />
-            <p className="text-xs text-muted-foreground">遗留问题</p>
-            <p className="mt-1 text-sm font-medium text-foreground">{openIssues} 个处理中</p>
-          </div>
-          <div className="px-3 py-4">
-            <Boxes className="mb-2 h-4 w-4 text-emerald-300" />
-            <p className="text-xs text-muted-foreground">负责人</p>
-            <p className="mt-1 text-sm font-medium text-foreground">{userProfile.role}</p>
-          </div>
-        </div>
-
-        <div className="mt-5 flex flex-wrap gap-2">
-          {userProfile.techStack.map((technology) => (
-            <Badge key={technology} variant="outline" className="font-mono">
-              {technology}
-            </Badge>
-          ))}
-        </div>
+          </article>
+        ))}
       </CardContent>
     </Card>
   );

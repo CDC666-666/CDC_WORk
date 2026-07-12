@@ -1,8 +1,8 @@
-# RM 工程工作台
+# CDC AI Workspace
 
-面向 RoboMaster 机器人竞赛学生的个人 AI 工程工作台。项目用于集中管理机器人项目、任务、工程日志、测试记录、问题复盘、技术栈与报告素材。
+面向大学生和工程学习者的个人 AI 工作台，用于统一管理课程学习、每日任务、阅读计划、技术内容、个人项目、技能成长、知识沉淀、报告素材和简单收支记录。
 
-当前版本为 **Sprint 0：项目初始化**。本阶段只提供工作台首页、响应式导航、类型定义与本地模拟数据，不包含真实 AI、登录、后端服务或数据库。
+当前版本为 **Sprint 1**。RoboMaster 是项目研发中的一级业务模块之一，不是整个产品的唯一定位。
 
 ## 技术栈
 
@@ -10,34 +10,97 @@
 - React 19
 - TypeScript
 - Tailwind CSS
-- shadcn/ui 组件结构
-- Lucide React 图标
+- shadcn/ui 风格基础组件
+- Lucide Icons
 - ESLint
-- 本地 TypeScript 模拟数据
+- 本地模拟数据与 localStorage 状态
+
+## Sprint 1 已完成
+
+- 默认浅色个人 AI Dashboard 与预留深色主题变量
+- 固定、可折叠的桌面侧栏和移动端抽屉导航
+- 顶部全局搜索、日期状态、快速新建和用户入口
+- 分组信息架构：总览、学习成长、项目研发、个人管理、系统
+- 综合工作台首页：
+  - 欢迎区与三个今日重点
+  - 今日概览指标
+  - 可勾选并持久化的今日任务
+  - 课程、阅读和阶段目标
+  - RoboMaster 与 CDC AI Workspace 项目进度
+  - 最近内容与技能成长
+  - 不连接真实模型的 AI 快捷输入
+- “视频与技术内容”中心：
+  - 10 条覆盖机器人、嵌入式、控制、视觉和软件方向的演示内容
+  - 搜索、来源、类型、时间、方向、标签和状态筛选
+  - 相关度、发布时间、推荐指数和学习时长排序
+  - 卡片与列表视图
+  - 收藏、待看、完成、知识库和学习计划状态
+  - localStorage 持久化收藏和处理状态
+  - AI 技术总结详情 Dialog
+  - 筛选空状态和一键清除
+- 其余导航均有“功能建设中”路由，不会进入 404
+- 全局 loading、error 和 not-found 状态
+- 项目长期开发规则 `AGENTS.md`
+
+## 演示数据说明
+
+- 视频与技术内容当前全部使用模拟数据。
+- 作者名称明确标记为“演示作者”或“演示维护者”。
+- 原始链接使用 `example.com` 安全占位地址。
+- 当前尚未实现 Bilibili、抖音、CSDN、GitHub 或技术博客的真实平台搜索。
+- 当前没有字幕下载、爬虫、登录、数据库或真实 AI 模型调用。
+- 后续只会接入合规、无需绕过登录/验证码/反爬机制的数据源，并在完成隐私和调用配置后接入 AI 总结能力。
 
 ## 目录结构
 
 ```text
 CDC_WORK/
 ├─ app/
-│  ├─ globals.css              # 全局主题、Tailwind 与工程化视觉样式
-│  ├─ layout.tsx               # App Router 根布局与页面元信息
-│  └─ page.tsx                 # 工作台首页入口
+│  ├─ page.tsx                 # 综合工作台首页
+│  ├─ content/page.tsx         # 视频与技术内容中心
+│  ├─ [section]/page.tsx       # 统一建设中页面
+│  ├─ layout.tsx               # 全局应用壳层
+│  ├─ loading.tsx              # 全局加载状态
+│  ├─ error.tsx                # 全局错误状态
+│  └─ not-found.tsx            # 404 状态
 ├─ components/
-│  ├─ dashboard/               # 首页各独立业务区域
-│  ├─ layout/                  # 应用外壳、左侧导航与顶部状态栏
-│  └─ ui/                      # shadcn/ui 风格基础组件
-├─ data/
-│  └─ mock-data.ts             # RoboMaster 场景模拟数据
-├─ lib/
-│  └─ utils.ts                 # 通用样式合并工具
-├─ types/
-│  └─ index.ts                 # 项目领域 TypeScript 类型
-├─ components.json             # shadcn/ui 配置
-├─ tailwind.config.ts          # Tailwind 配置
-├─ eslint.config.mjs           # ESLint 配置
-└─ package.json                # 依赖与脚本
+│  ├─ content/                 # 内容中心筛选、卡片、Dialog 和交互
+│  ├─ dashboard/               # 综合首页业务组件
+│  ├─ layout/                  # 侧栏、顶部栏和全局反馈
+│  ├─ shared/                  # 页面标题、空状态和建设中页面
+│  └─ ui/                      # 基础 UI 组件
+├─ data/                       # 独立模拟数据
+├─ services/                   # 未来 API 接入边界
+├─ types/                      # 领域 TypeScript 类型
+├─ lib/                        # 导航、筛选和通用工具
+└─ AGENTS.md                   # 长期开发规则
 ```
+
+## 页面路由
+
+完整页面：
+
+- `/`：工作台
+- `/content`：视频与技术内容
+
+Sprint 1 建设中页面：
+
+- `/assistant`
+- `/today`
+- `/learning`
+- `/reading`
+- `/knowledge`
+- `/skills`
+- `/projects`
+- `/robomaster`
+- `/logs`
+- `/reviews`
+- `/calendar`
+- `/reports`
+- `/resume`
+- `/finance`
+- `/automation`
+- `/settings`
 
 ## 安装与运行
 
@@ -48,9 +111,9 @@ npm install
 npm run dev
 ```
 
-开发服务器默认地址：`http://localhost:3000`。
+浏览器访问：`http://127.0.0.1:3000`
 
-代码检查和生产构建：
+检查与生产构建：
 
 ```bash
 npm run lint
@@ -58,34 +121,31 @@ npm run build
 npm run start
 ```
 
-如果 Windows PowerShell 因执行策略拦截 `npm.ps1`，可使用等价命令 `npm.cmd install`、`npm.cmd run dev`、`npm.cmd run lint` 和 `npm.cmd run build`，无需修改系统执行策略。
+Windows PowerShell 如果拦截 `npm.ps1`，使用：
 
-## 当前已完成功能
+```powershell
+npm.cmd install
+npm.cmd run dev
+npm.cmd run lint
+npm.cmd run build
+```
 
-- 深色、桌面优先且支持基本移动端适配的工程 Dashboard
-- 可折叠移动端侧栏与桌面固定导航
-- 顶部本地模式、模拟数据、日期与时间状态栏
-- 用户欢迎信息与当前项目总览
-- 今日任务与完成进度
-- 本周开发时长、任务、测试与问题闭环数据
-- 电机控制、超级电容、力控底盘、自瞄算法、测试复盘模块进度
-- 最近工程日志与技能成长视图
-- AI 工程助手快捷输入界面占位，不接入真实模型
-- `UserProfile`、`Project`、`ProjectModule`、`Task`、`WorkLog`、`TechnicalIssue`、`Skill` 类型及对应模拟数据
+无需修改系统执行策略。
 
-## 下一阶段计划
+## 当前限制
 
-- 建立项目、任务、日志、测试记录和问题复盘的独立页面
-- 增加本地数据编辑与持久化方案
-- 完善模块详情、测试数据曲线和故障闭环流程
-- 增加日报、周报、项目报告与简历素材模板
-- 评估只读接入机器人代码仓库的索引与分析边界
-- 在明确数据安全与调用配置后，再规划真实 AI 能力
+- 没有真实 AI API
+- 没有真实平台内容搜索或抓取
+- 没有登录、后端或数据库
+- 没有读取 `StandardRobotpp`
+- 财务模块仅预留简单收支记录，不提供投资建议
+- 除首页和内容中心外，其余业务页面暂为建设中状态
 
-## Sprint 0 边界
+## Sprint 2 建议
 
-- 未接入 `StandardRobotpp` 或任何本地代码仓库
-- 未写死仓库绝对路径
-- 未接入 AI API
-- 未实现登录、数据库服务器或后端接口
-- 未实现导航中后续模块的业务页面
+1. 完成今日任务、学习中心和阅读计划的本地 CRUD。
+2. 建立知识条目、来源引用和内容摘要之间的数据关系。
+3. 实现项目详情、工程日志和测试复盘闭环。
+4. 增加数据导入导出与本地备份。
+5. 评估公开 API、RSS、用户主动提交链接等合规数据源。
+6. 设计真实 AI 接入前的隐私、成本、提示词和失败降级方案。

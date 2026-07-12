@@ -4,26 +4,48 @@
 
 @layer base {
   :root {
-    --background: 200 10% 5%;
-    --foreground: 180 7% 91%;
-    --card: 200 9% 7%;
-    --card-foreground: 180 7% 91%;
-    --popover: 200 9% 7%;
-    --popover-foreground: 180 7% 91%;
-    --primary: 188 86% 47%;
-    --primary-foreground: 198 38% 7%;
-    --secondary: 200 8% 12%;
-    --secondary-foreground: 180 6% 86%;
-    --muted: 200 7% 13%;
-    --muted-foreground: 190 5% 59%;
-    --accent: 42 92% 56%;
-    --accent-foreground: 37 80% 9%;
-    --destructive: 350 79% 63%;
+    --background: 210 20% 97%;
+    --foreground: 216 25% 16%;
+    --card: 0 0% 100%;
+    --card-foreground: 216 25% 16%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 216 25% 16%;
+    --primary: 215 79% 47%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 210 22% 94%;
+    --secondary-foreground: 216 20% 25%;
+    --muted: 210 20% 95%;
+    --muted-foreground: 215 12% 46%;
+    --accent: 198 80% 44%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 72% 52%;
     --destructive-foreground: 0 0% 100%;
-    --border: 195 7% 18%;
-    --input: 195 7% 20%;
-    --ring: 188 86% 47%;
-    --radius: 0.25rem;
+    --border: 214 20% 88%;
+    --input: 214 20% 84%;
+    --ring: 215 79% 47%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 216 22% 9%;
+    --foreground: 210 20% 94%;
+    --card: 216 20% 12%;
+    --card-foreground: 210 20% 94%;
+    --popover: 216 20% 12%;
+    --popover-foreground: 210 20% 94%;
+    --primary: 212 88% 63%;
+    --primary-foreground: 216 30% 10%;
+    --secondary: 216 17% 17%;
+    --secondary-foreground: 210 18% 90%;
+    --muted: 216 15% 17%;
+    --muted-foreground: 214 10% 64%;
+    --accent: 190 76% 48%;
+    --accent-foreground: 216 30% 10%;
+    --destructive: 0 68% 58%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 216 14% 24%;
+    --input: 216 14% 27%;
+    --ring: 212 88% 63%;
   }
 
   * {
@@ -32,7 +54,8 @@
   }
 
   html {
-    color-scheme: dark;
+    color-scheme: light;
+    scroll-behavior: smooth;
   }
 
   body {
@@ -42,32 +65,33 @@
     font-feature-settings: "tnum" 1, "ss01" 1;
   }
 
+  button,
+  a,
+  input,
+  select,
+  textarea {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2;
+  }
+
   ::selection {
-    background: rgba(34, 211, 238, 0.24);
-    color: #ecfeff;
+    background: rgba(37, 99, 235, 0.16);
+    color: #172033;
   }
 }
 
 @layer utilities {
   .workspace-grid {
     background-image:
-      linear-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px);
-    background-size: 28px 28px;
+      linear-gradient(rgba(100, 116, 139, 0.045) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(100, 116, 139, 0.045) 1px, transparent 1px);
+    background-size: 32px 32px;
   }
 
-  .panel-topline {
-    position: relative;
-  }
-
-  .panel-topline::before {
-    position: absolute;
-    top: -1px;
-    left: 0;
-    width: 64px;
-    height: 1px;
-    content: "";
-    background: hsl(var(--primary));
+  .content-cover-grid {
+    background-image:
+      linear-gradient(rgba(255, 255, 255, 0.18) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.18) 1px, transparent 1px);
+    background-size: 18px 18px;
   }
 
   .scrollbar-thin {

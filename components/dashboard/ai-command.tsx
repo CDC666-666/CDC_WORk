@@ -1,76 +1,107 @@
-import { Bot, SendHorizontal, Sparkles, TerminalSquare } from "lucide-react";
+"use client";
 
-import { Badge } from "@/components/ui/badge";
+import { useState } from "react";
+import { Bot, SendHorizontal, Sparkles } from "lucide-react";
+
+import { SectionHeader } from "@/components/shared/section-header";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 
 const suggestedPrompts = [
-  "分析今天的电机测试记录",
-  "生成本周工程周报",
-  "整理力控底盘问题清单",
+  "总结今天的学习",
+  "制定本周计划",
+  "整理 RoboMaster 调试记录",
+  "生成阅读计划",
+  "分析最近收藏的技术内容",
 ];
 
-export function AiCommand() {
-  return (
-    <Card
-      className="panel-topline animate-panel-enter overflow-hidden border-cyan-300/15 bg-[#0d1213] motion-reduce:animate-none"
-      style={{ animationDelay: "360ms" }}
-    >
-      <CardContent className="p-5 sm:p-6">
-        <div className="flex flex-col gap-5 xl:flex-row xl:items-center">
-          <div className="flex min-w-0 items-start gap-3 xl:w-[285px] xl:shrink-0">
-            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-sm border border-cyan-300/25 bg-cyan-300/10 text-cyan-300">
-              <Bot className="h-5 w-5" />
-            </div>
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <h2 className="text-sm font-semibold text-foreground">AI 工程助手</h2>
-                <Badge variant="outline" className="font-mono">
-                  UI PREVIEW
-                </Badge>
-              </div>
-              <p className="mt-1 text-xs text-muted-foreground">本地界面 · 暂未接入模型</p>
-            </div>
-          </div>
+function createDemoResponse(prompt: string) {
+  if (prompt.includes("RoboMaster")) {
+    return "已识别为项目复盘任务。Sprint 1 仅生成演示反馈，后续会从工程日志中提取现象、原因、方案和验证结果。";
+  }
+  if (prompt.includes("阅读")) {
+    return "已识别为阅读规划任务。建议先确定目标日期、每日页数和输出笔记，本阶段不会调用外部模型。";
+  }
+  if (prompt.includes("收藏")) {
+    return "已识别为技术内容整理任务。可以前往“视频与技术内容”按相关度筛选并查看演示 AI 技术简介。";
+  }
+  return "输入已保留在当前页面。Sprint 1 未连接真实 AI，后续将基于课程、任务和项目数据生成结构化结果。";
+}
 
-          <div className="min-w-0 flex-1">
-            <div className="flex gap-2">
-              <div className="relative min-w-0 flex-1">
-                <TerminalSquare className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  aria-label="AI 工程助手输入"
-                  className="h-11 border-cyan-300/15 bg-black/20 pl-10 pr-3"
-                  placeholder="输入工程问题，例如：分析底盘高速换向振荡原因"
-                />
-              </div>
-              <Button
-                type="button"
-                size="icon"
-                className="h-11 w-11 shrink-0"
-                disabled
-                title="后续 Sprint 接入"
-                aria-label="发送（后续 Sprint 接入）"
-              >
-                <SendHorizontal className="h-4 w-4" />
-              </Button>
+export function AiCommand() {
+  const [prompt, setPrompt] = useState("");
+  const [response, setResponse] = useState<string | null>(null);
+
+  const submitPrompt = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const normalizedPrompt = prompt.trim();
+    if (!normalizedPrompt) return;
+    setResponse(createDemoResponse(normalizedPrompt));
+  };
+
+  return (
+    <Card className="h-full rounded-lg border-blue-100 bg-white shadow-sm">
+      <CardHeader className="border-b border-border p-5">
+        <SectionHeader
+          title="AI 快捷输入"
+          description="前端模拟响应，不连接真实模型"
+          action={
+            <span className="rounded border border-blue-200 bg-blue-50 px-2 py-1 text-[9px] font-semibold text-blue-700">
+              DEMO
+            </span>
+          }
+        />
+      </CardHeader>
+      <CardContent className="p-5">
+        <form onSubmit={submitPrompt}>
+          <div className="flex gap-2">
+            <div className="relative min-w-0 flex-1">
+              <Bot className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-blue-600" />
+              <Input
+                aria-label="AI 快捷输入"
+                className="h-11 rounded-lg border-slate-200 bg-slate-50 pl-10 text-slate-800"
+                placeholder="输入学习或工程问题"
+                value={prompt}
+                onChange={(event) => {
+                  setPrompt(event.target.value);
+                  setResponse(null);
+                }}
+              />
             </div>
-            <div className="mt-3 flex flex-wrap items-center gap-2">
-              <Sparkles className="h-3.5 w-3.5 text-amber-300" />
-              {suggestedPrompts.map((prompt) => (
-                <button
-                  key={prompt}
-                  type="button"
-                  disabled
-                  title="后续 Sprint 接入"
-                  className="rounded-sm border border-border bg-secondary/45 px-2.5 py-1 text-[11px] text-muted-foreground disabled:cursor-not-allowed disabled:opacity-75"
-                >
-                  {prompt}
-                </button>
-              ))}
-            </div>
+            <Button type="submit" size="icon" className="h-11 w-11" disabled={!prompt.trim()}>
+              <SendHorizontal className="h-4 w-4" />
+              <span className="sr-only">提交演示问题</span>
+            </Button>
           </div>
-        </div>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <Sparkles className="h-3.5 w-3.5 text-amber-500" />
+            {suggestedPrompts.map((suggestion) => (
+              <button
+                key={suggestion}
+                type="button"
+                className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-[10px] text-slate-600 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+                onClick={() => {
+                  setPrompt(suggestion);
+                  setResponse(null);
+                }}
+              >
+                {suggestion}
+              </button>
+            ))}
+          </div>
+        </form>
+
+        {response ? (
+          <div className="mt-5 border-l-2 border-blue-500 bg-blue-50/60 px-3 py-3" aria-live="polite">
+            <p className="text-[10px] font-semibold text-blue-700">模拟响应</p>
+            <p className="mt-1 text-xs leading-5 text-slate-600">{response}</p>
+          </div>
+        ) : (
+          <div className="mt-5 border-t border-border pt-4 text-[11px] leading-5 text-slate-400">
+            输入内容只保存在当前浏览器状态，不会发送到任何外部服务。
+          </div>
+        )}
       </CardContent>
     </Card>
   );

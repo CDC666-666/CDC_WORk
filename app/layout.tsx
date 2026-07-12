@@ -1,16 +1,21 @@
 import type { Metadata, Viewport } from "next";
 
+import { AppShell } from "@/components/layout/app-shell";
+
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "RM 工程工作台",
-  description: "面向 RoboMaster 机器人竞赛开发的个人 AI 工程工作台",
+  title: {
+    default: "CDC AI Workspace",
+    template: "%s | CDC AI Workspace",
+  },
+  description: "面向大学生和工程学习者的个人 AI 工作台",
 };
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#0b0e0f",
+  themeColor: "#f5f7fa",
 };
 
 export default function RootLayout({
@@ -19,8 +24,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="zh-CN" className="dark">
-      <body>{children}</body>
+    <html lang="zh-CN">
+      <body>
+        <AppShell>{children}</AppShell>
+      </body>
     </html>
   );
 }
