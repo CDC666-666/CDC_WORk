@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { Check, Copy, Edit3, Plus, RotateCcw, Trash2 } from "lucide-react";
 
 import { ActionToast, type ToastNotice } from "@/components/layout/action-toast";
@@ -151,6 +152,7 @@ export function TaskManager() {
                 <Button size="sm" variant={isCompleted ? "outline" : "secondary"} onClick={() => { workspace.toggleTaskCompleted(task.id); showNotice(isCompleted ? "任务已恢复" : "任务已完成", task.title); }}>{isCompleted ? <RotateCcw /> : <Check />}{isCompleted ? "恢复" : "完成"}</Button>
                 <Button size="sm" variant="ghost" onClick={() => { setEditingTask(task); setFormOpen(true); }}><Edit3 />编辑</Button>
                 <Button size="sm" variant="ghost" onClick={() => { workspace.duplicateTask(task); showNotice("任务已复制", "副本已设为待开始状态。 "); }}><Copy />复制</Button>
+                {task.projectId && <Button asChild size="sm" variant="ghost"><Link href={`/logs?projectId=${task.projectId}&taskId=${task.id}&create=1`}>写日志</Link></Button>}
                 <Button size="sm" variant="destructive" onClick={() => setDeletingTask(task)}><Trash2 />删除</Button>
               </div>
             </div>
