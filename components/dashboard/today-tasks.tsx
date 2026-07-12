@@ -1,19 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { CheckCircle2, Circle, Clock3, ListChecks } from "lucide-react";
 
 import { SectionHeader } from "@/components/shared/section-header";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { useWorkspaceData } from "@/hooks/use-workspace-data";
+import { formatChineseDateTime, toLocalDateKey } from "@/lib/date";
 import { cn } from "@/lib/utils";
-import type { Priority, Task } from "@/types/dashboard";
-
-interface TodayTasksProps {
-  tasks: Task[];
-}
-
-const taskStorageKey = "cdc-dashboard-task-state-v1";
+import type { Priority } from "@/types/dashboard";
 
 const priorityClasses: Record<Priority, string> = {
   高: "border-rose-200 bg-rose-50 text-rose-700",
@@ -29,41 +24,11 @@ const domainClasses: Record<string, string> = {
   个人管理: "text-slate-700",
 };
 
-export function TodayTasks({ tasks }: TodayTasksProps) {
-  const [completedIds, setCompletedIds] = useState<Set<string>>(
-    () => new Set(tasks.filter((task) => task.status === "已完成").map((task) => task.id)),
-  );
-  const [isHydrated, setIsHydrated] = useState(false);
-
-  useEffect(() => {
-    const stored = window.localStorage.getItem(taskStorageKey);
-    if (stored) {
-      try {
-        const ids = JSON.parse(stored) as string[];
-        setCompletedIds(new Set(ids));
-      } catch {
-        window.localStorage.removeItem(taskStorageKey);
-      }
-    }
-    setIsHydrated(true);
-  }, []);
-
-  useEffect(() => {
-    if (isHydrated) {
-      window.localStorage.setItem(taskStorageKey, JSON.stringify([...completedIds]));
-    }
-  }, [completedIds, isHydrated]);
-
-  const toggleTask = (taskId: string) => {
-    setCompletedIds((current) => {
-      const next = new Set(current);
-      if (next.has(taskId)) next.delete(taskId);
-      else next.add(taskId);
-      return next;
-    });
-  };
-
-  const completion = Math.round((completedIds.size / tasks.length) * 100);
+export function TodayTasks() {
+  const { data, toggleTaskCompleted } = useWorkspaceData();
+  const tasks = data.tasks.filter((task) => task.scheduledDate === toLocalDateKey());
+  const completedCount = tasks.filter((task) => task.status === "已完成").length;
+  const completion = tasks.length > 0 ? Math.round((completedCount / tasks.length) * 100) : 0;
 
   return (
     <Card className="h-full rounded-lg bg-white shadow-sm">
@@ -74,7 +39,7 @@ export function TodayTasks({ tasks }: TodayTasksProps) {
           action={
             <span className="flex items-center gap-1.5 text-xs text-slate-500">
               <ListChecks className="h-4 w-4 text-blue-600" />
-              {completedIds.size}/{tasks.length}
+              {completedCount}/{tasks.length}
             </span>
           }
         />
@@ -82,7 +47,7 @@ export function TodayTasks({ tasks }: TodayTasksProps) {
       </CardHeader>
       <CardContent className="divide-y divide-border p-0">
         {tasks.map((task) => {
-          const isCompleted = completedIds.has(task.id);
+          const isCompleted = task.status === "已完成";
           return (
             <div key={task.id} className="flex gap-3 px-5 py-4 hover:bg-slate-50/80">
               <button
@@ -90,7 +55,7 @@ export function TodayTasks({ tasks }: TodayTasksProps) {
                 className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-md text-slate-400 hover:bg-blue-50 hover:text-blue-600"
                 aria-label={isCompleted ? `将${task.title}标记为未完成` : `完成${task.title}`}
                 aria-pressed={isCompleted}
-                onClick={() => toggleTask(task.id)}
+                onClick={() => toggleTaskCompleted(task.id)}
               >
                 {isCompleted ? (
                   <CheckCircle2 className="h-[18px] w-[18px] text-emerald-600" />
@@ -111,11 +76,11 @@ export function TodayTasks({ tasks }: TodayTasksProps) {
                     </p>
                     <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-500">
                       <span className={cn("font-medium", domainClasses[task.domain ?? "个人管理"])}>
-                        {task.domain ?? "个人管理"}
+                        {task.domain}
                       </span>
                       <span className="flex items-center gap-1">
                         <Clock3 className="h-3 w-3" />
-                        {task.dueAt}
+                        {formatChineseDateTime(task.dueAt)}
                       </span>
                       <span>{task.estimateHours}h</span>
                     </div>

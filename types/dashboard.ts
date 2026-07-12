@@ -1,12 +1,16 @@
+import type { StudyPlan } from "@/types/learning";
+import type { ReadingItem } from "@/types/reading";
+import type { Task } from "@/types/task";
+
 export type ProjectStatus = "进行中" | "规划中" | "已归档";
-export type Priority = "高" | "中" | "低";
-export type TaskStatus = "待开始" | "进行中" | "已完成" | "受阻";
-export type DashboardDomain =
-  | "学校学习"
-  | "阅读成长"
-  | "项目研发"
-  | "内容学习"
-  | "个人管理";
+export type { StudyPlan } from "@/types/learning";
+export type { ReadingItem } from "@/types/reading";
+export type {
+  Priority,
+  Task,
+  TaskDomain as DashboardDomain,
+  TaskStatus,
+} from "@/types/task";
 
 export interface UserProfile {
   id: string;
@@ -30,38 +34,6 @@ export interface DashboardMetric {
   unit?: string;
   helper: string;
   tone: "blue" | "green" | "amber" | "rose" | "neutral";
-}
-
-export interface Task {
-  id: string;
-  title: string;
-  status: TaskStatus;
-  priority: Priority;
-  dueAt: string;
-  estimateHours: number;
-  tags: string[];
-  domain?: DashboardDomain;
-  projectId?: string;
-  moduleId?: string;
-}
-
-export interface StudyPlan {
-  id: string;
-  title: string;
-  category: "课程" | "阅读" | "阶段目标";
-  progress: number;
-  nextAction: string;
-  deadline: string;
-}
-
-export interface ReadingItem {
-  id: string;
-  title: string;
-  author: string;
-  totalPages: number;
-  currentPage: number;
-  targetDate: string;
-  status: "待读" | "阅读中" | "已完成";
 }
 
 export interface Project {

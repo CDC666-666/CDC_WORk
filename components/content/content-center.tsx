@@ -12,6 +12,7 @@ import {
 } from "@/components/layout/action-toast";
 import { EmptyState } from "@/components/shared/empty-state";
 import { PageHeader } from "@/components/shared/page-header";
+import { useWorkspaceData } from "@/hooks/use-workspace-data";
 import {
   defaultContentFilters,
   filterAndSortContent,
@@ -51,6 +52,7 @@ function buildPersistedState(items: ContentItem[]): PersistedContentState {
 }
 
 export function ContentCenter({ initialItems, tags }: ContentCenterProps) {
+  const workspace = useWorkspaceData();
   const [items, setItems] = useState(initialItems);
   const [filters, setFilters] = useState<ContentFilters>(defaultContentFilters);
   const [viewMode, setViewMode] = useState<ContentViewMode>("card");
@@ -120,8 +122,23 @@ export function ContentCenter({ initialItems, tags }: ContentCenterProps) {
   };
 
   const addToStudyPlan = (itemId: string) => {
+    const content = items.find((item) => item.id === itemId);
+    if (!content) {
+      showNotice("加入失败", "没有找到对应的技术内容。 ");
+      return;
+    }
+    const wasAdded = workspace.addTaskFromContent({
+      id: content.id,
+      title: content.title,
+      durationMinutes: content.durationMinutes,
+    });
     updateItem(itemId, (item) => ({ ...item, isInStudyPlan: true }));
-    showNotice("已加入学习计划", "该内容已写入本地状态，刷新页面后仍会保留。");
+    showNotice(
+      wasAdded ? "已加入今日任务" : "任务已存在",
+      wasAdded
+        ? "已创建内容学习任务，可在今日任务和工作台首页查看。"
+        : "同一内容已经存在学习任务，未重复添加。",
+    );
   };
 
   const openDemoLink = (item: ContentItem) => {

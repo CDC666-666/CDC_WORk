@@ -8,6 +8,7 @@ import type {
   WeeklyMetric,
   WorkLog,
 } from "@/types";
+import { initialTasks } from "@/data/initial-workspace-data";
 
 export const userProfile: UserProfile = {
   id: "usr-cdc-001",
@@ -94,52 +95,7 @@ export const projectModules: ProjectModule[] = [
   },
 ];
 
-export const tasks: Task[] = [
-  {
-    id: "task-001",
-    projectId: "project-standard-2026",
-    moduleId: "motor",
-    title: "完成 M3508 速度环阶跃响应采样",
-    status: "进行中",
-    priority: "高",
-    dueAt: "今天 18:00",
-    estimateHours: 1.5,
-    tags: ["CAN", "PID", "示波数据"],
-  },
-  {
-    id: "task-002",
-    projectId: "project-standard-2026",
-    moduleId: "supercap",
-    title: "校核超级电容 CAN 状态帧解析",
-    status: "待开始",
-    priority: "高",
-    dueAt: "今天 20:00",
-    estimateHours: 1,
-    tags: ["C 板", "CAN"],
-  },
-  {
-    id: "task-003",
-    projectId: "project-standard-2026",
-    moduleId: "force-chassis",
-    title: "复测底盘横移跟随误差",
-    status: "待开始",
-    priority: "中",
-    dueAt: "今天 22:00",
-    estimateHours: 2,
-    tags: ["底盘", "测试"],
-  },
-  {
-    id: "task-004",
-    projectId: "project-standard-2026",
-    moduleId: "auto-aim",
-    title: "整理自瞄联调接口清单",
-    status: "已完成",
-    priority: "中",
-    dueAt: "今天 12:00",
-    estimateHours: 0.5,
-    tags: ["UART", "接口"],
-  },
-];
+export const tasks: Task[] = initialTasks.map((task) => ({ ...task, tags: [...task.tags] }));
 
 export const workLogs: WorkLog[] = [
   {

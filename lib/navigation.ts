@@ -164,7 +164,7 @@ export const navigationGroups: NavigationGroup[] = [
 export const navigationItems = navigationGroups.flatMap((group) => group.items);
 
 export const placeholderSections = navigationItems
-  .filter((item) => item.href !== "/" && item.href !== "/content")
+  .filter((item) => !["/", "/content", "/today", "/learning", "/reading", "/settings"].includes(item.href))
   .map((item) => item.href.slice(1));
 
 export function getNavigationItemBySection(section: string) {

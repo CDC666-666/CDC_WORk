@@ -14,6 +14,27 @@ export type {
   UserProfile,
 } from "@/types/dashboard";
 
+export type {
+  StudyPlanCategory,
+  StudyPlanDraft,
+  StudyPlanStatus,
+  StudySession,
+  StudySessionDraft,
+} from "@/types/learning";
+export type {
+  ReadingCategory,
+  ReadingItemDraft,
+  ReadingStatus,
+} from "@/types/reading";
+export type { TaskDraft, TaskDomain, TaskSourceType } from "@/types/task";
+export type {
+  WorkspaceBackup,
+  WorkspaceData,
+  WorkspaceLoadResult,
+  WorkspaceMetadata,
+  WorkspaceRecoveryKind,
+} from "@/types/workspace";
+
 export type ModuleStatus = "开发中" | "验证中" | "待规划" | "稳定";
 export type WorkLogResult = "完成" | "部分完成" | "受阻";
 export type IssueStatus = "待定位" | "处理中" | "已解决";

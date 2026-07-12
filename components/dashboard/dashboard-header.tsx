@@ -37,7 +37,7 @@ export function DashboardHeader({ user, tasks }: DashboardHeaderProps) {
         <div className="min-w-0">
           <div className="mb-3 flex flex-wrap items-center gap-2">
             <span className="rounded border border-blue-200 bg-blue-50 px-2 py-1 text-[10px] font-semibold text-blue-700">
-              SPRINT 1
+              SPRINT 2
             </span>
             <span className="text-xs text-slate-500">{user.studentStatus ?? user.grade}</span>
             <span className="text-slate-300">/</span>

@@ -1,0 +1,201 @@
+import type { StudyPlan, StudySession } from "@/types/learning";
+import type { ReadingItem } from "@/types/reading";
+import type { Task } from "@/types/task";
+import { WORKSPACE_SCHEMA_VERSION, type WorkspaceData } from "@/types/workspace";
+
+const createdAt = "2026-07-12T08:00:00+08:00";
+
+export const initialTasks: Task[] = [
+  {
+    id: "task-math",
+    title: "完成高等数学作业",
+    description: "完成第三章课后习题并标记不会的题目。",
+    status: "进行中",
+    priority: "高",
+    domain: "学校学习",
+    scheduledDate: "2026-07-12",
+    dueAt: "2026-07-12T19:00:00+08:00",
+    estimateHours: 1.5,
+    actualHours: 0.5,
+    tags: ["高等数学", "作业"],
+    sourceType: "manual",
+    createdAt,
+    updatedAt: createdAt,
+  },
+  {
+    id: "task-reading",
+    title: "阅读《控制系统基础》20 页",
+    description: "阅读经典控制章节并记录三个关键概念。",
+    status: "待开始",
+    priority: "中",
+    domain: "阅读成长",
+    scheduledDate: "2026-07-12",
+    dueAt: "2026-07-12T21:00:00+08:00",
+    estimateHours: 0.8,
+    actualHours: 0,
+    tags: ["控制理论", "阅读"],
+    sourceType: "reading",
+    sourceId: "book-control",
+    createdAt,
+    updatedAt: createdAt,
+  },
+  {
+    id: "task-motor",
+    title: "调试步兵底盘电机速度环",
+    description: "完成 M3508 带载速度环测试并记录超调与稳态误差。",
+    status: "进行中",
+    priority: "高",
+    domain: "项目研发",
+    scheduledDate: "2026-07-12",
+    dueAt: "2026-07-12T22:00:00+08:00",
+    estimateHours: 2,
+    actualHours: 0.6,
+    tags: ["M3508", "PID"],
+    projectId: "project-rm-standard",
+    moduleId: "motor",
+    sourceType: "project",
+    sourceId: "project-rm-standard",
+    createdAt,
+    updatedAt: createdAt,
+  },
+  {
+    id: "task-supercap",
+    title: "整理超级电容通信记录",
+    description: "整理 CAN 帧定义、功率状态与异常现象。",
+    status: "待开始",
+    priority: "中",
+    domain: "项目研发",
+    scheduledDate: "2026-07-13",
+    dueAt: "2026-07-13T12:00:00+08:00",
+    estimateHours: 0.7,
+    actualHours: 0,
+    tags: ["超级电容", "CAN"],
+    projectId: "project-rm-standard",
+    moduleId: "supercap",
+    sourceType: "project",
+    sourceId: "project-rm-standard",
+    createdAt,
+    updatedAt: createdAt,
+  },
+  {
+    id: "task-video",
+    title: "查看一条 RoboMaster 技术视频",
+    description: "选择一条与底盘控制相关的视频并输出简短笔记。",
+    status: "待开始",
+    priority: "低",
+    domain: "内容学习",
+    scheduledDate: "2026-07-13",
+    dueAt: "2026-07-13T20:00:00+08:00",
+    estimateHours: 0.5,
+    actualHours: 0,
+    tags: ["技术视频", "RoboMaster"],
+    sourceType: "manual",
+    createdAt,
+    updatedAt: createdAt,
+  },
+];
+
+export const initialStudyPlans: StudyPlan[] = [
+  ["plan-math", "高等数学", "课程", 50, 18, "2026-07-28", "完成第三章习题并整理错题", ["数学", "课程"]],
+  ["plan-circuit", "电路分析", "课程", 36, 12, "2026-08-05", "复习戴维南定理并完成例题", ["电路", "课程"]],
+  ["plan-cpp", "C / C++ 工程能力", "技术", 60, 22, "2026-09-01", "练习 RAII 与模块化设计", ["C++", "编程"]],
+  ["plan-stm32", "STM32 外设与调度", "技术", 48, 19, "2026-08-20", "整理 CAN 与定时器配置清单", ["STM32", "嵌入式"]],
+  ["plan-control", "控制系统基础", "考试", 42, 11.5, "2026-07-31", "完成经典控制章节阅读", ["控制", "考试"]],
+  ["plan-chassis", "RoboMaster 底盘控制", "项目", 80, 31, "2026-08-15", "完成速度环带载复测", ["RoboMaster", "底盘"]],
+  ["plan-python", "Python 数据处理", "阶段目标", 30, 8, "2026-09-15", "分析一组电机测试 CSV", ["Python", "数据"]],
+].map(([id, title, category, targetHours, completedHours, deadline, nextAction, tags]) => ({
+  id: id as string,
+  title: title as string,
+  category: category as StudyPlan["category"],
+  description: `${title as string}的阶段学习计划。`,
+  targetHours: targetHours as number,
+  completedHours: completedHours as number,
+  progress: Math.min(100, Math.round(((completedHours as number) / (targetHours as number)) * 100)),
+  deadline: deadline as string,
+  nextAction: nextAction as string,
+  status: "进行中",
+  tags: tags as string[],
+  createdAt,
+  updatedAt: createdAt,
+}));
+
+export const initialStudySessions: StudySession[] = [
+  {
+    id: "session-control-1",
+    studyPlanId: "plan-control",
+    date: "2026-07-12",
+    durationMinutes: 90,
+    content: "经典控制系统基本结构",
+    result: "完成章节笔记",
+    notes: "需要复习稳态误差定义。",
+    createdAt: "2026-07-12T10:00:00+08:00",
+  },
+  {
+    id: "session-chassis-1",
+    studyPlanId: "plan-chassis",
+    date: "2026-07-11",
+    durationMinutes: 120,
+    content: "M3508 速度环参数测试",
+    result: "获得第一组带载数据",
+    notes: "换向时仍有明显振荡。",
+    createdAt: "2026-07-11T21:00:00+08:00",
+  },
+  {
+    id: "session-math-1",
+    studyPlanId: "plan-math",
+    date: "2026-07-10",
+    durationMinutes: 75,
+    content: "高数第三章复习",
+    result: "完成 12 道习题",
+    notes: "两道积分题需要订正。",
+    createdAt: "2026-07-10T20:30:00+08:00",
+  },
+];
+
+export const initialReadingItems: ReadingItem[] = [
+  ["book-control", "控制系统基础", "课程推荐读物", "课程教材", 320, 86, 20, "2026-07-31"],
+  ["book-cpp", "C++ Primer", "演示书目", "专业技术", 864, 120, 15, "2026-10-01"],
+  ["book-embedded", "嵌入式系统设计", "演示书目", "专业技术", 420, 35, 12, "2026-09-15"],
+  ["book-product", "产品方法与用户研究", "演示书目", "产品管理", 260, 0, 10, "2026-09-01"],
+  ["book-startup", "创业项目从零到一", "演示书目", "创业商业", 280, 0, 10, "2026-10-15"],
+].map(([id, title, author, category, totalPages, currentPage, dailyPageTarget, targetDate]) => ({
+  id: id as string,
+  title: title as string,
+  author: author as string,
+  category: category as ReadingItem["category"],
+  totalPages: totalPages as number,
+  currentPage: currentPage as number,
+  dailyPageTarget: dailyPageTarget as number,
+  startDate: "2026-07-12",
+  targetDate: targetDate as string,
+  status: (currentPage as number) > 0 ? "阅读中" : "待读",
+  rating: 0,
+  notes: "",
+  tags: [category as string],
+  createdAt,
+  updatedAt: createdAt,
+}));
+
+export const initialWorkspaceData: WorkspaceData = {
+  tasks: initialTasks,
+  studyPlans: initialStudyPlans,
+  studySessions: initialStudySessions,
+  readingItems: initialReadingItems,
+  metadata: {
+    schemaVersion: WORKSPACE_SCHEMA_VERSION,
+    createdAt,
+    updatedAt: createdAt,
+  },
+};
+
+export function createInitialWorkspaceData(now = new Date()): WorkspaceData {
+  const timestamp = now.toISOString();
+  return {
+    tasks: initialWorkspaceData.tasks.map((task) => ({ ...task, tags: [...task.tags] })),
+    studyPlans: initialWorkspaceData.studyPlans.map((plan) => ({ ...plan, tags: [...plan.tags] })),
+    studySessions: initialWorkspaceData.studySessions.map((session) => ({ ...session })),
+    readingItems: initialWorkspaceData.readingItems.map((item) => ({ ...item, tags: [...item.tags] })),
+    metadata: { schemaVersion: WORKSPACE_SCHEMA_VERSION, createdAt: timestamp, updatedAt: timestamp },
+  };
+}
+

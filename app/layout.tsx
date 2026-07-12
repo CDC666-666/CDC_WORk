@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 
 import { AppShell } from "@/components/layout/app-shell";
+import { WorkspaceDataProvider } from "@/components/providers/workspace-data-provider";
 
 import "./globals.css";
 
@@ -26,7 +27,9 @@ export default function RootLayout({
   return (
     <html lang="zh-CN">
       <body>
-        <AppShell>{children}</AppShell>
+        <WorkspaceDataProvider>
+          <AppShell>{children}</AppShell>
+        </WorkspaceDataProvider>
       </body>
     </html>
   );

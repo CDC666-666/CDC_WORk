@@ -1,16 +1,16 @@
+import Link from "next/link";
 import { BookOpen, CalendarClock, GraduationCap } from "lucide-react";
 
 import { SectionHeader } from "@/components/shared/section-header";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import type { ReadingItem, StudyPlan } from "@/types/dashboard";
+import { useWorkspaceData } from "@/hooks/use-workspace-data";
+import { formatChineseDate } from "@/lib/date";
 
-interface StudyOverviewProps {
-  plans: StudyPlan[];
-  readingItems: ReadingItem[];
-}
-
-export function StudyOverview({ plans, readingItems }: StudyOverviewProps) {
+export function StudyOverview() {
+  const { data } = useWorkspaceData();
+  const plans = data.studyPlans.filter((plan) => plan.status === "进行中").slice(0, 3);
+  const readingItems = data.readingItems;
   const currentBook = readingItems.find((item) => item.status === "阅读中") ?? readingItems[0];
   const readingProgress = currentBook
     ? Math.round((currentBook.currentPage / currentBook.totalPages) * 100)
@@ -19,7 +19,11 @@ export function StudyOverview({ plans, readingItems }: StudyOverviewProps) {
   return (
     <Card className="h-full rounded-lg bg-white shadow-sm">
       <CardHeader className="border-b border-border p-5">
-        <SectionHeader title="学习计划" description="课程、阅读和阶段目标" />
+        <SectionHeader
+          title="学习计划"
+          description="课程、阅读和阶段目标"
+          action={<Link href="/learning" className="text-[11px] font-medium text-blue-600">管理计划</Link>}
+        />
       </CardHeader>
       <CardContent className="p-5">
         <div className="space-y-4">
@@ -29,7 +33,7 @@ export function StudyOverview({ plans, readingItems }: StudyOverviewProps) {
                 <div className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-blue-50 text-blue-600">
                   {plan.category === "课程" ? (
                     <GraduationCap className="h-4 w-4" />
-                  ) : plan.category === "阅读" ? (
+                  ) : plan.category === "技术" ? (
                     <BookOpen className="h-4 w-4" />
                   ) : (
                     <CalendarClock className="h-4 w-4" />
@@ -38,7 +42,7 @@ export function StudyOverview({ plans, readingItems }: StudyOverviewProps) {
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-3">
                     <p className="truncate text-sm font-medium text-slate-800">{plan.title}</p>
-                    <span className="text-[10px] text-slate-400">{plan.deadline}</span>
+                    <span className="text-[10px] text-slate-400">{formatChineseDate(plan.deadline)}</span>
                   </div>
                   <p className="mt-1 truncate text-[11px] text-slate-500">{plan.nextAction}</p>
                   <div className="mt-2 flex items-center gap-3">
