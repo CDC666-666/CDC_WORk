@@ -9,6 +9,7 @@ import { Dialog } from "@/components/shared/dialog";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { useWorkspaceData } from "@/hooks/use-workspace-data";
+import { useAcademic } from "@/hooks/use-academic";
 import { toLocalDateKey } from "@/lib/date";
 import { parseWorkspaceBackup, workspaceDataService, WORKSPACE_STORAGE_KEY,
   type WorkspaceImportPreview } from "@/services/workspace-data-service";
@@ -16,6 +17,7 @@ import { WORKSPACE_DOMAIN_SCHEMA_VERSION } from "@/types/workspace";
 
 export function LocalDataSettings() {
   const workspace = useWorkspaceData();
+  const academic = useAcademic();
   const inputRef = useRef<HTMLInputElement>(null);
   const [pendingBackup, setPendingBackup] = useState<WorkspaceImportPreview | null>(null);
   const [resetOpen, setResetOpen] = useState(false);
@@ -28,8 +30,10 @@ export function LocalDataSettings() {
     const anchor = document.createElement("a");
     anchor.href = url;
     anchor.download = filename;
+    document.body.appendChild(anchor);
     anchor.click();
-    URL.revokeObjectURL(url);
+    anchor.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 0);
   };
 
   const exportData = async () => {
@@ -90,6 +94,7 @@ export function LocalDataSettings() {
     ["技能 / 证据", `${workspace.data.skills.length} / ${workspace.data.skillEvidence.length}`],
     ["报告 / 简历素材", `${workspace.data.reports.length} / ${workspace.data.resumeMaterials.length}`],
     ["日程 / 收支", `${workspace.data.calendarEvents.length} / ${workspace.data.financeTransactions.length}`],
+    ["学期 / 课程 / 作业", `${academic.state.semesters.length} / ${academic.state.courses.length} / ${academic.state.assignments.length}`],
   ];
 
   return <div className="space-y-5 lg:space-y-6">

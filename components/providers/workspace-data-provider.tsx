@@ -19,6 +19,7 @@ import type { WorkspaceData } from "@/types/workspace";
 export interface WorkspaceDataContextValue {
   data: WorkspaceData;
   isHydrated: boolean;
+  domainRevision: number;
   dispatch: React.Dispatch<WorkspaceAction>;
   addTask: (draft: TaskDraft) => Task;
   updateTask: (task: Task) => void;
@@ -48,6 +49,7 @@ function normalizeStudyPlan(plan: StudyPlan): StudyPlan {
 export function WorkspaceDataProvider({ children }: { children: React.ReactNode }) {
   const [data, dispatch] = useReducer(workspaceReducer, undefined, createWorkspaceInitialState);
   const [isHydrated, setIsHydrated] = useState(false);
+  const [domainRevision, setDomainRevision] = useState(0);
   const [notice, setNotice] = useState<ToastNotice | null>(null);
 
   useEffect(() => {
@@ -188,11 +190,13 @@ export function WorkspaceDataProvider({ children }: { children: React.ReactNode 
   const importWorkspaceBackup = useCallback(async (backup: WorkspaceImportPreview) => {
     const imported = await workspaceDataService.importBackup(backup);
     dispatch({ type: "workspace/replaced", data: normalizeWorkspaceData(imported) });
+    setDomainRevision((revision) => revision + 1);
   }, []);
 
   const restoreDemoData = useCallback(() => {
     void workspaceDataService.reset().then((resetData) => {
       dispatch({ type: "workspace/replaced", data: normalizeWorkspaceData(resetData) });
+      setDomainRevision((revision) => revision + 1);
     }).catch(() => {
       setNotice({ id: Date.now(), title: "恢复演示数据失败", description: "请检查浏览器存储后重试。" });
     });
@@ -201,6 +205,7 @@ export function WorkspaceDataProvider({ children }: { children: React.ReactNode 
   const value = useMemo<WorkspaceDataContextValue>(() => ({
     data,
     isHydrated,
+    domainRevision,
     dispatch,
     addTask,
     updateTask,
@@ -221,6 +226,7 @@ export function WorkspaceDataProvider({ children }: { children: React.ReactNode 
   }), [
     data,
     isHydrated,
+    domainRevision,
     addTask,
     updateTask,
     deleteTask,

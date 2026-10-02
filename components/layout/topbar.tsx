@@ -21,7 +21,7 @@ import {
 
 import { Input } from "@/components/ui/input";
 import { useWorkspaceData } from "@/hooks/use-workspace-data";
-import { navigationItems } from "@/lib/navigation";
+import { getNavigationItemByPathname } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
 import { searchWorkspace } from "@/services/global-search-service";
 
@@ -81,7 +81,7 @@ export function Topbar({
   }, []);
 
   const date = formatDate(now);
-  const currentItem = navigationItems.find((item) => item.href === pathname);
+  const currentItem = getNavigationItemByPathname(pathname);
   const normalizedQuery = query.trim().toLocaleLowerCase("zh-CN");
   const searchResults = searchWorkspace(data, normalizedQuery);
 

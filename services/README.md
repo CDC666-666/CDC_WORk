@@ -14,3 +14,11 @@ file, and includes broken-reference details. Normal import rejects recovery
 files and keeps reference validation in force.
 Later server implementations can provide the same repository contract behind
 authenticated endpoints; browser code must not import a database client.
+
+`academic-selectors.ts` derives dashboard rows and calendar events directly
+from `AcademicState.assignments`. The source keys are stable (`assignment:id`
+for dashboard rows and `derived-assignment-id` for calendar events). Editing
+or completing an assignment updates its Academic record; no `Task` or manual
+calendar record is created. Due today and unfinished overdue assignments
+appear on the dashboard. All assignments appear on their due dates in the
+calendar, including completed ones.

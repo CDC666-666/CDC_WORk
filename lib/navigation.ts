@@ -59,6 +59,12 @@ export const navigationGroups: NavigationGroup[] = [
         description: "课程与学习目标",
       },
       {
+        label: "课程管理",
+        href: "/academic",
+        icon: "bookOpen",
+        description: "学期、课程、作业与考试",
+      },
+      {
         label: "阅读计划",
         href: "/reading",
         icon: "bookOpen",
@@ -163,8 +169,15 @@ export const navigationGroups: NavigationGroup[] = [
 
 export const navigationItems = navigationGroups.flatMap((group) => group.items);
 
+export function getNavigationItemByPathname(pathname: string) {
+  return navigationItems.find((item) => item.href === pathname)
+    ?? (pathname.startsWith("/academic/")
+      ? navigationItems.find((item) => item.href === "/academic")
+      : undefined);
+}
+
 export const placeholderSections = navigationItems
-  .filter((item) => !["/", "/content", "/today", "/learning", "/reading", "/knowledge", "/skills", "/projects", "/robomaster", "/logs", "/reviews", "/calendar", "/reports", "/resume", "/finance", "/settings"].includes(item.href))
+  .filter((item) => !["/", "/content", "/today", "/learning", "/academic", "/reading", "/knowledge", "/skills", "/projects", "/robomaster", "/logs", "/reviews", "/calendar", "/reports", "/resume", "/finance", "/settings"].includes(item.href))
   .map((item) => item.href.slice(1));
 
 export function getNavigationItemBySection(section: string) {

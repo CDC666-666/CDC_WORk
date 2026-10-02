@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit --incremental false",
-    "test": "tsx --test tests/workspace-calendar.test.ts tests/repository-data.test.ts tests/domain-persistence.test.ts"
+    "test": "tsx --test tests/workspace-calendar.test.ts tests/repository-data.test.ts tests/domain-persistence.test.ts tests/academic-flow.test.ts"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.2.3",

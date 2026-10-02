@@ -26,7 +26,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-import { navigationGroups, type NavigationIconKey } from "@/lib/navigation";
+import { getNavigationItemByPathname, navigationGroups, type NavigationIconKey } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
 
 interface SidebarProps {
@@ -58,6 +58,7 @@ const navigationIcons: Record<NavigationIconKey, LucideIcon> = {
 
 export function Sidebar({ isCollapsed, isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
+  const activeItem = getNavigationItemByPathname(pathname);
 
   return (
     <>
@@ -118,7 +119,7 @@ export function Sidebar({ isCollapsed, isOpen, onClose }: SidebarProps) {
                 <ul className="space-y-1">
                   {group.items.map((item) => {
                     const Icon = navigationIcons[item.icon];
-                    const isActive = pathname === item.href;
+                    const isActive = activeItem?.href === item.href;
 
                     return (
                       <li key={item.href}>
