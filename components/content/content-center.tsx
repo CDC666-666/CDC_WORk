@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { BookMarked, BrainCircuit, Inbox, PlusCircle } from "lucide-react";
 
 import { ContentCard } from "@/components/content/content-card";
@@ -12,6 +12,7 @@ import {
 } from "@/components/layout/action-toast";
 import { EmptyState } from "@/components/shared/empty-state";
 import { PageHeader } from "@/components/shared/page-header";
+import { useContentItems } from "@/hooks/use-content-items";
 import { useWorkspaceData } from "@/hooks/use-workspace-data";
 import { knowledgeFromContent } from "@/services/knowledge-service";
 import {
@@ -24,7 +25,6 @@ import type {
   ContentFilters,
   ContentItem,
   ContentViewMode,
-  PersistedContentState,
   TechnicalTag,
 } from "@/types/content";
 
@@ -33,56 +33,13 @@ interface ContentCenterProps {
   tags: TechnicalTag[];
 }
 
-const contentStorageKey = "cdc-content-state-v1";
-
-function buildPersistedState(items: ContentItem[]): PersistedContentState {
-  return {
-    version: 1,
-    items: Object.fromEntries(
-      items.map((item) => [
-        item.id,
-        {
-          status: item.status,
-          isFavorite: item.isFavorite,
-          isInKnowledgeBase: item.isInKnowledgeBase,
-          isInStudyPlan: item.isInStudyPlan,
-        },
-      ]),
-    ),
-  };
-}
-
 export function ContentCenter({ initialItems, tags }: ContentCenterProps) {
   const workspace = useWorkspaceData();
-  const [items, setItems] = useState(initialItems);
+  const { items, setItems } = useContentItems(initialItems);
   const [filters, setFilters] = useState<ContentFilters>(defaultContentFilters);
   const [viewMode, setViewMode] = useState<ContentViewMode>("card");
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [notice, setNotice] = useState<ToastNotice | null>(null);
-  const [isHydrated, setIsHydrated] = useState(false);
-
-  useEffect(() => {
-    const stored = window.localStorage.getItem(contentStorageKey);
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored) as PersistedContentState;
-        if (parsed.version === 1) {
-          setItems((current) =>
-            current.map((item) => ({ ...item, ...(parsed.items[item.id] ?? {}) })),
-          );
-        }
-      } catch {
-        window.localStorage.removeItem(contentStorageKey);
-      }
-    }
-    setIsHydrated(true);
-  }, []);
-
-  useEffect(() => {
-    if (isHydrated) {
-      window.localStorage.setItem(contentStorageKey, JSON.stringify(buildPersistedState(items)));
-    }
-  }, [isHydrated, items]);
 
   const filteredItems = useMemo(
     () => filterAndSortContent(items, filters),

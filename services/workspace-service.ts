@@ -1,3 +1,4 @@
+import { normalizeWorkspaceData } from "@/lib/storage/workspace-normalization";
 import type { CalendarEvent } from "@/types/calendar";
 import type { WorkLog } from "@/types/engineering-log";
 import type { FinanceTransaction } from "@/types/finance";
@@ -74,7 +75,7 @@ export function workspaceReducer(data: WorkspaceData, action: WorkspaceAction): 
   const now = new Date().toISOString();
   switch (action.type) {
     case "workspace/replaced":
-      return action.data;
+      return normalizeWorkspaceData(action.data);
     case "task/added":
       return withUpdatedMetadata({ ...data, tasks: [action.task, ...data.tasks] }, now);
     case "task/updated":
@@ -247,8 +248,10 @@ export function workspaceReducer(data: WorkspaceData, action: WorkspaceAction): 
     case "resume/deleted":
       return withUpdatedMetadata({ ...data, resumeMaterials: data.resumeMaterials.filter((item) => item.id !== action.materialId) }, now);
     case "calendar/added":
+      if (action.event.sourceType !== "manual") return data;
       return withUpdatedMetadata({ ...data, calendarEvents: [action.event, ...data.calendarEvents] }, now);
     case "calendar/updated":
+      if (action.event.sourceType !== "manual") return data;
       return withUpdatedMetadata({ ...data, calendarEvents: data.calendarEvents.map((item) => item.id === action.event.id ? action.event : item) }, now);
     case "calendar/deleted":
       return withUpdatedMetadata({ ...data, calendarEvents: data.calendarEvents.filter((item) => item.id !== action.eventId) }, now);

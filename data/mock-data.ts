@@ -1,12 +1,12 @@
 import type {
-  Project,
-  ProjectModule,
-  Skill,
+  DashboardProject as Project,
+  DashboardProjectModule as ProjectModule,
+  DashboardSkill as Skill,
   Task,
-  TechnicalIssue,
+  DashboardTechnicalIssue as TechnicalIssue,
   UserProfile,
   WeeklyMetric,
-  WorkLog,
+  DashboardWorkLog as WorkLog,
 } from "@/types";
 import { initialTasks } from "@/data/initial-workspace-data";
 

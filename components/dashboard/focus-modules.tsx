@@ -12,7 +12,7 @@ import { PanelHeader } from "@/components/dashboard/panel-header";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { projectModules } from "@/data/mock-data";
+import { getDemoFocusModules } from "@/services/dashboard-service";
 import type { ModuleStatus } from "@/types";
 
 const moduleIcons: Record<string, LucideIcon> = {
@@ -43,7 +43,7 @@ export function FocusModules() {
         trailing={<span className="font-mono text-[10px] text-muted-foreground">5 / 5</span>}
       />
       <CardContent className="divide-y divide-border p-0">
-        {projectModules.map((module) => {
+        {getDemoFocusModules().map((module) => {
           const Icon = moduleIcons[module.id] ?? Focus;
 
           return (

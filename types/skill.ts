@@ -31,3 +31,8 @@ export interface SkillEvidence {
 export type SkillDraft = Omit<Skill, "id" | "createdAt" | "updatedAt">;
 export type SkillEvidenceDraft = Omit<SkillEvidence, "id" | "createdAt">;
 
+/** Explicit course and knowledge links for future relational storage. */
+export interface SkillEvidenceVNext extends SkillEvidence {
+  courseId?: string;
+  knowledgeId?: string;
+}

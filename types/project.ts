@@ -2,6 +2,7 @@ export type ProjectCategory = "比赛" | "课程" | "科研" | "个人" | "创�
 export type ProjectStatus = "规划中" | "进行中" | "已暂停" | "已完成" | "已归档";
 export type ProjectModuleStatus = "规划中" | "开发中" | "验证中" | "稳定" | "已暂停";
 export type MilestoneStatus = "未开始" | "进行中" | "已完成" | "延期";
+export type Visibility = "PRIVATE" | "PUBLIC";
 
 export interface Project {
   id: string;
@@ -54,3 +55,9 @@ export type ProjectDraft = Omit<Project, "id" | "createdAt" | "updatedAt">;
 export type ProjectModuleDraft = Omit<ProjectModule, "id" | "createdAt" | "updatedAt">;
 export type ProjectMilestoneDraft = Omit<ProjectMilestone, "id">;
 
+/** Target model; the current Workspace v3 `Project` has no publication state. */
+export interface ProjectVNext extends Project {
+  tags: string[];
+  visibility: Visibility;
+  publicSummary?: string;
+}
