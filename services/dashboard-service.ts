@@ -1,9 +1,10 @@
-import { mockDashboardData } from "@/data/mock-dashboard";
 import { isDateInCurrentWeek, toLocalDateKey } from "@/lib/date";
+import { demoDataRepository } from "@/repositories/demo-data-repository";
 import type { DashboardData } from "@/types/dashboard";
 import type { WorkspaceData } from "@/types/workspace";
 
 export async function getDashboardData(): Promise<DashboardData> {
+  const mockDashboardData = demoDataRepository.readDashboard();
   return {
     ...mockDashboardData,
     metrics: mockDashboardData.metrics.map((metric) => ({ ...metric })),
@@ -27,6 +28,18 @@ export async function getDashboardData(): Promise<DashboardData> {
       goals: [...(mockDashboardData.user.goals ?? [])],
     },
   };
+}
+
+export function getDemoFocusModules() {
+  return demoDataRepository.readFocusModules();
+}
+
+export function getDemoRecentWorkLogs() {
+  return demoDataRepository.readRecentWorkLogs();
+}
+
+export function getDemoModule(moduleId: string) {
+  return demoDataRepository.readModule(moduleId);
 }
 
 export function buildDashboardMetrics(

@@ -3,7 +3,7 @@ import { BookOpenCheck, Clock3 } from "lucide-react";
 import { PanelHeader } from "@/components/dashboard/panel-header";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { getModule, workLogs } from "@/data/mock-data";
+import { getDemoModule, getDemoRecentWorkLogs } from "@/services/dashboard-service";
 import type { WorkLogResult } from "@/types";
 
 const resultVariants: Record<WorkLogResult, BadgeProps["variant"]> = {
@@ -37,8 +37,8 @@ export function RecentWorklogs() {
       />
       <CardContent className="p-0">
         <div className="divide-y divide-border">
-          {workLogs.map((log) => {
-            const projectModule = getModule(log.moduleId);
+          {getDemoRecentWorkLogs().map((log) => {
+            const projectModule = getDemoModule(log.moduleId);
 
             return (
               <article

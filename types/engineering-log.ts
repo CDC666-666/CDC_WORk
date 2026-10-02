@@ -21,3 +21,11 @@ export interface WorkLog {
 
 export type WorkLogDraft = Omit<WorkLog, "id" | "createdAt" | "updatedAt">;
 
+/** Future structured log; legacy fields remain available during migration. */
+export interface EngineeringLog extends WorkLog {
+  environment: string;
+  problem: string;
+  symptom: string;
+  analysis: string;
+  solution: string;
+}

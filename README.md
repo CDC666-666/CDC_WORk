@@ -2,14 +2,14 @@
 
 面向大学生和工程学习者的个人 AI 工作台，统一管理课程学习、任务、阅读、技术内容、工程项目、测试复盘、知识沉淀、技能成长、报告素材、日历与个人收支。
 
-当前版本为 **Sprint 3: Unified Engineering & Growth Loop**。RoboMaster 是一级业务模块之一，不是产品的唯一定位。
+当前正在进行 **Sprint 4.3: 数据持久化架构准备**。Sprint 3 的工程成长闭环仍是现有产品功能；RoboMaster 是一级业务模块之一，不是产品的唯一定位。
 
 ## 技术栈
 
 - Next.js 15 App Router、React 19、TypeScript
 - Tailwind CSS、shadcn/ui 风格组件、Lucide Icons
 - React Context + useReducer
-- localStorage 版本化存储、迁移、校验和 JSON 备份
+- Repository + LocalStorage Adapter、版本化迁移、校验和 JSON 备份
 - ESLint、TypeScript typecheck、GitHub Actions CI
 
 ## Sprint 3 完成内容
@@ -61,17 +61,21 @@
 
 ## 本地数据与迁移
 
-- 当前统一存储键：`cdc-workspace-data-v3`
+Sprint 4.1 的持久化路径为 `Component → Hook → Service → Repository → LocalStorage Adapter`。Repository 方法采用 Promise 接口，客户端组件不直接调用 localStorage。当前仍只在本机浏览器保存数据；尚未接入 Prisma、PostgreSQL、GitHub 登录或跨设备同步。Repository 的具体契约与存储键见 [`repositories/README.md`](repositories/README.md)。
+
+Sprint 4.3 将 `WorkspaceDomainState` v4 作为本地持久化源；现有页面继续使用 `WorkspaceData` v3 投影。Review、Academic、Timeline、Attachment 等新领域记录可随 v4 数据保存和备份；详见 [`types/README.md`](types/README.md) 与 [`lib/storage/README.md`](lib/storage/README.md)。未创建 Prisma Schema。
+
+- 当前统一存储键：`cdc-workspace-data-v4`
 - 内容中心兼容键：`cdc-content-state-v1`
-- 旧键：`cdc-workspace-data-v2`、`cdc-dashboard-task-state-v1`
-- 加载时优先验证 v3；没有 v3 时自动验证并迁移 v2
-- v2 的任务、学习和阅读数据保持不变，新增 v3 工程与成长演示数据
-- 只有 v3 保存成功后才删除旧键
+- 旧键：`cdc-workspace-data-v3`、`cdc-workspace-data-v2`、`cdc-dashboard-task-state-v1`
+- 加载时优先验证 v4；随后按 v3、v2、旧任务状态顺序迁移
+- v3 全部集合保留；v4 项目默认私有，未知结构化字段保持空白
+- v3 旧键保留作恢复副本；v2 只有在 v4 保存成功后才删除
 - JSON 始终先按 `unknown` 解析，再由类型守卫验证
 - 数据损坏时回退演示数据并显示恢复提示，不让页面崩溃
 - localStorage 只在客户端 repository/provider 层访问，避免 hydration mismatch
 
-设置页支持导出完整 schema v3 JSON、导入前验证和数量预览、二次确认覆盖，以及恢复 Sprint 3 演示数据。文件名格式为 `cdc-workspace-backup-YYYY-MM-DD.json`。
+设置页支持导出完整 schema v4 JSON、导入 v2/v3/v4 备份时先验证并预览数量、二次确认覆盖，以及恢复演示数据。文件名格式为 `cdc-workspace-backup-YYYY-MM-DD.json`。
 
 ## 目录结构
 
@@ -80,8 +84,9 @@ app/                 页面与路由
 components/          按 dashboard、projects、engineering、knowledge 等领域拆分
 data/                独立演示数据
 hooks/               Workspace 数据 Hook
-lib/storage/         本地存储、迁移和类型验证
-services/            领域服务、选择器和未来 API 边界
+lib/storage/         迁移、规范化和类型验证
+repositories/        本地存储 Adapter、Repository 契约及演示数据读取
+services/            领域服务、迁移、选择器和未来 API 边界
 types/               独立领域类型
 .github/workflows/   CI 工作流
 ```

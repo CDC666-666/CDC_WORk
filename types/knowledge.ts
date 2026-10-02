@@ -23,3 +23,7 @@ export interface KnowledgeItem {
 
 export type KnowledgeItemDraft = Omit<KnowledgeItem, "id" | "createdAt" | "updatedAt">;
 
+/** A knowledge item may be traced back to a course in the next model. */
+export interface KnowledgeVNext extends KnowledgeItem {
+  courseId?: string;
+}

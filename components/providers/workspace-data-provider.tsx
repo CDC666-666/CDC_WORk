@@ -3,13 +3,13 @@
 import { createContext, useCallback, useEffect, useMemo, useReducer, useState } from "react";
 
 import { ActionToast, type ToastNotice } from "@/components/layout/action-toast";
-import { createEmptyWorkspaceData } from "@/data/initial-workspace-data";
 import { combineDateAndTime, toLocalDateKey } from "@/lib/date";
+import { normalizeWorkspaceData } from "@/lib/storage/workspace-normalization";
 import {
-  loadWorkspaceData,
-  resetWorkspaceData,
-  saveWorkspaceData,
-} from "@/services/workspace-repository";
+  createWorkspaceInitialState,
+  workspaceDataService,
+  type WorkspaceImportPreview,
+} from "@/services/workspace-data-service";
 import { createWorkspaceId, workspaceReducer, type WorkspaceAction } from "@/services/workspace-service";
 import type { StudyPlan, StudyPlanDraft, StudySessionDraft } from "@/types/learning";
 import type { ReadingItem, ReadingItemDraft } from "@/types/reading";
@@ -34,6 +34,7 @@ export interface WorkspaceDataContextValue {
   updateReadingItem: (item: ReadingItem) => void;
   deleteReadingItem: (itemId: string) => void;
   replaceWorkspaceData: (nextData: WorkspaceData) => void;
+  importWorkspaceBackup: (backup: WorkspaceImportPreview) => Promise<void>;
   restoreDemoData: () => void;
 }
 
@@ -45,21 +46,35 @@ function normalizeStudyPlan(plan: StudyPlan): StudyPlan {
 }
 
 export function WorkspaceDataProvider({ children }: { children: React.ReactNode }) {
-  const [data, dispatch] = useReducer(workspaceReducer, undefined, createEmptyWorkspaceData);
+  const [data, dispatch] = useReducer(workspaceReducer, undefined, createWorkspaceInitialState);
   const [isHydrated, setIsHydrated] = useState(false);
   const [notice, setNotice] = useState<ToastNotice | null>(null);
 
   useEffect(() => {
-    const result = loadWorkspaceData();
-    dispatch({ type: "workspace/replaced", data: result.data });
-    if (result.message) {
-      setNotice({ id: Date.now(), title: "本地数据已恢复", description: result.message });
-    }
-    setIsHydrated(true);
+    let active = true;
+    void workspaceDataService.load().then((result) => {
+      if (!active) return;
+      dispatch({ type: "workspace/replaced", data: result.data });
+      if (result.message) {
+        setNotice({ id: Date.now(), title: "本地数据已恢复", description: result.message });
+      }
+      setIsHydrated(true);
+    }).catch(() => {
+      if (!active) return;
+      setNotice({ id: Date.now(), title: "本地数据读取失败", description: "请检查浏览器存储后重试。" });
+    });
+    return () => { active = false; };
   }, []);
 
   useEffect(() => {
-    if (isHydrated) saveWorkspaceData(data);
+    if (!isHydrated) return;
+    void workspaceDataService.save(data).then((saved) => {
+      if (!saved) {
+        setNotice({ id: Date.now(), title: "本地数据保存失败", description: "请导出备份并检查浏览器存储空间。" });
+      }
+    }).catch(() => {
+      setNotice({ id: Date.now(), title: "本地数据保存失败", description: "请导出备份并检查浏览器存储空间。" });
+    });
   }, [data, isHydrated]);
 
   const addTask = useCallback((draft: TaskDraft) => {
@@ -167,11 +182,20 @@ export function WorkspaceDataProvider({ children }: { children: React.ReactNode 
   const deleteReadingItem = useCallback((itemId: string) => dispatch({ type: "reading/deleted", itemId }), []);
 
   const replaceWorkspaceData = useCallback((nextData: WorkspaceData) => {
-    dispatch({ type: "workspace/replaced", data: nextData });
+    dispatch({ type: "workspace/replaced", data: normalizeWorkspaceData(nextData) });
+  }, []);
+
+  const importWorkspaceBackup = useCallback(async (backup: WorkspaceImportPreview) => {
+    const imported = await workspaceDataService.importBackup(backup);
+    dispatch({ type: "workspace/replaced", data: normalizeWorkspaceData(imported) });
   }, []);
 
   const restoreDemoData = useCallback(() => {
-    dispatch({ type: "workspace/replaced", data: resetWorkspaceData() });
+    void workspaceDataService.reset().then((resetData) => {
+      dispatch({ type: "workspace/replaced", data: normalizeWorkspaceData(resetData) });
+    }).catch(() => {
+      setNotice({ id: Date.now(), title: "恢复演示数据失败", description: "请检查浏览器存储后重试。" });
+    });
   }, []);
 
   const value = useMemo<WorkspaceDataContextValue>(() => ({
@@ -192,6 +216,7 @@ export function WorkspaceDataProvider({ children }: { children: React.ReactNode 
     updateReadingItem,
     deleteReadingItem,
     replaceWorkspaceData,
+    importWorkspaceBackup,
     restoreDemoData,
   }), [
     data,
@@ -210,6 +235,7 @@ export function WorkspaceDataProvider({ children }: { children: React.ReactNode 
     updateReadingItem,
     deleteReadingItem,
     replaceWorkspaceData,
+    importWorkspaceBackup,
     restoreDemoData,
   ]);
 
