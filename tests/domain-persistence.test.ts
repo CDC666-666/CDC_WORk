@@ -16,8 +16,9 @@ import { workspaceReducer } from "@/services/workspace-service";
 
 class MemoryStorage implements StorageAdapter {
   values = new Map<string, string>();
+  writes = 0;
   async getItem(key: string) { return this.values.get(key) ?? null; }
-  async setItem(key: string, value: string) { this.values.set(key, value); return true; }
+  async setItem(key: string, value: string) { this.writes++; this.values.set(key, value); return true; }
   async removeItem(key: string) { this.values.delete(key); }
 }
 
@@ -280,4 +281,25 @@ test("v3 backup import explains a dangling reference before replacing local data
   assert.throws(() => parseWorkspaceBackup(JSON.stringify({
     app: "CDC AI Workspace", schemaVersion: 3, exportedAt: fixedNow.toISOString(), data: old,
   })), /关联引用无效.*任务.*missing-project/);
+});
+
+test("recovery export reads invalid v4 references without writing or dropping records", async () => {
+  const storage = new MemoryStorage();
+  const state = migrateWorkspaceV3(createInitialWorkspaceData(fixedNow), fixedNow);
+  state.reviews.push({ id: "orphan-review", type: "PROJECT", date: "2026-07-14",
+    summary: "必须恢复的复盘", achievement: "完成", problem: "失效引用", plan: "修复",
+    relatedProjectId: "missing-project" });
+  const raw = JSON.stringify(state);
+  storage.values.set(WORKSPACE_STORAGE_KEY, raw);
+  const service = createWorkspaceDataService(createWorkspaceRepository(storage));
+  const view = (await service.load()).data;
+  await assert.rejects(() => service.createDomainBackup(view, fixedNow), /关联引用无效/);
+
+  const backup = await service.createRecoveryBackup(fixedNow);
+  assert.equal(backup.recovery.kind, "INVALID_REFERENCES");
+  assert.match(backup.recovery.issues.join(" "), /orphan-review.*missing-project/);
+  assert.equal(backup.data.reviews[0].summary, "必须恢复的复盘");
+  assert.equal(storage.values.get(WORKSPACE_STORAGE_KEY), raw);
+  assert.equal(storage.writes, 0);
+  assert.throws(() => parseWorkspaceBackup(JSON.stringify(backup)), /恢复备份/);
 });

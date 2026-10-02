@@ -20,6 +20,7 @@ export interface WorkspaceRepository {
   save(data: WorkspaceData): Promise<boolean>;
   reset(): Promise<WorkspaceData>;
   loadDomain(): Promise<WorkspaceDomainState>;
+  readPersistedDomain(): Promise<WorkspaceDomainState>;
   updateDomain(change: (current: WorkspaceDomainState) => WorkspaceDomainState): Promise<WorkspaceDomainState>;
   replaceDomain(data: WorkspaceDomainState): Promise<WorkspaceData>;
 }
@@ -178,6 +179,14 @@ export function createWorkspaceRepository(storage: StorageAdapter): WorkspaceRep
       return saved;
     }),
     loadDomain: () => enqueue(async () => structuredClone((await readDomain()).data)),
+    readPersistedDomain: () => enqueue(async () => {
+      const raw = await storage.getItem(WORKSPACE_STORAGE_KEY);
+      if (!raw) throw new Error("尚无已持久化的 v4 数据，无法生成恢复备份。");
+      let parsed: unknown;
+      try { parsed = JSON.parse(raw); } catch { throw new Error("持久化 v4 数据不是有效 JSON，无法生成结构化恢复备份。"); }
+      if (!isWorkspaceDomainState(parsed)) throw new Error("持久化 v4 数据结构无效，无法生成结构化恢复备份。");
+      return structuredClone(parsed);
+    }),
     updateDomain: (change) => enqueue(async () => {
       const current = structuredClone((await readDomain()).data);
       const next = change(current);

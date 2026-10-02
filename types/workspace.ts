@@ -92,6 +92,11 @@ export interface WorkspaceDomainBackup {
   data: WorkspaceDomainState;
 }
 
+/** Read-only rescue export; it must never be accepted by the normal import path. */
+export interface WorkspaceRecoveryBackup extends WorkspaceDomainBackup {
+  recovery: { kind: "INVALID_REFERENCES" | "MANUAL"; issues: string[] };
+}
+
 export interface WorkspaceDataV2 {
   tasks: Task[];
   studyPlans: StudyPlan[];

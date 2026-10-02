@@ -1,6 +1,6 @@
 import { createEmptyWorkspaceData } from "@/data/initial-workspace-data";
 import { isWorkspaceDomainBackup } from "@/lib/storage/domain-validation";
-import { assertDomainReferences } from "@/lib/storage/domain-relations";
+import { assertDomainReferences, findBrokenDomainReferences } from "@/lib/storage/domain-relations";
 import { migrateWorkspaceV2, migrateWorkspaceV3, projectDomainToWorkspaceV3 } from "@/lib/storage/workspace-migration";
 import { normalizeWorkspaceData } from "@/lib/storage/workspace-normalization";
 import { isWorkspaceBackup, isWorkspaceBackupV2 } from "@/lib/storage/workspace-validation";
@@ -8,7 +8,7 @@ import {
   localWorkspaceRepository,
   type WorkspaceRepository,
 } from "@/repositories/workspace-repository";
-import type { WorkspaceBackup, WorkspaceData, WorkspaceDomainBackup, WorkspaceDomainState, WorkspaceLoadResult } from "@/types/workspace";
+import type { WorkspaceBackup, WorkspaceData, WorkspaceDomainBackup, WorkspaceDomainState, WorkspaceLoadResult, WorkspaceRecoveryBackup } from "@/types/workspace";
 
 export interface WorkspaceImportPreview {
   app: "CDC AI Workspace";
@@ -23,6 +23,7 @@ export interface WorkspaceDataService {
   save(data: WorkspaceData): Promise<boolean>;
   reset(): Promise<WorkspaceData>;
   createDomainBackup(data: WorkspaceData, now?: Date): Promise<WorkspaceDomainBackup>;
+  createRecoveryBackup(now?: Date): Promise<WorkspaceRecoveryBackup>;
   importBackup(backup: WorkspaceImportPreview): Promise<WorkspaceData>;
 }
 
@@ -43,6 +44,12 @@ export function createWorkspaceDataService(repository: WorkspaceRepository): Wor
       if (!(await repository.save(data))) throw new Error("本地数据保存失败，无法生成完整备份。");
       return { app: "CDC AI Workspace", schemaVersion: 4, exportedAt: now.toISOString(),
         data: await repository.loadDomain() };
+    }),
+    createRecoveryBackup: (now = new Date()) => enqueue(async () => {
+      const data = await repository.readPersistedDomain();
+      const issues = findBrokenDomainReferences(data);
+      return { app: "CDC AI Workspace", schemaVersion: 4, exportedAt: now.toISOString(), data,
+        recovery: { kind: issues.length ? "INVALID_REFERENCES" : "MANUAL", issues } };
     }),
     importBackup: (backup) => enqueue(() => repository.replaceDomain(backup.domainState)),
   };
@@ -70,6 +77,9 @@ export function parseWorkspaceBackup(rawValue: string): WorkspaceImportPreview {
     parsed = JSON.parse(rawValue);
   } catch {
     throw new Error("文件不是有效的 JSON。请确认选择了 CDC Workspace 备份文件。");
+  }
+  if (typeof parsed === "object" && parsed !== null && "recovery" in parsed) {
+    throw new Error("这是恢复备份，不能直接按正常备份导入；请先修复其中列出的失效关联，保留原文件以供恢复。");
   }
   if (isWorkspaceDomainBackup(parsed)) {
     assertDomainReferences(parsed.data);

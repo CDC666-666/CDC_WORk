@@ -32,3 +32,7 @@ sessions, assignments, and exams reference `Course.id`. A future UI may group
 record and does not replace experiments or technical issues. `Attachment`
 stores a URL and target reference only; upload, binary storage, and URL access
 policy are not implemented here.
+
+`WorkspaceRecoveryBackup` marks a read-only rescue export and lists broken
+references. It contains the full persisted v4 state and is deliberately not
+accepted by normal import until those references have been repaired.
