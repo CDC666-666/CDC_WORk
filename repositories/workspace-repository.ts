@@ -1,5 +1,6 @@
 import { createInitialWorkspaceData } from "@/data/initial-workspace-data";
 import { isWorkspaceDomainState } from "@/lib/storage/domain-validation";
+import { assertDomainReferences, assertProjectDeletionAllowed, findBrokenDomainReferences } from "@/lib/storage/domain-relations";
 import { LEGACY_TASK_STORAGE_KEY, mergeWorkspaceV3IntoDomain, migrateLegacyTaskState,
   migrateWorkspaceV2, migrateWorkspaceV3, projectDomainToWorkspaceV3 } from "@/lib/storage/workspace-migration";
 import { normalizeWorkspaceData } from "@/lib/storage/workspace-normalization";
@@ -31,15 +32,25 @@ interface DomainLoadResult {
 
 function mergeUiCollection<T extends { id: string }>(before: T[], incoming: T[], latest: T[]): T[] {
   const previous = new Map(before.map((item) => [item.id, item]));
-  const edits = new Map(incoming.filter((item) => {
+  const edits = new Map(incoming.map((item) => [item.id, item]));
+  const current = new Set(latest.map((item) => item.id));
+  const merged = latest.flatMap((item) => {
     const old = previous.get(item.id);
-    return !old || JSON.stringify(old) !== JSON.stringify(item);
-  }).map((item) => [item.id, item]));
-  const incomingIds = new Set(incoming.map((item) => item.id));
-  const result = latest.filter((item) => !previous.has(item.id) || incomingIds.has(item.id))
-    .map((item) => edits.get(item.id) ?? item);
-  const resultIds = new Set(result.map((item) => item.id));
-  return [...result, ...incoming.filter((item) => !resultIds.has(item.id))];
+    if (!old) return [item]; // Domain-created after the UI snapshot.
+    const edit = edits.get(item.id);
+    if (!edit) return []; // Explicit deletion from the old page wins.
+    const result = { ...item } as Record<string, unknown>;
+    const base = old as Record<string, unknown>;
+    const changed = edit as Record<string, unknown>;
+    for (const key of new Set([...Object.keys(base), ...Object.keys(changed)])) {
+      if (JSON.stringify(base[key]) === JSON.stringify(changed[key])) continue;
+      if (Object.hasOwn(changed, key)) result[key] = changed[key];
+      else delete result[key];
+    }
+    return [result as T];
+  });
+  // A record present in the old snapshot but absent from the domain was deleted there.
+  return [...merged, ...incoming.filter((item) => !previous.has(item.id) && !current.has(item.id))];
 }
 
 export function createWorkspaceRepository(storage: StorageAdapter): WorkspaceRepository {
@@ -133,18 +144,31 @@ export function createWorkspaceRepository(storage: StorageAdapter): WorkspaceRep
       const result = await readDomain();
       const data = normalizeWorkspaceData(projectDomainToWorkspaceV3(result.data));
       lastUiProjection = structuredClone(data);
-      return { ...result, data };
+      const issues = findBrokenDomainReferences(result.data);
+      const warning = issues.length
+        ? `检测到 ${issues.length} 处失效关联，记录已保留：${issues.slice(0, 2).join("；")}。请修复后再保存。`
+        : null;
+      return { ...result, data, message: [result.message, warning].filter(Boolean).join(" ") || null };
     }),
     save: (data) => enqueue(async () => {
       const current = (await readDomain()).data;
       const latest = projectDomainToWorkspaceV3(current);
       const normalized = normalizeWorkspaceData(data);
+      if (lastUiProjection) {
+        const incomingIds = new Set(normalized.projects.map((item) => item.id));
+        for (const item of lastUiProjection.projects) {
+          if (!incomingIds.has(item.id) && current.projects.some((project) => project.id === item.id)) {
+            assertProjectDeletionAllowed(current, item.id);
+          }
+        }
+      }
       const input = lastUiProjection ? {
         ...normalized,
         projects: mergeUiCollection(lastUiProjection.projects, normalized.projects, latest.projects),
         tasks: mergeUiCollection(lastUiProjection.tasks, normalized.tasks, latest.tasks),
       } : normalized;
       const next = mergeWorkspaceV3IntoDomain(input, current);
+      assertDomainReferences(next);
       if (blockedWrites) return false;
       const saved = await write(next);
       if (saved) {
@@ -158,6 +182,7 @@ export function createWorkspaceRepository(storage: StorageAdapter): WorkspaceRep
       const current = structuredClone((await readDomain()).data);
       const next = change(current);
       if (!isWorkspaceDomainState(next)) throw new Error("领域数据结构无效，未保存。");
+      assertDomainReferences(next);
       next.metadata.updatedAt = new Date().toISOString();
       if (blockedWrites || !(await write(next))) throw new Error("本地数据保存失败，领域更改未提交。");
       cached = next;
@@ -165,6 +190,7 @@ export function createWorkspaceRepository(storage: StorageAdapter): WorkspaceRep
     }),
     replaceDomain: (data) => enqueue(async () => {
       if (!isWorkspaceDomainState(data)) throw new Error("领域数据结构无效，未导入。");
+      assertDomainReferences(data);
       if (blockedWrites || !(await write(data))) throw new Error("本地数据保存失败，未导入。");
       cached = structuredClone(data);
       lastUiProjection = projectDomainToWorkspaceV3(data);

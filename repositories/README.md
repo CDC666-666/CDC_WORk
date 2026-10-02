@@ -10,7 +10,10 @@ Repository methods are asynchronous and serialize writes.
 keys, parsing, and local schema migration. `WorkspaceRepository` exposes a v3
 facade for the existing pages plus v4 `loadDomain`, `updateDomain`, and
 `replaceDomain` methods. V3 page saves merge against the last loaded projection
-so newly created v4 projects/tasks are retained. Their public contracts return
+so newly created v4 projects/tasks are retained. The merge compares each field
+with the last UI projection: unchanged UI fields keep domain updates, explicitly
+changed UI fields win, and a domain deletion cannot be undone by a stale page.
+Page project deletion is rejected when dependent records remain. Their public contracts return
 typed data rather than serialized JSON. `demo-data-repository.ts` is a read-only
 source for demonstration views. Services coordinate operations and business
 behavior; components should not import a repository or call `localStorage`

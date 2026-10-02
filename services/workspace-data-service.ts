@@ -1,5 +1,6 @@
 import { createEmptyWorkspaceData } from "@/data/initial-workspace-data";
 import { isWorkspaceDomainBackup } from "@/lib/storage/domain-validation";
+import { assertDomainReferences } from "@/lib/storage/domain-relations";
 import { migrateWorkspaceV2, migrateWorkspaceV3, projectDomainToWorkspaceV3 } from "@/lib/storage/workspace-migration";
 import { normalizeWorkspaceData } from "@/lib/storage/workspace-normalization";
 import { isWorkspaceBackup, isWorkspaceBackupV2 } from "@/lib/storage/workspace-validation";
@@ -71,21 +72,26 @@ export function parseWorkspaceBackup(rawValue: string): WorkspaceImportPreview {
     throw new Error("文件不是有效的 JSON。请确认选择了 CDC Workspace 备份文件。");
   }
   if (isWorkspaceDomainBackup(parsed)) {
+    assertDomainReferences(parsed.data);
     return { app: parsed.app, schemaVersion: 4, exportedAt: parsed.exportedAt,
       data: normalizeWorkspaceData(projectDomainToWorkspaceV3(parsed.data)), domainState: parsed.data };
   }
   if (isWorkspaceBackup(parsed)) {
     const data = normalizeWorkspaceData(parsed.data);
-    return { ...parsed, data, domainState: migrateWorkspaceV3(data) };
+    const domainState = migrateWorkspaceV3(data);
+    assertDomainReferences(domainState);
+    return { ...parsed, data, domainState };
   }
   if (isWorkspaceBackupV2(parsed)) {
     const data = normalizeWorkspaceData(migrateWorkspaceV2(parsed.data));
+    const domainState = migrateWorkspaceV3(data);
+    assertDomainReferences(domainState);
     return {
       app: "CDC AI Workspace",
       schemaVersion: 2,
       exportedAt: parsed.exportedAt,
       data,
-      domainState: migrateWorkspaceV3(data),
+      domainState,
     };
   }
   throw new Error("备份结构或 schema version 不受支持，未修改当前数据。");

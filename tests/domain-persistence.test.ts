@@ -12,6 +12,7 @@ import { createProjectService } from "@/services/project-service";
 import { createReviewService } from "@/services/review-service";
 import { createTaskService } from "@/services/task-service";
 import { createWorkspaceDataService, parseWorkspaceBackup } from "@/services/workspace-data-service";
+import { workspaceReducer } from "@/services/workspace-service";
 
 class MemoryStorage implements StorageAdapter {
   values = new Map<string, string>();
@@ -144,4 +145,139 @@ test("domain services support CRUD and protect academic/project relations", asyn
   await reviews.update(review.id, { summary: "定稿" });
   assert.equal((await reviews.query({ type: "MONTHLY" }))[0].summary, "定稿");
   assert.equal(await reviews.delete(review.id), true);
+});
+
+test("stale v3 saves cannot resurrect domain-deleted tasks or projects, including exports", async () => {
+  const storage = new MemoryStorage();
+  const repository = createWorkspaceRepository(storage);
+  const projects = createProjectService(repository);
+  const tasks = createTaskService(repository);
+  const projectTemplate = (await repository.loadDomain()).projects[0];
+  const project = await projects.create({ ...withoutIdentity(projectTemplate), name: "待删除项目" });
+  const taskTemplate = (await repository.loadDomain()).tasks[0];
+  const task = await tasks.create({ ...withoutIdentity(taskTemplate), title: "待删除任务",
+    sourceType: "PERSONAL", relatedId: undefined, moduleId: undefined });
+  const staleView = (await repository.load()).data;
+
+  assert.equal(await tasks.delete(task.id), true);
+  assert.equal(await projects.delete(project.id), true);
+  assert.equal(await repository.save(staleView), true);
+
+  const reopened = createWorkspaceRepository(storage);
+  assert.equal((await reopened.loadDomain()).tasks.some((item) => item.id === task.id), false);
+  assert.equal((await reopened.loadDomain()).projects.some((item) => item.id === project.id), false);
+  const backup = await createWorkspaceDataService(reopened).createDomainBackup((await reopened.load()).data, fixedNow);
+  assert.equal(backup.data.tasks.some((item) => item.id === task.id), false);
+  assert.equal(backup.data.projects.some((item) => item.id === project.id), false);
+});
+
+test("v3 project deletion and domain deletion both reject v4 references without losing records", async () => {
+  const storage = new MemoryStorage();
+  const repository = createWorkspaceRepository(storage);
+  const projects = createProjectService(repository);
+  const template = (await repository.loadDomain()).projects[0];
+  const project = await projects.create({ ...withoutIdentity(template), name: "含复盘的项目" });
+  await repository.updateDomain((state) => ({ ...state,
+    reviews: [...state.reviews, { id: "review-linked", type: "PROJECT", date: "2026-07-14",
+      summary: "复盘", achievement: "完成", problem: "问题", plan: "计划", relatedProjectId: project.id }],
+    timeline: [...state.timeline, { id: "timeline-linked", date: "2026-07-14", title: "节点",
+      description: "说明", tags: [], relatedProjectId: project.id, visibility: "PRIVATE" }],
+    attachments: [...state.attachments, { id: "attachment-linked", url: "https://example.com/a",
+      type: "text/plain", relatedType: "PROJECT", relatedId: project.id }],
+  }));
+  const staleView = (await repository.load()).data;
+  const deletingView = workspaceReducer(staleView, { type: "project/deleted", projectId: project.id });
+  await assert.rejects(() => repository.save(deletingView), /关联|复盘/);
+  await assert.rejects(() => projects.delete(project.id), /关联|复盘/);
+
+  const reopened = createWorkspaceRepository(storage);
+  const state = await reopened.loadDomain();
+  assert.equal(state.projects.some((item) => item.id === project.id), true);
+  assert.equal(state.reviews.some((item) => item.id === "review-linked"), true);
+  assert.equal(state.timeline.some((item) => item.id === "timeline-linked"), true);
+  assert.equal(state.attachments.some((item) => item.id === "attachment-linked"), true);
+  const backup = await createWorkspaceDataService(reopened).createDomainBackup((await reopened.load()).data, fixedNow);
+  assert.equal(backup.data.reviews.some((item) => item.id === "review-linked"), true);
+});
+
+test("v3 task and project field edits merge with newer domain edits", async () => {
+  const storage = new MemoryStorage();
+  const repository = createWorkspaceRepository(storage);
+  const view = (await repository.load()).data;
+  const task = view.tasks[0];
+  const project = view.projects[0];
+  await createTaskService(repository).update(task.id, { title: "领域新标题" });
+  await createProjectService(repository).update(project.id, { description: "领域新描述" });
+  const edited = { ...view,
+    tasks: view.tasks.map((item) => item.id === task.id ? { ...item, status: "已完成" as const } : item),
+    projects: view.projects.map((item) => item.id === project.id ? { ...item, progress: 42 } : item),
+  };
+  assert.equal(await repository.save(edited), true);
+  const reopened = createWorkspaceRepository(storage);
+  const savedTask = (await reopened.loadDomain()).tasks.find((item) => item.id === task.id);
+  const savedProject = (await reopened.loadDomain()).projects.find((item) => item.id === project.id);
+  assert.equal(savedTask?.title, "领域新标题");
+  assert.equal(savedTask?.status, "已完成");
+  assert.equal(savedProject?.description, "领域新描述");
+  assert.equal(savedProject?.progress, 42);
+  const backup = await createWorkspaceDataService(reopened).createDomainBackup((await reopened.load()).data, fixedNow);
+  assert.equal(backup.data.tasks.find((item) => item.id === task.id)?.title, "领域新标题");
+  assert.equal(backup.data.projects.find((item) => item.id === project.id)?.description, "领域新描述");
+});
+
+test("explicit same-field v3 edits win over concurrent domain edits", async () => {
+  const storage = new MemoryStorage();
+  const repository = createWorkspaceRepository(storage);
+  const view = (await repository.load()).data;
+  const task = view.tasks[0];
+  const project = view.projects[0];
+  await createTaskService(repository).update(task.id, { title: "领域任务标题" });
+  await createProjectService(repository).update(project.id, { description: "领域项目描述" });
+  assert.equal(await repository.save({ ...view,
+    tasks: view.tasks.map((item) => item.id === task.id ? { ...item, title: "页面任务标题" } : item),
+    projects: view.projects.map((item) => item.id === project.id ? { ...item, description: "页面项目描述" } : item),
+  }), true);
+  const reopened = createWorkspaceRepository(storage);
+  const backup = await createWorkspaceDataService(reopened).createDomainBackup((await reopened.load()).data, fixedNow);
+  assert.equal(backup.data.tasks.find((item) => item.id === task.id)?.title, "页面任务标题");
+  assert.equal(backup.data.projects.find((item) => item.id === project.id)?.description, "页面项目描述");
+});
+
+test("backup import rejects broken v4 references and preserves stored records", async () => {
+  const storage = new MemoryStorage();
+  const repository = createWorkspaceRepository(storage);
+  const service = createWorkspaceDataService(repository);
+  const view = (await service.load()).data;
+  const backup = await service.createDomainBackup(view, fixedNow);
+  backup.data.reviews.push({ id: "orphan-review", type: "PROJECT", date: "2026-07-14",
+    summary: "必须保留", achievement: "", problem: "", plan: "", relatedProjectId: "missing-project" });
+  assert.throws(() => parseWorkspaceBackup(JSON.stringify(backup)), /关联引用无效.*复盘/);
+  await assert.rejects(() => repository.replaceDomain(backup.data), /关联引用无效.*复盘/);
+  const reopened = createWorkspaceRepository(storage);
+  assert.equal((await reopened.loadDomain()).reviews.some((item) => item.id === "orphan-review"), false);
+  assert.equal((await reopened.loadDomain()).projects.length, backup.data.projects.length);
+});
+
+test("v3 migration reports dangling project references and keeps the old record", async () => {
+  const storage = new MemoryStorage();
+  const old = createInitialWorkspaceData(fixedNow);
+  old.tasks[0] = { ...old.tasks[0], projectId: "missing-project" };
+  storage.values.set(LEGACY_WORKSPACE_V3_STORAGE_KEY, JSON.stringify(old));
+  const repository = createWorkspaceRepository(storage);
+  const loaded = await repository.load();
+  assert.match(loaded.message ?? "", /失效关联.*任务/);
+  assert.equal((await repository.loadDomain()).tasks[0].relatedId, "missing-project");
+  assert.equal(JSON.parse(storage.values.get(WORKSPACE_STORAGE_KEY) ?? "null").tasks[0].relatedId, "missing-project");
+  await assert.rejects(() => repository.save(loaded.data), /关联引用无效.*任务/);
+  const reopened = await createWorkspaceRepository(storage).load();
+  assert.match(reopened.message ?? "", /失效关联.*任务/);
+  assert.equal(reopened.data.tasks[0].projectId, "missing-project");
+});
+
+test("v3 backup import explains a dangling reference before replacing local data", async () => {
+  const old = createInitialWorkspaceData(fixedNow);
+  old.tasks[0] = { ...old.tasks[0], projectId: "missing-project" };
+  assert.throws(() => parseWorkspaceBackup(JSON.stringify({
+    app: "CDC AI Workspace", schemaVersion: 3, exportedAt: fixedNow.toISOString(), data: old,
+  })), /关联引用无效.*任务.*missing-project/);
 });

@@ -11,3 +11,9 @@ collections are retained, including those stored in `legacy`.
 before use. The repository first reads v4, then v3, v2, and the old task key.
 It writes v4 before removing older migratable keys. The old v3 key is retained
 as a recovery copy. No Prisma or server database migration is performed here.
+
+`domain-relations.ts` checks project dependencies and cross-record references
+for v4 saves, domain changes, and backup imports. Invalid references in older
+browser data remain stored and are reported on load; subsequent saves are
+rejected until they are repaired. Project deletion rejects dependent records,
+including reviews, timeline entries, and attachments.

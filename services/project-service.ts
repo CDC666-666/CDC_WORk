@@ -1,4 +1,5 @@
 import { createWorkspaceId } from "@/services/workspace-service";
+import { assertProjectDeletionAllowed } from "@/lib/storage/domain-relations";
 import { localWorkspaceRepository, type WorkspaceRepository } from "@/repositories/workspace-repository";
 import type { Project, ProjectDraft, ProjectMilestone, ProjectMilestoneDraft, ProjectModule, ProjectModuleDraft, ProjectVNext } from "@/types/project";
 import type { WorkspaceData } from "@/types/workspace";
@@ -89,20 +90,7 @@ export function createProjectService(repository: WorkspaceRepository): ProjectSe
       let deleted = false;
       await repository.updateDomain((state) => {
         if (!state.projects.some((item) => item.id === id)) return state;
-        const referenced = state.tasks.some((item) => item.sourceType === "PROJECT" && item.relatedId === id) ||
-          state.engineeringLogs.some((item) => item.projectId === id) ||
-          state.experiments.some((item) => item.projectId === id) ||
-          state.projectModules.some((item) => item.projectId === id) ||
-          state.projectMilestones.some((item) => item.projectId === id) ||
-          state.knowledge.some((item) => item.projectId === id) ||
-          state.reviews.some((item) => item.relatedProjectId === id) ||
-          state.timeline.some((item) => item.relatedProjectId === id) ||
-          state.skillEvidence.some((item) => item.projectId === id) ||
-          state.attachments.some((item) => item.relatedType === "PROJECT" && item.relatedId === id) ||
-          state.legacy.technicalIssues.some((item) => item.projectId === id) ||
-          state.legacy.reports.some((item) => item.projectId === id) ||
-          state.legacy.resumeMaterials.some((item) => item.projectId === id);
-        if (referenced) throw new Error("项目仍有关联记录，请先处理关联数据。");
+        assertProjectDeletionAllowed(state, id);
         deleted = true;
         return { ...state, projects: state.projects.filter((item) => item.id !== id) };
       });
