@@ -11,12 +11,14 @@ import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import { useWorkspaceData } from "@/hooks/use-workspace-data";
+import { useAcademic } from "@/hooks/use-academic";
 import { formatChineseDate, toLocalDateKey } from "@/lib/date";
 import { cn } from "@/lib/utils";
 import { selectDerivedCalendarEvents } from "@/services/workspace-selectors";
+import { isAssignmentOverdue, selectAssignmentCalendarEvents } from "@/services/academic-selectors";
 import { createWorkspaceId } from "@/services/workspace-service";
 import type { CalendarEvent, CalendarEventDraft, CalendarEventType } from "@/types/calendar";
-import type { WorkspaceData } from "@/types/workspace";
+import type { AcademicState, WorkspaceData } from "@/types/workspace";
 
 type CalendarView = "month" | "week" | "list";
 
@@ -39,7 +41,11 @@ function monthCells(month: Date): Date[] {
   });
 }
 
-function eventHref(event: CalendarEvent, data: WorkspaceData): string | undefined {
+function eventHref(event: CalendarEvent, data: WorkspaceData, academic: AcademicState): string | undefined {
+  if (event.sourceType === "assignment" && event.sourceId) {
+    const assignment = academic.assignments.find((item) => item.id === event.sourceId);
+    return assignment ? `/academic/${assignment.courseId}` : undefined;
+  }
   if (event.sourceType === "task" && event.sourceId && data.tasks.some((item) => item.id === event.sourceId)) return "/today";
   if (event.sourceType === "studyPlan" && event.sourceId && data.studyPlans.some((item) => item.id === event.sourceId)) return "/learning";
   if (event.sourceType === "reading" && event.sourceId && data.readingItems.some((item) => item.id === event.sourceId)) return "/reading";
@@ -52,12 +58,13 @@ function eventHref(event: CalendarEvent, data: WorkspaceData): string | undefine
   return undefined;
 }
 
-function EventLabel({ event }: { event: CalendarEvent }) {
-  return <span className="block truncate rounded bg-blue-50 px-1.5 py-1 text-[10px] text-blue-700">{event.title}</span>;
+function EventLabel({ event, overdue }: { event: CalendarEvent; overdue: boolean }) {
+  return <span className={cn("block truncate rounded px-1.5 py-1 text-[10px]", overdue ? "bg-rose-50 text-rose-700" : "bg-blue-50 text-blue-700")}>{overdue ? "逾期 · " : ""}{event.title}</span>;
 }
 
 export function CalendarCenter() {
   const { data, dispatch } = useWorkspaceData();
+  const academic = useAcademic();
   const [month, setMonth] = useState(() => new Date());
   const [view, setView] = useState<CalendarView>("month");
   const [type, setType] = useState<CalendarEventType | "全部">("全部");
@@ -65,10 +72,12 @@ export function CalendarCenter() {
   const [formOpen, setFormOpen] = useState(false);
   const [deleting, setDeleting] = useState<CalendarEvent | null>(null);
 
-  const events = useMemo(() => selectDerivedCalendarEvents(data)
-    .filter((event) => event.sourceType === "manual" || Boolean(eventHref(event, data)))
+  const events = useMemo(() => [...selectDerivedCalendarEvents(data), ...selectAssignmentCalendarEvents(academic.state)]
+    .filter((event) => event.sourceType === "manual" || Boolean(eventHref(event, data, academic.state)))
     .filter((event) => type === "全部" || event.eventType === type)
-    .sort((left, right) => left.startAt.localeCompare(right.startAt)), [data, type]);
+    .sort((left, right) => left.startAt.localeCompare(right.startAt)), [academic.state, data, type]);
+  const overdue = (event: CalendarEvent) => event.sourceType === "assignment" &&
+    academic.state.assignments.some((item) => item.id === event.sourceId && isAssignmentOverdue(item, toLocalDateKey()));
   const cells = monthCells(month);
   const monthLabel = new Intl.DateTimeFormat("zh-CN", { year: "numeric", month: "long" }).format(month);
 
@@ -101,18 +110,18 @@ export function CalendarCenter() {
       const key = toLocalDateKey(date);
       const dayEvents = events.filter((event) => toLocalDateKey(new Date(event.startAt)) === key);
       return <div key={key} className={cn("min-h-28 border-b border-r p-2", date.getMonth() !== month.getMonth() && "bg-slate-50 text-slate-400")}><p className="text-xs">{date.getDate()}</p><div className="mt-1 space-y-1">{dayEvents.slice(0, 3).map((event) => {
-        const href = eventHref(event, data);
+        const href = eventHref(event, data, academic.state);
         return href
-          ? <Link key={event.id} href={href}><EventLabel event={event} /></Link>
-          : <button type="button" key={event.id} className="block w-full text-left" onClick={() => { setEditing(event); setFormOpen(true); }}><EventLabel event={event} /></button>;
-      })}</div></div>;
+          ? <Link key={event.id} href={href}><EventLabel event={event} overdue={overdue(event)} /></Link>
+          : <button type="button" key={event.id} className="block w-full text-left" onClick={() => { setEditing(event); setFormOpen(true); }}><EventLabel event={event} overdue={false} /></button>;
+        })}{dayEvents.length > 3 && <button type="button" className="text-xs text-blue-700 hover:underline" onClick={() => setView("list")}>另有 {dayEvents.length - 3} 条，查看列表</button>}</div></div>;
     })}</div></section>}
 
     <section className={cn("rounded-lg border bg-white", view === "month" ? "md:hidden" : "")}>
       <header className="border-b p-4"><h2 className="font-semibold">{view === "week" ? "未来 7 天" : "日程列表"}</h2></header>
-      {visibleListEvents.length ? <div className="divide-y">{visibleListEvents.slice(0, 30).map((event) => {
-        const href = eventHref(event, data);
-        return <article key={event.id} className="flex flex-col justify-between gap-3 p-4 sm:flex-row sm:items-center"><div><div className="flex gap-2 text-[10px]"><span className="rounded bg-blue-50 px-2 py-1 text-blue-700">{event.eventType}</span><span>{event.sourceType === "manual" ? "手动日程" : "派生日程"}</span></div><p className="mt-2 text-sm font-medium">{event.title}</p><p className="mt-1 text-xs text-slate-500">{formatChineseDate(event.startAt)} {event.allDay ? "全天" : new Intl.DateTimeFormat("zh-CN", { hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date(event.startAt))}</p></div>{event.sourceType === "manual" ? <div className="flex gap-2"><Button size="sm" variant="ghost" onClick={() => { setEditing(event); setFormOpen(true); }}><Edit3 />编辑</Button><Button size="sm" variant="destructive" onClick={() => setDeleting(event)}><Trash2 />删除</Button></div> : href ? <Button asChild size="sm" variant="outline"><Link href={href}>查看来源</Link></Button> : null}</article>;
+      {visibleListEvents.length ? <div className="divide-y">{visibleListEvents.map((event) => {
+        const href = eventHref(event, data, academic.state);
+        return <article key={event.id} className="flex flex-col justify-between gap-3 p-4 sm:flex-row sm:items-center"><div><div className="flex gap-2 text-[10px]"><span className="rounded bg-blue-50 px-2 py-1 text-blue-700">{event.eventType}</span><span>{event.sourceType === "manual" ? "手动日程" : "派生日程"}</span>{overdue(event) && <span className="text-rose-700">逾期</span>}</div><p className="mt-2 text-sm font-medium">{event.title}</p><p className="mt-1 text-xs text-slate-500">{formatChineseDate(event.startAt)} {event.allDay ? "全天" : new Intl.DateTimeFormat("zh-CN", { hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date(event.startAt))}</p></div>{event.sourceType === "manual" ? <div className="flex gap-2"><Button size="sm" variant="ghost" onClick={() => { setEditing(event); setFormOpen(true); }}><Edit3 />编辑</Button><Button size="sm" variant="destructive" onClick={() => setDeleting(event)}><Trash2 />删除</Button></div> : href ? <Button asChild size="sm" variant="outline"><Link href={href}>查看来源</Link></Button> : null}</article>;
       })}</div> : <EmptyState title="当前没有日程" description="新增手动日程，或在任务、学习、阅读和项目中设置日期。" />}
     </section>
     <CalendarEventDialog open={formOpen} event={editing} onClose={() => setFormOpen(false)} onSubmit={save} />

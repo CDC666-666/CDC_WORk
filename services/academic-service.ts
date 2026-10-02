@@ -6,6 +6,7 @@ export type AcademicCollection = keyof AcademicState;
 export type AcademicEntity<K extends AcademicCollection> = AcademicState[K][number];
 
 export interface AcademicService {
+  loadState(): Promise<AcademicState>;
   create<K extends AcademicCollection>(collection: K, draft: Omit<AcademicEntity<K>, "id">): Promise<AcademicEntity<K>>;
   update<K extends AcademicCollection>(collection: K, id: string, patch: Partial<Omit<AcademicEntity<K>, "id">>): Promise<AcademicEntity<K>>;
   delete<K extends AcademicCollection>(collection: K, id: string): Promise<boolean>;
@@ -46,6 +47,9 @@ function checkDelete(state: WorkspaceDomainState, collection: AcademicCollection
 
 export function createAcademicService(repository: WorkspaceRepository): AcademicService {
   return {
+    async loadState() {
+      return (await repository.loadDomain()).academic;
+    },
     async create<K extends AcademicCollection>(collection: K, draft: Omit<AcademicEntity<K>, "id">) {
       const item = { ...draft, id: createWorkspaceId(collection.slice(0, -1)) } as AcademicEntity<K>;
       await repository.updateDomain((state) => {
