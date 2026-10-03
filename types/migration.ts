@@ -53,12 +53,24 @@ export interface MigrationIssue {
   message: string;
 }
 
+export type MigrationDisposition = "write" | "skip" | "conflict" | "pending";
+
+export interface MigrationDependency {
+  dependentKey: string;
+  requiredKey: string;
+  field: string;
+  requiredOrigin: MigrationOrigin | null;
+  requiredStatus: MigrationDisposition | "missing";
+  satisfied: boolean;
+}
+
 export interface MigrationPreview {
   sourceKind: "v4" | "v3" | "v2" | "none";
   sourceFingerprint: string;
   planFingerprint: string;
   previewDigest: string;
   counts: Record<MigrationCollection, MigrationCollectionCount>;
+  dependencies: MigrationDependency[];
   issues: MigrationIssue[];
   canExecute: boolean;
 }

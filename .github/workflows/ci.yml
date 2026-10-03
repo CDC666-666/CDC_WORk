@@ -58,6 +58,8 @@ jobs:
         run: npm run test:db
       - name: Build
         run: npm run build
+      - name: Install browser for migration page regression
+        run: npx playwright install --with-deps chromium --only-shell
       - name: Private API test
         run: |
           npm run start -- -p 3100 > next-server.log 2>&1 &
@@ -68,6 +70,7 @@ jobs:
             sleep 1
           done
           npm run test:api
+          npm run test:browser
 
   compose:
     runs-on: ubuntu-latest

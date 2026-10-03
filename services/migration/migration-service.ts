@@ -6,9 +6,10 @@ import { Prisma } from "@prisma/client";
 import { ApiError } from "@/lib/server/api-response";
 import { prisma } from "@/lib/server/prisma";
 import { countRowsFromBatch, insertMigrationRow, readMigrationRow, verifyMigrationRow } from "@/repositories/migration/server-repository";
+import { collectMigrationDependencies } from "@/services/migration/dependency-graph";
 import { canonicalJson, prepareRawMigration, type PreparedMigration } from "@/services/migration/preflight";
 import { MIGRATION_COLLECTIONS, RAW_STORAGE_KEYS, type MigrationCollection, type MigrationCollectionCount,
-  type MigrationEntity, type MigrationIssue, type MigrationPreview, type MigrationResult,
+  type MigrationDisposition, type MigrationEntity, type MigrationIssue, type MigrationPreview, type MigrationResult,
   type RawBrowserSnapshot } from "@/types/migration";
 
 function sha256(value: unknown): string {
@@ -46,11 +47,10 @@ function prepare(raw: RawBrowserSnapshot): PreparedMigration {
   }
 }
 
-type Disposition = "write" | "skip" | "conflict" | "pending";
 type Planning = {
   preview: MigrationPreview;
   entities: MigrationEntity[];
-  disposition: Map<string, Disposition>;
+  disposition: Map<string, MigrationDisposition>;
   hashes: Map<string, string>;
 };
 
@@ -68,7 +68,7 @@ async function plan(
     { source: 0, written: 0, skipped: 0, conflict: 0, pending: 0 }])) as Record<MigrationCollection, MigrationCollectionCount>;
   const maps = await tx.migrationEntityMap.findMany({ where: { workspaceId } });
   const mapped = new Map(maps.map((item) => [`${item.collection}:${item.sourceId}`, item]));
-  const disposition = new Map<string, Disposition>();
+  const disposition = new Map<string, MigrationDisposition>();
   const hashes = new Map<string, string>();
   for (const entity of prepared.entities) {
     const key = keyOf(entity);
@@ -81,7 +81,7 @@ async function plan(
         code: "AMBIGUOUS", message: "内置演示 ID 的内容已变化；需人工确认是否迁入。" });
       continue;
     }
-    if (entity.origin === "DEMO" && !include.has(key)) {
+    if (entity.origin === "DEMO" && !include.has(key) && !mapped.has(key)) {
       disposition.set(key, "skip");
       continue;
     }
@@ -136,7 +136,8 @@ async function plan(
     else if (status === "conflict") count.conflict++;
     else count.pending++;
   }
-  const base = { sourceKind: prepared.sourceKind, sourceFingerprint, planFingerprint, counts, issues,
+  const dependencies = collectMigrationDependencies(prepared.entities, disposition, new Set(mapped.keys()), include);
+  const base = { sourceKind: prepared.sourceKind, sourceFingerprint, planFingerprint, counts, issues, dependencies,
     canExecute: !prepared.fatal && prepared.entities.length > 0 };
   const preview: MigrationPreview = { ...base, previewDigest: sha256(base) };
   return { preview, entities: prepared.entities, disposition, hashes };

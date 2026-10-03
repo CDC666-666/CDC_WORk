@@ -5,7 +5,9 @@ export function middleware(request: NextRequest) {
   const sessionCookie = request.cookies.get("next-auth.session-token") ??
     request.cookies.get("__Secure-next-auth.session-token");
   if (sessionCookie) return NextResponse.next();
-  return NextResponse.redirect(new URL("/login", request.url));
+  const login = new URL("/login", request.url);
+  if (request.nextUrl.pathname === "/migration") login.searchParams.set("callbackUrl", "/migration");
+  return NextResponse.redirect(login);
 }
 
 export const config = {

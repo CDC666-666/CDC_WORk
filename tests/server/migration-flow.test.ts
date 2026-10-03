@@ -299,3 +299,80 @@ test("every one of the 28 persisted collections can migrate and reconcile in one
     await db.$disconnect();
   }
 });
+
+test("personal records keep demo links pending until the exact multi-level dependencies are selected", {
+  skip: !process.env.DATABASE_URL,
+}, async () => {
+  const db = new PrismaClient();
+  const marker = randomUUID();
+  const user = await db.user.create({ data: { githubId: `migration-dependency-${marker}` } });
+  const workspace = await db.workspace.create({ data: { userId: user.id } });
+  const state = migrateWorkspaceV3(createInitialWorkspaceData(now), now);
+  const projectId = state.projects[0].id;
+  const taskTemplate = state.tasks.find((item) => item.id === "task-motor");
+  assert.ok(taskTemplate?.moduleId);
+  const moduleId = taskTemplate.moduleId;
+  state.reviews.push({ id: `personal-review-${marker}`, type: "PROJECT", date: "2026-10-04",
+    summary: "个人项目复盘", achievement: "调试完成", problem: "", plan: "继续",
+    relatedProjectId: projectId });
+  state.tasks.push({ ...taskTemplate, id: `personal-task-${marker}`, title: "个人调试任务" });
+  state.academic.semesters.push({ id: `personal-semester-${marker}`, year: 2026,
+    term: "AUTUMN", name: "个人学期" });
+  state.academic.courses.push({ id: `personal-course-${marker}`, semesterId: `personal-semester-${marker}`,
+    name: "控制课程", type: "MAJOR", teacher: "老师", credits: 3, importance: 4, status: "IN_PROGRESS" });
+  state.academic.assignments.push({ id: `personal-assignment-${marker}`,
+    courseId: `personal-course-${marker}`, title: "个人作业",
+    description: "完成建模", deadline: "2026-10-10", status: "TODO", priority: "HIGH" });
+  const raw = emptyRaw();
+  raw["cdc-workspace-data-v4"] = JSON.stringify(state);
+  const projectKey = `projects:${projectId}`;
+  const moduleKey = `projectModules:${moduleId}`;
+  try {
+    const first = await previewMigration(workspace.id, raw);
+    assert.equal(first.counts.reviews.pending, 1);
+    assert.equal(first.counts.tasks.pending > 0, true);
+    assert.equal(first.counts.assignments.written, 1);
+    assert.equal(first.dependencies.some((item) => item.dependentKey === `reviews:personal-review-${marker}` &&
+      item.requiredKey === projectKey && !item.satisfied), true);
+    assert.equal(first.dependencies.some((item) => item.dependentKey === `tasks:personal-task-${marker}` &&
+      item.requiredKey === moduleKey && !item.satisfied), true);
+    assert.equal(first.dependencies.some((item) => item.dependentKey === moduleKey &&
+      item.requiredKey === projectKey && !item.satisfied), true);
+    const partial = await executeMigration(workspace.id, raw, [], first.previewDigest);
+    assert.equal(partial.status, "PARTIAL");
+    assert.equal(await db.review.count({ where: { id: `personal-review-${marker}` } }), 0);
+    assert.equal(await db.assignment.count({ where: { id: `personal-assignment-${marker}` } }), 1);
+    assert.equal((await db.migrationPending.findFirstOrThrow({ where: {
+      batchId: partial.batchId, sourceId: `personal-review-${marker}`,
+    } })).payload !== null, true);
+
+    const onlyModule = await previewMigration(workspace.id, raw, [moduleKey]);
+    assert.equal(onlyModule.counts.projectModules.pending > 0, true);
+    const selected = [moduleKey, projectKey].sort();
+    const resolved = await previewMigration(workspace.id, raw, selected);
+    assert.equal(resolved.counts.reviews.written, 1);
+    assert.equal(resolved.counts.tasks.written, 1);
+    assert.equal(resolved.counts.projects.written, 1);
+    assert.equal(resolved.counts.projectModules.written, 1);
+    const completed = await executeMigration(workspace.id, raw, selected, resolved.previewDigest);
+    // Other pre-existing modified demo records remain pending by design.
+    assert.equal(completed.status, "PARTIAL");
+    assert.equal(completed.counts.reviews.pending, 0);
+    assert.equal(completed.counts.reviews.written, 1);
+    assert.equal(completed.counts.projectModules.written, 1);
+    assert.equal((await executeMigration(workspace.id, raw, selected, resolved.previewDigest)).batchId, completed.batchId);
+    assert.equal(await db.review.count({ where: { id: `personal-review-${marker}` } }), 1);
+    assert.equal(await db.project.count({ where: { id: projectId } }), 1);
+    assert.equal(await db.assignment.count({ where: { id: `personal-assignment-${marker}` } }), 1);
+  } finally {
+    await db.migrationPending.deleteMany({ where: { workspaceId: workspace.id } });
+    await db.migrationEntityMap.deleteMany({ where: { workspaceId: workspace.id } });
+    await db.migrationBatch.deleteMany({ where: { workspaceId: workspace.id } });
+    for (const collection of [...MIGRATION_COLLECTIONS].reverse()) {
+      await db.$executeRawUnsafe(`DELETE FROM "${MIGRATION_TABLES[collection].table}" WHERE "workspaceId" = $1`, workspace.id);
+    }
+    await db.workspace.delete({ where: { id: workspace.id } });
+    await db.user.delete({ where: { id: user.id } });
+    await db.$disconnect();
+  }
+});

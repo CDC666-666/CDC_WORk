@@ -27,6 +27,7 @@ export function BrowserMigrationTool() {
   const [raw, setRaw] = useState<RawBrowserSnapshot | null>(null);
   const [local, setLocal] = useState<LocalCheck | null>(null);
   const [preview, setPreview] = useState<MigrationPreview | null>(null);
+  const [previewSelection, setPreviewSelection] = useState<string | null>(null);
   const [result, setResult] = useState<MigrationResult | null>(null);
   const [includeIds, setIncludeIds] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
@@ -37,7 +38,7 @@ export function BrowserMigrationTool() {
       const snapshot = readRawBrowserSnapshot(window.localStorage);
       setRaw(snapshot);
       setLocal(prepareRawMigration(snapshot));
-      setPreview(null); setResult(null); setIncludeIds([]); setError(null);
+      setPreview(null); setPreviewSelection(null); setResult(null); setIncludeIds([]); setError(null);
     } catch (cause: unknown) { setError(cause instanceof Error ? cause.message : "无法读取浏览器数据。"); }
   };
   const uploadPreview = async () => {
@@ -45,12 +46,12 @@ export function BrowserMigrationTool() {
     setBusy(true); setError(null);
     try {
       const data = await postMigration("preview", { raw, includeIds }) as { preview: MigrationPreview };
-      setPreview(data.preview); setResult(null);
+      setPreview(data.preview); setPreviewSelection(JSON.stringify([...includeIds].sort())); setResult(null);
     } catch (cause: unknown) { setError(cause instanceof Error ? cause.message : "预览失败。"); }
     finally { setBusy(false); }
   };
   const execute = async () => {
-    if (!raw || !preview) return;
+    if (!raw || !preview || previewSelection !== JSON.stringify([...includeIds].sort())) return;
     if (!window.confirm("确认将预览中的可写记录迁入服务器？浏览器原始数据将保留。")) return;
     setBusy(true); setError(null);
     try {
@@ -63,19 +64,21 @@ export function BrowserMigrationTool() {
   const ambiguous = local?.entities.filter((item) => item.origin === "NEEDS_REVIEW" && !item.reasons.length) ?? [];
   const toggle = (key: string) => {
     setIncludeIds((current) => current.includes(key) ? current.filter((item) => item !== key) : [...current, key]);
-    setPreview(null); setResult(null);
+    setResult(null);
   };
+  const previewCurrent = Boolean(preview && previewSelection === JSON.stringify([...includeIds].sort()));
+  const unresolvedDependencies = preview?.dependencies.filter((item) => !item.satisfied) ?? [];
   const counts = result?.counts ?? preview?.counts;
   return <div className="space-y-5">
     <PageHeader eyebrow="SERVER MIGRATION" title="浏览器数据迁移"
       description="先在本机检查，再主动上传预览并执行。旧 localStorage、备份入口和工作台现有数据源都会保留。" />
     <section className="rounded-lg border bg-white p-4 text-sm leading-6 text-slate-600">
       <p>原文只在点击“读取原始数据”后读取。点击“上传服务器预览”会发送这份原文，包括个人记录；请先在可信任的本地环境中确认。</p>
-      <p>演示原样记录默认跳过；无法判断的记录需要勾选。异常关联和数据冲突会列在待处理清单，不会自动覆盖。</p>
+      <p>演示原样记录默认跳过。预览会列出个人记录依赖的演示实体；可逐项选择后重新预览。异常关联和数据冲突会留在待处理清单。</p>
       <div className="mt-3 flex flex-wrap gap-2">
         <Button onClick={read} disabled={busy}>1. 读取原始数据并本机预检查</Button>
-        <Button variant="outline" onClick={() => { void uploadPreview(); }} disabled={!local || busy || local.fatal}>2. 上传服务器预览</Button>
-        <Button onClick={() => { void execute(); }} disabled={!preview?.canExecute || busy}>3. 执行并核对</Button>
+        <Button variant="outline" onClick={() => { void uploadPreview(); }} disabled={!local || busy}>2. 上传服务器预览</Button>
+        <Button onClick={() => { void execute(); }} disabled={!previewCurrent || !preview?.canExecute || busy}>3. 执行并核对</Button>
       </div>
     </section>
     {error && <p role="alert" className="rounded border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">{error}</p>}
@@ -87,11 +90,31 @@ export function BrowserMigrationTool() {
         <div className="mt-2 max-h-56 space-y-2 overflow-auto">{ambiguous.map((item) => {
           const key = `${item.collection}:${item.id}`;
           return <label key={key} className="flex items-start gap-2 break-all text-xs">
-            <input type="checkbox" checked={includeIds.includes(key)} onChange={() => toggle(key)} />
+            <input type="checkbox" checked={includeIds.includes(key)} disabled={busy} onChange={() => toggle(key)} />
             <span>{key} · 勾选后迁入；不勾选则留在待处理清单</span>
           </label>;
         })}</div>
       </div>}
+    </section>}
+    {preview && <section className="rounded-lg border bg-white p-4">
+      <h2 className="font-semibold">关联依赖</h2>
+      <p className="mt-1 text-xs leading-5 text-slate-600">这里只展示个人记录及已选择记录的关联链。未修改的演示实体不会默认迁入；多级依赖需逐项选择。</p>
+      {!previewCurrent && <p role="status" className="mt-2 rounded bg-amber-50 p-2 text-xs text-amber-800">选择已变化，请重新上传服务器预览；当前数量和状态为上次预览。</p>}
+      {unresolvedDependencies.length ? <ul className="mt-3 max-h-64 space-y-2 overflow-auto">{unresolvedDependencies.map((dependency) => {
+        const selectable = dependency.requiredOrigin === "DEMO" && dependency.requiredStatus === "skip";
+        return <li key={`${dependency.dependentKey}/${dependency.field}/${dependency.requiredKey}`}
+          className="min-w-0 rounded border border-amber-100 bg-amber-50/50 p-2 text-xs">
+          <label className="flex items-start gap-2">
+            {selectable && <input type="checkbox" className="mt-0.5" checked={includeIds.includes(dependency.requiredKey)}
+              disabled={busy} onChange={() => toggle(dependency.requiredKey)} />}
+            <span className="min-w-0 break-all">{dependency.dependentKey} 的 {dependency.field} → {dependency.requiredKey}
+              <span className="ml-2 text-amber-800">{selectable ? "演示依赖，可选择迁入" :
+                dependency.requiredStatus === "missing" ? "来源缺失" :
+                  dependency.requiredStatus === "conflict" ? "服务器冲突" : "待处理"}</span>
+            </span>
+          </label>
+        </li>;
+      })}</ul> : <p className="mt-2 text-xs text-slate-500">当前预览没有未满足的关联依赖。</p>}
     </section>}
     {counts && <section className="overflow-x-auto rounded-lg border bg-white p-4">
       <h2 className="font-semibold">{result ? "执行结果" : "服务器预览"}</h2>
