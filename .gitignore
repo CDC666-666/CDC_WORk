@@ -1,5 +1,7 @@
 # dependencies
 /node_modules
+/.local-test-tools
+/.local-test-db
 /.npm-cache
 /.pnp
 .pnp.*
@@ -26,6 +28,7 @@ yarn-error.log*
 
 # environment files
 .env*
+!.env.example
 
 # typescript
 *.tsbuildinfo
