@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import Link from "next/link";
 import { DatabaseBackup, Download, FileJson, RotateCcw, Upload } from "lucide-react";
 
 import { ActionToast, type ToastNotice } from "@/components/layout/action-toast";
@@ -99,6 +100,7 @@ export function LocalDataSettings() {
 
   return <div className="space-y-5 lg:space-y-6">
     <PageHeader eyebrow="LOCAL DATA" title="设置" description="管理 CDC AI Workspace 的本地数据备份、导入与演示数据恢复。" />
+    <section className="rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm"><h2 className="font-semibold text-slate-900">服务器迁移预检查</h2><p className="mt-1 text-slate-600">Sprint 5.2A 可手动检查并预览浏览器原始数据；日常页面仍使用本地数据。</p><Link href="/migration" className="mt-2 inline-block font-medium text-blue-700 underline">打开迁移工具</Link></section>
     <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5" aria-label="本地数据统计">{statistics.map(([label, value]) => <article key={label} className="rounded-lg border border-border bg-white p-4 shadow-sm"><p className="text-[11px] text-slate-500">{label}</p><p className="mt-1 break-words text-sm font-semibold text-slate-950">{value}</p></article>)}</section>
     <section className="rounded-lg border border-border bg-white shadow-sm"><header className="border-b border-border p-5"><div className="flex items-center gap-3"><div className="grid h-10 w-10 place-items-center rounded-md bg-blue-50 text-blue-600"><DatabaseBackup className="h-5 w-5" /></div><div><h2 className="text-base font-semibold text-slate-900">本地数据管理</h2><p className="mt-1 text-xs text-slate-500">当前数据保存在浏览器 localStorage，不会上传到服务器。</p></div></div></header><div className="grid gap-4 p-5 lg:grid-cols-3">
       <article className="rounded-lg border border-slate-200 p-4"><Download className="h-5 w-5 text-blue-600" /><h3 className="mt-3 text-sm font-semibold text-slate-900">导出数据</h3><p className="mt-2 text-xs leading-5 text-slate-500">下载经过版本标记的完整 JSON 备份。</p><div className="mt-4 flex flex-wrap gap-2"><Button variant="outline" disabled={!workspace.isHydrated} onClick={exportData}><Download />导出 JSON</Button><Button variant="outline" disabled={!workspace.isHydrated} onClick={exportRecovery}><DatabaseBackup />导出恢复备份</Button></div><p className="mt-2 text-xs leading-5 text-slate-500">恢复备份只读地复制已保存数据，列出失效关联；需先修复后才能正常导入。</p></article>

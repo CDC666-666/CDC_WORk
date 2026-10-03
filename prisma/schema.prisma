@@ -61,6 +61,34 @@ model Workspace {
   projects  Project[]
   reviews   Review[]
   attachments Attachment[]
+  projectModules ProjectModule[]
+  projectMilestones ProjectMilestone[]
+  tasks Task[]
+  engineeringLogs EngineeringLog[]
+  experiments Experiment[]
+  knowledge Knowledge[]
+  skills Skill[]
+  skillEvidence SkillEvidence[]
+  timeline Timeline[]
+  semesters Semester[]
+  courses Course[]
+  chapters Chapter[]
+  classSessions ClassSession[]
+  assignments Assignment[]
+  exams Exam[]
+  studyPlans StudyPlan[]
+  studySessions StudySession[]
+  readingItems ReadingItem[]
+  technicalIssues TechnicalIssue[]
+  issueSolutions IssueSolution[]
+  reports ReportRecord[]
+  resumeMaterials ResumeMaterial[]
+  calendarEvents CalendarEvent[]
+  financeTransactions FinanceTransaction[]
+  contentStates ContentState[]
+  migrationBatches MigrationBatch[]
+  migrationEntityMaps MigrationEntityMap[]
+  migrationPending MigrationPending[]
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 }
@@ -70,6 +98,11 @@ model Project {
   workspaceId      String
   workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
   reviews          Review[]
+  projectModules   ProjectModule[]
+  projectMilestones ProjectMilestone[]
+  engineeringLogs  EngineeringLog[]
+  experiments      Experiment[]
+  timelineEntries  Timeline[]
   name             String
   code             String    @default("")
   category         String    @default("个人")
@@ -87,6 +120,10 @@ model Project {
   tags             String[]  @default([])
   visibility       String    @default("PRIVATE")
   publicSummary    String?   @db.Text
+  payload          Json?
+  sourceHash       String?
+  migrationBatchId String?
+  relationRefs     Json?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
@@ -112,6 +149,10 @@ model Review {
   problem          String     @default("") @db.Text
   plan             String     @default("") @db.Text
   relatedProjectId String?
+  payload          Json?
+  sourceHash       String?
+  migrationBatchId String?
+  relationRefs     Json?
   relatedProject   Project?   @relation(fields: [workspaceId, relatedProjectId], references: [workspaceId, id], onDelete: Restrict)
   version          Int        @default(1)
   createdAt        DateTime   @default(now())
@@ -130,6 +171,474 @@ model Attachment {
   type        String
   relatedType String
   relatedId   String
+  payload     Json?
+  sourceHash  String?
+  migrationBatchId String?
+  relationRefs Json?
 
   @@index([workspaceId, relatedType, relatedId])
+}
+
+model ProjectModule {
+  id               String    @id
+  workspaceId      String
+  workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+  payload          Json
+  sourceHash       String
+  migrationBatchId String
+  relationRefs     Json
+  projectId        String?
+  project          Project? @relation(fields: [workspaceId, projectId], references: [workspaceId, id], onDelete: Restrict)
+  parentId         String?
+  status           String?
+
+  @@unique([workspaceId, id])
+  @@index([workspaceId])
+}
+
+model ProjectMilestone {
+  id               String    @id
+  workspaceId      String
+  workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+  payload          Json
+  sourceHash       String
+  migrationBatchId String
+  relationRefs     Json
+  projectId        String?
+  project          Project? @relation(fields: [workspaceId, projectId], references: [workspaceId, id], onDelete: Restrict)
+  status           String?
+  targetDate       DateTime? @db.Date
+
+  @@unique([workspaceId, id])
+  @@index([workspaceId])
+}
+
+model Task {
+  id               String    @id
+  workspaceId      String
+  workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+  payload          Json
+  sourceHash       String
+  migrationBatchId String
+  relationRefs     Json
+  sourceType       String?
+  relatedId        String?
+  status           String?
+  deadline         String?
+
+  @@unique([workspaceId, id])
+  @@index([workspaceId])
+}
+
+model EngineeringLog {
+  id               String    @id
+  workspaceId      String
+  workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+  payload          Json
+  sourceHash       String
+  migrationBatchId String
+  relationRefs     Json
+  projectId        String?
+  project          Project? @relation(fields: [workspaceId, projectId], references: [workspaceId, id], onDelete: Restrict)
+  moduleId         String?
+  taskId           String?
+  date             DateTime? @db.Date
+
+  @@unique([workspaceId, id])
+  @@index([workspaceId])
+}
+
+model Experiment {
+  id               String    @id
+  workspaceId      String
+  workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+  payload          Json
+  sourceHash       String
+  migrationBatchId String
+  relationRefs     Json
+  projectId        String?
+  project          Project? @relation(fields: [workspaceId, projectId], references: [workspaceId, id], onDelete: Restrict)
+  moduleId         String?
+  taskId           String?
+  workLogId        String?
+
+  @@unique([workspaceId, id])
+  @@index([workspaceId])
+}
+
+model Knowledge {
+  id               String    @id
+  workspaceId      String
+  workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+  payload          Json
+  sourceHash       String
+  migrationBatchId String
+  relationRefs     Json
+  projectId        String?
+  courseId         String?
+  sourceType       String?
+  sourceId         String?
+
+  @@unique([workspaceId, id])
+  @@index([workspaceId])
+}
+
+model Skill {
+  id               String    @id
+  workspaceId      String
+  workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+  payload          Json
+  sourceHash       String
+  migrationBatchId String
+  relationRefs     Json
+  parentId         String?
+  level            Int?
+
+  @@unique([workspaceId, id])
+  @@index([workspaceId])
+}
+
+model SkillEvidence {
+  id               String    @id
+  workspaceId      String
+  workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+  payload          Json
+  sourceHash       String
+  migrationBatchId String
+  relationRefs     Json
+  skillId          String?
+  projectId        String?
+  courseId         String?
+  knowledgeId      String?
+
+  @@unique([workspaceId, id])
+  @@index([workspaceId])
+}
+
+model Timeline {
+  id               String    @id
+  workspaceId      String
+  workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+  payload          Json
+  sourceHash       String
+  migrationBatchId String
+  relationRefs     Json
+  relatedProjectId String?
+  relatedProject    Project? @relation(fields: [workspaceId, relatedProjectId], references: [workspaceId, id], onDelete: Restrict)
+  date             DateTime? @db.Date
+  visibility       String?
+
+  @@unique([workspaceId, id])
+  @@index([workspaceId])
+}
+
+model Semester {
+  id               String    @id
+  workspaceId      String
+  workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+  payload          Json
+  sourceHash       String
+  migrationBatchId String
+  relationRefs     Json
+  year             Int?
+  term             String?
+  courses          Course[]
+
+  @@unique([workspaceId, id])
+  @@index([workspaceId])
+}
+
+model Course {
+  id               String    @id
+  workspaceId      String
+  workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+  payload          Json
+  sourceHash       String
+  migrationBatchId String
+  relationRefs     Json
+  semesterId       String?
+  semester         Semester? @relation(fields: [workspaceId, semesterId], references: [workspaceId, id], onDelete: Restrict)
+  chapters         Chapter[]
+  classSessions    ClassSession[]
+  assignments      Assignment[]
+  exams            Exam[]
+  type             String?
+  status           String?
+
+  @@unique([workspaceId, id])
+  @@index([workspaceId])
+}
+
+model Chapter {
+  id               String    @id
+  workspaceId      String
+  workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+  payload          Json
+  sourceHash       String
+  migrationBatchId String
+  relationRefs     Json
+  courseId         String?
+  course           Course? @relation(fields: [workspaceId, courseId], references: [workspaceId, id], onDelete: Restrict)
+  learnDate        DateTime? @db.Date
+
+  @@unique([workspaceId, id])
+  @@index([workspaceId])
+}
+
+model ClassSession {
+  id               String    @id
+  workspaceId      String
+  workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+  payload          Json
+  sourceHash       String
+  migrationBatchId String
+  relationRefs     Json
+  courseId         String?
+  course           Course? @relation(fields: [workspaceId, courseId], references: [workspaceId, id], onDelete: Restrict)
+  date             DateTime? @db.Date
+
+  @@unique([workspaceId, id])
+  @@index([workspaceId])
+}
+
+model Assignment {
+  id               String    @id
+  workspaceId      String
+  workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+  payload          Json
+  sourceHash       String
+  migrationBatchId String
+  relationRefs     Json
+  courseId         String?
+  course           Course? @relation(fields: [workspaceId, courseId], references: [workspaceId, id], onDelete: Restrict)
+  deadline         String?
+  status           String?
+
+  @@unique([workspaceId, id])
+  @@index([workspaceId])
+}
+
+model Exam {
+  id               String    @id
+  workspaceId      String
+  workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+  payload          Json
+  sourceHash       String
+  migrationBatchId String
+  relationRefs     Json
+  courseId         String?
+  course           Course? @relation(fields: [workspaceId, courseId], references: [workspaceId, id], onDelete: Restrict)
+  date             DateTime? @db.Date
+  reviewStatus     String?
+
+  @@unique([workspaceId, id])
+  @@index([workspaceId])
+}
+
+model StudyPlan {
+  id               String    @id
+  workspaceId      String
+  workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+  payload          Json
+  sourceHash       String
+  migrationBatchId String
+  relationRefs     Json
+  status           String?
+  deadline         DateTime? @db.Date
+
+  @@unique([workspaceId, id])
+  @@index([workspaceId])
+}
+
+model StudySession {
+  id               String    @id
+  workspaceId      String
+  workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+  payload          Json
+  sourceHash       String
+  migrationBatchId String
+  relationRefs     Json
+  studyPlanId      String?
+  date             DateTime? @db.Date
+
+  @@unique([workspaceId, id])
+  @@index([workspaceId])
+}
+
+model ReadingItem {
+  id               String    @id
+  workspaceId      String
+  workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+  payload          Json
+  sourceHash       String
+  migrationBatchId String
+  relationRefs     Json
+  status           String?
+  currentPage      Int?
+
+  @@unique([workspaceId, id])
+  @@index([workspaceId])
+}
+
+model TechnicalIssue {
+  id               String    @id
+  workspaceId      String
+  workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+  payload          Json
+  sourceHash       String
+  migrationBatchId String
+  relationRefs     Json
+  projectId        String?
+  testRecordId     String?
+  status           String?
+
+  @@unique([workspaceId, id])
+  @@index([workspaceId])
+}
+
+model IssueSolution {
+  id               String    @id
+  workspaceId      String
+  workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+  payload          Json
+  sourceHash       String
+  migrationBatchId String
+  relationRefs     Json
+  issueId          String?
+  isEffective      Boolean?
+
+  @@unique([workspaceId, id])
+  @@index([workspaceId])
+}
+
+model ReportRecord {
+  id               String    @id
+  workspaceId      String
+  workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+  payload          Json
+  sourceHash       String
+  migrationBatchId String
+  relationRefs     Json
+  projectId        String?
+  status           String?
+
+  @@unique([workspaceId, id])
+  @@index([workspaceId])
+}
+
+model ResumeMaterial {
+  id               String    @id
+  workspaceId      String
+  workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+  payload          Json
+  sourceHash       String
+  migrationBatchId String
+  relationRefs     Json
+  projectId        String?
+  status           String?
+
+  @@unique([workspaceId, id])
+  @@index([workspaceId])
+}
+
+model CalendarEvent {
+  id               String    @id
+  workspaceId      String
+  workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+  payload          Json
+  sourceHash       String
+  migrationBatchId String
+  relationRefs     Json
+  sourceType       String?
+  sourceId         String?
+  startAt          String?
+
+  @@unique([workspaceId, id])
+  @@index([workspaceId])
+}
+
+model FinanceTransaction {
+  id               String    @id
+  workspaceId      String
+  workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+  payload          Json
+  sourceHash       String
+  migrationBatchId String
+  relationRefs     Json
+  amount           Decimal? @db.Decimal(20, 2)
+  date             DateTime? @db.Date
+  type             String?
+
+  @@unique([workspaceId, id])
+  @@index([workspaceId])
+}
+
+model ContentState {
+  id               String    @id
+  workspaceId      String
+  workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+  payload          Json
+  sourceHash       String
+  migrationBatchId String
+  relationRefs     Json
+  status           String?
+  isFavorite       Boolean?
+  isInKnowledgeBase Boolean?
+  isInStudyPlan    Boolean?
+
+  @@unique([workspaceId, id])
+  @@index([workspaceId])
+}
+
+model MigrationBatch {
+  id                String @id @default(cuid())
+  workspaceId       String
+  workspace         Workspace @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+  sourceFingerprint String
+  planFingerprint   String
+  sourceKind        String
+  status            String
+  rawSource         Json
+  sourceCounts      Json
+  result            Json?
+  issues            Json?
+  createdAt         DateTime @default(now())
+  completedAt       DateTime?
+
+  @@unique([workspaceId, sourceFingerprint, planFingerprint])
+  @@index([workspaceId, status])
+}
+
+model MigrationEntityMap {
+  id              String @id @default(cuid())
+  workspaceId     String
+  workspace       Workspace @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+  collection      String
+  sourceId        String
+  targetModel     String
+  targetId        String
+  sourceHash      String
+  serverVersion   Int?
+  serverUpdatedAt DateTime?
+  batchId         String
+  createdAt       DateTime @default(now())
+
+  @@unique([workspaceId, collection, sourceId])
+  @@index([workspaceId, batchId])
+}
+
+model MigrationPending {
+  id          String @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+  batchId     String
+  collection  String
+  sourceId    String
+  sourceOrdinal Int
+  payload     Json
+  sourceHash  String
+  reasons     Json
+
+  @@unique([batchId, collection, sourceId, sourceOrdinal])
+  @@index([workspaceId, collection])
 }
