@@ -84,7 +84,7 @@ Sprint 4.3 将 `WorkspaceDomainState` v4 作为本地持久化源；现有页面
 
 本轮服务器只持久化 Project、Review 和预留的 Attachment 引用。`/api/private/projects` 可创建关联项目；`/api/private/reviews` 提供增删改查、筛选和版本冲突检测。旧 `/reflections` 页面依然读取 localStorage v4，**不会展示服务器 API 新建的总结**；全量数据迁移与页面切换属于 Sprint 5.2。
 
-本地启动：复制 `.env.example` 为 `.env`，填写本地 PostgreSQL 密码、随机 `NEXTAUTH_SECRET`、GitHub OAuth Client ID/Secret 和允许的 GitHub 数字 ID。在 GitHub OAuth App 中配置本地回调 `http://localhost:3000/api/auth/callback/github`。生产机使用 HTTPS 域名的对应回调，不把密钥提交到 Git。运行 `docker compose up --build` 可启动数据库和应用并应用迁移；也可只运行 `docker compose up -d db`，随后执行 `npm ci`、`npm run db:generate`、`npm run db:deploy`、`npm run dev`。
+本地启动：复制 `.env.example` 为 `.env`，填写本地 PostgreSQL 密码、随机 `NEXTAUTH_SECRET`、GitHub OAuth Client ID/Secret，并确认允许的 GitHub 数字 ID 为 `248133835`。本地访问 `http://localhost:3000`，OAuth 回调为 `http://localhost:3000/api/auth/callback/github`；详细操作见 [`docs/oauth-local.md`](docs/oauth-local.md)。生产机使用 HTTPS 域名的对应回调，不把密钥提交到 Git。运行 `docker compose up --build --wait -d` 可启动数据库和应用并应用迁移；也可只运行 `docker compose up -d db`，随后执行 `npm ci`、`npm run db:generate`、`npm run db:deploy`、`npm run dev`。
 
 私人 API 日期统一为 `YYYY-MM-DD`，时间戳为 UTC ISO 8601；未来金额以十进制字符串传输。PATCH 总结时提交整数 `version`；DELETE 使用 `If-Match: "<version>"`。数据库仅在写入事务成功后返回成功，过期版本返回 409。详细接口见 [`app/api/private/README.md`](app/api/private/README.md)。
 
@@ -127,7 +127,7 @@ npm.cmd run start
 
 ## CI
 
-`.github/workflows/ci.yml` 在推送到 `main`、任意目标分支的 Pull Request 和手动触发时运行。它启动临时 PostgreSQL，执行 `npm ci`、Prisma 生成及迁移、lint、typecheck、单元测试、数据库测试、production build 和私有 API 测试。Workflow 使用 Node.js 20、`contents: read` 最小权限和分支 concurrency；测试会话与密钥仅在 CI 内临时生成，不包含部署步骤。
+`.github/workflows/ci.yml` 在推送到 `main`、任意目标分支的 Pull Request 和手动触发时运行。`quality` job 使用临时 PostgreSQL 执行 Prisma 迁移、lint、typecheck、测试和 production build；`compose` job 实际构建并启动数据库和应用容器，检查迁移、健康状态、私有 API，并在重启两个容器后再次读取记录。Workflow 使用 `contents: read` 最小权限；测试密码与密钥仅在 CI 内临时生成，不包含部署步骤。
 
 ## 演示与安全说明
 

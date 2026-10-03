@@ -30,7 +30,7 @@ jobs:
     env:
       DATABASE_URL: postgresql://postgres@localhost:5432/cdc_workspace?schema=public
       NEXTAUTH_URL: http://localhost:3100
-      ALLOWED_GITHUB_USER_ID: "999001"
+      ALLOWED_GITHUB_USER_ID: "248133835"
       TEST_BASE_URL: http://localhost:3100
     steps:
       - name: Checkout
@@ -68,3 +68,49 @@ jobs:
             sleep 1
           done
           npm run test:api
+
+  compose:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Create temporary local environment
+        run: |
+          password="$(openssl rand -hex 20)"
+          secret="$(openssl rand -hex 32)"
+          {
+            printf 'POSTGRES_USER=cdc\n'
+            printf 'POSTGRES_PASSWORD=%s\n' "$password"
+            printf 'POSTGRES_DB=cdc_workspace\n'
+            printf 'DATABASE_URL=postgresql://cdc:%s@localhost:5432/cdc_workspace?schema=public\n' "$password"
+            printf 'NEXTAUTH_URL=http://localhost:3000\n'
+            printf 'NEXTAUTH_SECRET=%s\n' "$secret"
+            printf 'GITHUB_CLIENT_ID=\nGITHUB_CLIENT_SECRET=\n'
+            printf 'ALLOWED_GITHUB_USER_ID=248133835\n'
+          } > .env
+      - name: Build and start Compose services
+        run: docker compose up --build --wait -d
+      - name: Verify health, migration, and private access
+        run: |
+          test "$(docker inspect --format '{{.State.Health.Status}}' "$(docker compose ps -q db)")" = healthy
+          test "$(docker inspect --format '{{.State.Health.Status}}' "$(docker compose ps -q web)")" = healthy
+          docker compose exec -T web npx prisma migrate status
+          curl --silent --show-error --fail http://localhost:3000/login > /dev/null
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://localhost:3000/api/private/reviews)" = 401
+      - name: Exercise private API inside Compose
+        run: docker compose exec -T -e TEST_BASE_URL=http://localhost:3000 web npm run test:api
+      - name: Restart containers and verify persisted review
+        run: |
+          marker="$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          docker compose exec -T web node --import tsx tests/server/compose-persistence.ts prepare "$marker"
+          docker compose restart db web
+          docker compose up --wait -d
+          test "$(docker inspect --format '{{.State.Health.Status}}' "$(docker compose ps -q db)")" = healthy
+          test "$(docker inspect --format '{{.State.Health.Status}}' "$(docker compose ps -q web)")" = healthy
+          docker compose exec -T web node --import tsx tests/server/compose-persistence.ts verify "$marker"
+      - name: Show Compose logs on failure
+        if: failure()
+        run: docker compose logs --no-color --tail=100
+      - name: Stop Compose services
+        if: always()
+        run: docker compose down

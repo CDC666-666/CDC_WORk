@@ -19,6 +19,7 @@ import {
   X,
 } from "lucide-react";
 
+import { LogoutButton } from "@/components/auth/logout-button";
 import { Input } from "@/components/ui/input";
 import { useWorkspaceData } from "@/hooks/use-workspace-data";
 import { getNavigationItemByPathname } from "@/lib/navigation";
@@ -256,6 +257,7 @@ export function Topbar({
       >
         CDC
       </button>
+      <LogoutButton />
 
       {isSearchOpen && (
         <div className="absolute left-4 right-4 top-[72px] md:hidden">

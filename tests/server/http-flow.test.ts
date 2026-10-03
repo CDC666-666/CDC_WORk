@@ -49,7 +49,9 @@ test("private HTTP API enforces session and commits versioned reflection CRUD", 
     assert.doesNotMatch(deniedHtml, /记录保存在本地 Workspace v4/);
     const allowedPage = await fetch(`${baseUrl}/reflections`, { headers, redirect: "manual" });
     assert.equal(allowedPage.status, 200);
-    assert.match(await allowedPage.text(), /总结与复盘/);
+    const allowedHtml = await allowedPage.text();
+    assert.match(allowedHtml, /总结与复盘/);
+    assert.match(allowedHtml, /退出登录/);
 
     const projectResponse = await fetch(`${baseUrl}/api/private/projects`, {
       method: "POST", headers: writeHeaders, body: JSON.stringify({ name: "三轴机械臂" }),
@@ -98,6 +100,23 @@ test("private HTTP API enforces session and commits versioned reflection CRUD", 
     assert.equal(deleted.status, 200);
     const missing = await fetch(`${baseUrl}/api/private/reviews/${created.id}`, { headers });
     assert.equal(missing.status, 404);
+
+    const csrfResponse = await fetch(`${baseUrl}/api/auth/csrf`, { headers });
+    assert.equal(csrfResponse.status, 200);
+    const { csrfToken } = (await csrfResponse.json()) as { csrfToken: string };
+    const csrfCookies = csrfResponse.headers.getSetCookie().map((cookie) => cookie.split(";")[0]).join("; ");
+    assert.match(csrfCookies, /next-auth\.csrf-token=/);
+    const signout = await fetch(`${baseUrl}/api/auth/signout`, {
+      method: "POST",
+      headers: { cookie: `${headers.cookie}; ${csrfCookies}`, origin: baseUrl,
+        "content-type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({ csrfToken, callbackUrl: "/login", json: "true" }),
+      redirect: "manual",
+    });
+    assert.equal(signout.status, 200);
+    assert.equal(await db.session.count({ where: { sessionToken: goodToken } }), 0);
+    const afterSignout = await fetch(`${baseUrl}/api/private/reviews`, { headers });
+    assert.equal(afterSignout.status, 401);
   } finally {
     const workspace = await db.workspace.findUnique({ where: { userId: allowed.id } });
     if (workspace) {
