@@ -58,6 +58,8 @@ jobs:
         run: npm run test:db
       - name: Build
         run: npm run build
+      - name: Install browser for migration page regression
+        run: npx playwright install --with-deps chromium --only-shell
       - name: Private API test
         run: |
           npm run start -- -p 3100 > next-server.log 2>&1 &
@@ -68,6 +70,7 @@ jobs:
             sleep 1
           done
           npm run test:api
+          npm run test:browser
 
   compose:
     runs-on: ubuntu-latest
@@ -99,6 +102,8 @@ jobs:
           test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://localhost:3000/api/private/reviews)" = 401
       - name: Exercise private API inside Compose
         run: docker compose exec -T -e TEST_BASE_URL=http://localhost:3000 web npm run test:api
+      - name: Exercise PostgreSQL migration inside Compose
+        run: docker compose exec -T web npm run test:db
       - name: Restart containers and verify persisted review
         run: |
           marker="$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"

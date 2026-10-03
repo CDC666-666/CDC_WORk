@@ -3,6 +3,8 @@ import { randomUUID } from "node:crypto";
 import test from "node:test";
 
 import { PrismaClient } from "@prisma/client";
+import { createEmptyWorkspaceData } from "@/data/initial-workspace-data";
+import { migrateWorkspaceV3 } from "@/lib/storage/workspace-migration";
 
 const baseUrl = process.env.TEST_BASE_URL;
 
@@ -52,6 +54,33 @@ test("private HTTP API enforces session and commits versioned reflection CRUD", 
     const allowedHtml = await allowedPage.text();
     assert.match(allowedHtml, /总结与复盘/);
     assert.match(allowedHtml, /退出登录/);
+    const rawMigration = Object.fromEntries([
+      "cdc-workspace-data-v4", "cdc-workspace-data-v3", "cdc-workspace-data-v2",
+      "cdc-dashboard-task-state-v1", "cdc-workspace-data-v4-invalid-backup",
+      "cdc-content-state-v1",
+    ].map((key) => [key, null]));
+    const anonymousMigration = await fetch(`${baseUrl}/api/private/migration/preview`, {
+      method: "POST", headers: { origin: baseUrl, "content-type": "application/json" },
+      body: JSON.stringify({ raw: rawMigration }),
+    });
+    assert.equal(anonymousMigration.status, 401);
+    const deniedMigration = await fetch(`${baseUrl}/api/private/migration/preview`, {
+      method: "POST", headers: { origin: baseUrl, "content-type": "application/json",
+        cookie: `next-auth.session-token=${badToken}` },
+      body: JSON.stringify({ raw: rawMigration }),
+    });
+    assert.equal(deniedMigration.status, 401);
+    const migrationPreview = await fetch(`${baseUrl}/api/private/migration/preview`, {
+      method: "POST", headers: writeHeaders, body: JSON.stringify({ raw: rawMigration }),
+    });
+    assert.equal(migrationPreview.status, 200);
+    const migrationBody = (await migrationPreview.json()) as { preview: { canExecute: boolean } };
+    assert.equal(migrationBody.preview.canExecute, false);
+    const invalidMigrationOrigin = await fetch(`${baseUrl}/api/private/migration/execute`, {
+      method: "POST", headers: { ...writeHeaders, origin: "https://other.invalid" },
+      body: JSON.stringify({ raw: rawMigration, previewDigest: "0".repeat(64) }),
+    });
+    assert.equal(invalidMigrationOrigin.status, 403);
 
     const projectResponse = await fetch(`${baseUrl}/api/private/projects`, {
       method: "POST", headers: writeHeaders, body: JSON.stringify({ name: "三轴机械臂" }),
@@ -101,6 +130,29 @@ test("private HTTP API enforces session and commits versioned reflection CRUD", 
     const missing = await fetch(`${baseUrl}/api/private/reviews/${created.id}`, { headers });
     assert.equal(missing.status, 404);
 
+    const migrationState = migrateWorkspaceV3(createEmptyWorkspaceData());
+    migrationState.reviews.push({ id: `http-migration-${marker}`, type: "DAILY", date: "2026-10-03",
+      summary: "迁移测试", achievement: "完成", problem: "", plan: "继续" });
+    const migrationSource = { ...rawMigration, "cdc-workspace-data-v4": JSON.stringify(migrationState) };
+    const migrationPlanResponse = await fetch(`${baseUrl}/api/private/migration/preview`, {
+      method: "POST", headers: writeHeaders, body: JSON.stringify({ raw: migrationSource }),
+    });
+    assert.equal(migrationPlanResponse.status, 200);
+    const migrationPlan = (await migrationPlanResponse.json()) as { preview: { previewDigest: string; counts: {
+      reviews: { written: number } } } };
+    assert.equal(migrationPlan.preview.counts.reviews.written, 1);
+    const migrationExecuteResponse = await fetch(`${baseUrl}/api/private/migration/execute`, {
+      method: "POST", headers: writeHeaders,
+      body: JSON.stringify({ raw: migrationSource, previewDigest: migrationPlan.preview.previewDigest }),
+    });
+    assert.equal(migrationExecuteResponse.status, 200);
+    const migrated = (await migrationExecuteResponse.json()) as { result: { batchId: string; status: string } };
+    assert.equal(migrated.result.status, "COMPLETED");
+    const batchResponse = await fetch(`${baseUrl}/api/private/migration/batches/${migrated.result.batchId}`, { headers });
+    assert.equal(batchResponse.status, 200);
+    const anonymousBatch = await fetch(`${baseUrl}/api/private/migration/batches/${migrated.result.batchId}`);
+    assert.equal(anonymousBatch.status, 401);
+
     const csrfResponse = await fetch(`${baseUrl}/api/auth/csrf`, { headers });
     assert.equal(csrfResponse.status, 200);
     const { csrfToken } = (await csrfResponse.json()) as { csrfToken: string };
@@ -120,6 +172,9 @@ test("private HTTP API enforces session and commits versioned reflection CRUD", 
   } finally {
     const workspace = await db.workspace.findUnique({ where: { userId: allowed.id } });
     if (workspace) {
+      await db.migrationPending.deleteMany({ where: { workspaceId: workspace.id } });
+      await db.migrationEntityMap.deleteMany({ where: { workspaceId: workspace.id } });
+      await db.migrationBatch.deleteMany({ where: { workspaceId: workspace.id } });
       await db.review.deleteMany({ where: { workspaceId: workspace.id } });
       if (projectId) await db.project.deleteMany({ where: { id: projectId, workspaceId: workspace.id } });
       await db.workspace.delete({ where: { id: workspace.id } });
