@@ -1,0 +1,135 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  githubId      String?   @unique
+  accounts      Account[]
+  sessions      Session[]
+  workspace     Workspace?
+  createdAt     DateTime  @default(now())
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Workspace {
+  id        String    @id @default(cuid())
+  userId    String    @unique
+  user      User      @relation(fields: [userId], references: [id], onDelete: Restrict)
+  projects  Project[]
+  reviews   Review[]
+  attachments Attachment[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Project {
+  id               String    @id
+  workspaceId      String
+  workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+  reviews          Review[]
+  name             String
+  code             String    @default("")
+  category         String    @default("个人")
+  role             String    @default("")
+  description      String    @default("") @db.Text
+  status           String    @default("规划中")
+  progress         Int       @default(0)
+  startDate        DateTime? @db.Date
+  endDate          DateTime? @db.Date
+  objectives       String[]  @default([])
+  responsibilities String[]  @default([])
+  techStack        String[]  @default([])
+  repositoryUrl    String    @default("")
+  coverStyle       String    @default("blue")
+  tags             String[]  @default([])
+  visibility       String    @default("PRIVATE")
+  publicSummary    String?   @db.Text
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@unique([workspaceId, id])
+  @@index([workspaceId, name])
+}
+
+enum ReviewType {
+  DAILY
+  WEEKLY
+  MONTHLY
+  PROJECT
+}
+
+model Review {
+  id               String     @id @default(cuid())
+  workspaceId      String
+  workspace        Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+  type             ReviewType
+  date             DateTime   @db.Date
+  summary          String     @db.Text
+  achievement      String     @default("") @db.Text
+  problem          String     @default("") @db.Text
+  plan             String     @default("") @db.Text
+  relatedProjectId String?
+  relatedProject   Project?   @relation(fields: [workspaceId, relatedProjectId], references: [workspaceId, id], onDelete: Restrict)
+  version          Int        @default(1)
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+
+  @@index([workspaceId, date])
+  @@index([workspaceId, type])
+  @@index([workspaceId, relatedProjectId])
+}
+
+model Attachment {
+  id          String    @id
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+  url         String    @db.Text
+  type        String
+  relatedType String
+  relatedId   String
+
+  @@index([workspaceId, relatedType, relatedId])
+}
