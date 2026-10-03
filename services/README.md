@@ -22,3 +22,9 @@ or completing an assignment updates its Academic record; no `Task` or manual
 calendar record is created. Due today and unfinished overdue assignments
 appear on the dashboard. All assignments appear on their due dates in the
 calendar, including completed ones.
+
+`reflection-period.ts` interprets Review dates as local calendar keys.
+Weekly records are stored on Monday and monthly records on day one;
+project records use their actual review date. `ReviewService` validates
+nonempty summaries and all optional or required project links before a
+repository write. Existing imported records are read without rewriting them.
