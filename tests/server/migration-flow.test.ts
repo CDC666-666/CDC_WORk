@@ -70,6 +70,15 @@ test("raw browser reader only calls getItem for the six known keys", () => {
   assert.equal(raw["cdc-content-state-v1"], "{}");
 });
 
+test("amounts beyond a safe integer number of cents are quarantined", () => {
+  const raw = fixture(randomUUID());
+  const state = JSON.parse(raw["cdc-workspace-data-v4"] ?? "") as WorkspaceDomainState;
+  state.legacy.financeTransactions[0].amount = 90071992547409.92;
+  raw["cdc-workspace-data-v4"] = JSON.stringify(state);
+  const item = prepareRawMigration(raw).entities.find((entity) => entity.collection === "financeTransactions");
+  assert.ok(item?.reasons.some((reason) => reason.includes("金额")));
+});
+
 test("v4 wins over old snapshots and invalid links or duplicate IDs stay visible", () => {
   const raw = fixture(randomUUID());
   raw["cdc-workspace-data-v3"] = JSON.stringify(createInitialWorkspaceData(now));

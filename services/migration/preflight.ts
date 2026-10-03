@@ -121,8 +121,12 @@ function valueIssues(collection: MigrationCollection, item: Item): string[] {
   }
   if (collection === "financeTransactions") {
     const amount = item.amount;
+    const decimal = typeof amount === "number" ? amount.toString() : "";
+    const validDecimal = /^-?\d+(?:\.\d{1,2})?$/.test(decimal);
+    const [whole, fraction = ""] = decimal.replace(/^-/, "").split(".");
+    const cents = validDecimal ? BigInt(whole) * BigInt(100) + BigInt(fraction.padEnd(2, "0")) : null;
     if (typeof amount !== "number" || !Number.isFinite(amount) ||
-      !/^-?\d+(?:\.\d{1,2})?$/.test(amount.toString()) || Math.abs(amount) >= 10 ** 14) {
+      !validDecimal || cents === null || cents > BigInt(Number.MAX_SAFE_INTEGER)) {
       problems.push("amount 无法无损表示为两位十进制金额");
     }
   }
