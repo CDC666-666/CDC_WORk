@@ -14,8 +14,7 @@ import { Progress } from "@/components/ui/progress";
 import { Select } from "@/components/ui/select";
 import { useWorkspaceData } from "@/hooks/use-workspace-data";
 import { cn } from "@/lib/utils";
-import { createProject, getProjectImpact, projectDomainService, updateProject } from "@/services/project-service";
-import { workspaceDataService } from "@/services/workspace-data-service";
+import { createProject, getProjectImpact, updateProject } from "@/services/project-service";
 import type { Project, ProjectCategory, ProjectDraft, ProjectStatus } from "@/types/project";
 
 export function ProjectCenter({ openCreate = false }: { openCreate?: boolean }) {
@@ -23,19 +22,16 @@ export function ProjectCenter({ openCreate = false }: { openCreate?: boolean }) 
   const [query, setQuery] = useState(""); const [category, setCategory] = useState<ProjectCategory | "全部">("全部"); const [status, setStatus] = useState<ProjectStatus | "全部">("全部"); const [view, setView] = useState<"card" | "list">("card");
   const [editing, setEditing] = useState<Project | null>(null); const [formOpen, setFormOpen] = useState(openCreate); const [deleting, setDeleting] = useState<Project | null>(null); const [notice, setNotice] = useState<ToastNotice | null>(null);
   const projects = useMemo(() => data.projects.filter((project) => (!query || `${project.name} ${project.code} ${project.description}`.toLowerCase().includes(query.toLowerCase())) && (category === "全部" || project.category === category) && (status === "全部" || project.status === status)).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)), [category, data.projects, query, status]);
-  const save = (draft: ProjectDraft, current: Project | null) => { if (current) dispatch({ type: "project/updated", project: updateProject({ ...current, ...draft }) }); else dispatch({ type: "project/added", project: createProject(draft) }); setNotice({ id: Date.now(), title: current ? "项目已更新" : "项目已创建", description: "项目数据已同步到统一 Workspace。" }); };
+  const save = async (draft: ProjectDraft, current: Project | null) => { await dispatch(current ? { type: "project/updated", project: updateProject({ ...current, ...draft }) } : { type: "project/added", project: createProject(draft) }); setNotice({ id: Date.now(), title: current ? "项目已更新" : "项目已创建", description: "项目已保存到服务器。" }); };
   const impact = deleting ? getProjectImpact(data, deleting.id) : null;
   const confirmDelete = async () => {
     if (!deleting) return;
     try {
-      if (!(await workspaceDataService.save(data))) throw new Error("本地数据保存失败，请重试。");
-      await projectDomainService.delete(deleting.id);
-      dispatch({ type: "project/deleted", projectId: deleting.id });
+      await dispatch({ type: "project/deleted", projectId: deleting.id });
+      setDeleting(null);
       setNotice({ id: Date.now(), title: "项目已删除", description: "项目删除已保存。" });
     } catch (error: unknown) {
       setNotice({ id: Date.now(), title: "无法删除项目", description: error instanceof Error ? error.message : "请稍后重试。" });
-    } finally {
-      setDeleting(null);
     }
   };
   return <div className="space-y-5 lg:space-y-6"><PageHeader eyebrow="PROJECT PORTFOLIO" title="我的项目" description="项目是任务、工程记录、知识成果和成长证据的主线。" actions={<Button onClick={() => { setEditing(null); setFormOpen(true); }}><Plus />新增项目</Button>} />

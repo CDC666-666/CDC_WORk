@@ -15,8 +15,8 @@ interface Props {
   open: boolean;
   plan: StudyPlan | null;
   onClose: () => void;
-  onCreate: (draft: StudyPlanDraft) => void;
-  onUpdate: (plan: StudyPlan) => void;
+  onCreate: (draft: StudyPlanDraft) => Promise<unknown> | void;
+  onUpdate: (plan: StudyPlan) => Promise<unknown> | void;
 }
 
 function initial(plan: StudyPlan | null) {
@@ -35,7 +35,7 @@ export function StudyPlanDialog({ open, plan, onClose, onCreate, onUpdate }: Pro
   const [error, setError] = useState("");
   useEffect(() => { if (open) { setForm(initial(plan)); setError(""); } }, [open, plan]);
 
-  const submit = (event: React.FormEvent<HTMLFormElement>) => {
+  const submit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const targetHours = Number(form.targetHours);
     const completedHours = Math.max(0, Number(form.completedHours));
@@ -45,8 +45,10 @@ export function StudyPlanDialog({ open, plan, onClose, onCreate, onUpdate }: Pro
       targetHours, completedHours, deadline: form.deadline, nextAction: form.nextAction.trim(),
       status: form.status, tags: form.tags.split(/[,，]/).map((tag) => tag.trim()).filter(Boolean),
     };
-    if (plan) onUpdate({ ...plan, ...draft }); else onCreate(draft);
-    onClose();
+    try {
+      if (plan) await onUpdate({ ...plan, ...draft }); else await onCreate(draft);
+      onClose();
+    } catch (cause: unknown) { setError(cause instanceof Error ? cause.message : "服务器保存失败。"); }
   };
 
   return <Dialog open={open} title={plan ? "编辑学习计划" : "新增学习计划"} description="管理目标时长、截止日期与下一步行动。" onClose={onClose} size="lg" footer={<><Button variant="outline" onClick={onClose}>取消</Button><Button type="submit" form="study-plan-form">{plan ? "保存修改" : "创建计划"}</Button></>}>

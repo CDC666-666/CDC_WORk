@@ -41,7 +41,7 @@ function reference(field: string, collection: MigrationCollection, value: unknow
   return typeof value === "string" && value.length ? [{ field, collection, id: value }] : [];
 }
 
-function relations(collection: MigrationCollection, item: Item): MigrationRelation[] {
+export function migrationRelations(collection: MigrationCollection, item: Item): MigrationRelation[] {
   const refs: MigrationRelation[] = [];
   const add = (field: string, target: MigrationCollection) => refs.push(...reference(field, target, item[field]));
   const project = () => add("projectId", "projects");
@@ -113,7 +113,7 @@ const dateFields: Partial<Record<MigrationCollection, string[]>> = {
   reports: ["dateFrom", "dateTo"], financeTransactions: ["date"],
 };
 
-function valueIssues(collection: MigrationCollection, item: Item): string[] {
+export function migrationValueIssues(collection: MigrationCollection, item: Item): string[] {
   const problems: string[] = [];
   for (const field of dateFields[collection] ?? []) {
     const value = item[field];
@@ -245,7 +245,7 @@ export function prepareRawMigration(raw: RawBrowserSnapshot): PreparedMigration 
     }
     for (const [sourceOrdinal, item] of items.entries()) {
       const id = typeof item.id === "string" && item.id ? item.id : `__missing_id_${sourceOrdinal}`;
-      const reasons = valueIssues(collection, item);
+      const reasons = migrationValueIssues(collection, item);
       if (collection === "calendarEvents" && droppedV3CalendarEvents.includes(item)) {
         reasons.push("v3 旧日历派生记录在常规升级中会被过滤；已保留原文，需人工核对");
       }
@@ -258,7 +258,7 @@ export function prepareRawMigration(raw: RawBrowserSnapshot): PreparedMigration 
         canonicalJson(item) === canonicalJson(sample) ? "DEMO" :
           collection === "contentStates" ? "PERSONAL" : "NEEDS_REVIEW";
       if (collection === "contentStates" && !contentDefaults.has(id)) reasons.push("内容 ID 不在内置目录中");
-      entities.push({ collection, id, sourceOrdinal, payload: item, relations: relations(collection, item), origin, reasons });
+      entities.push({ collection, id, sourceOrdinal, payload: item, relations: migrationRelations(collection, item), origin, reasons });
     }
   }
   const ids = new Map(MIGRATION_COLLECTIONS.map((key) => [key,

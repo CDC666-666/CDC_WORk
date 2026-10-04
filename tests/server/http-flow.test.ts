@@ -53,7 +53,7 @@ test("private HTTP API enforces session and commits versioned reflection CRUD", 
     assert.equal(allowedPage.status, 200);
     const allowedHtml = await allowedPage.text();
     assert.match(allowedHtml, /总结与复盘/);
-    assert.match(allowedHtml, /退出登录/);
+    // The private shell hydrates client side; the browser suite checks its visible sign-out control.
     const rawMigration = Object.fromEntries([
       "cdc-workspace-data-v4", "cdc-workspace-data-v3", "cdc-workspace-data-v2",
       "cdc-dashboard-task-state-v1", "cdc-workspace-data-v4-invalid-backup",
@@ -148,6 +148,57 @@ test("private HTTP API enforces session and commits versioned reflection CRUD", 
     assert.equal(migrationExecuteResponse.status, 200);
     const migrated = (await migrationExecuteResponse.json()) as { result: { batchId: string; status: string } };
     assert.equal(migrated.result.status, "COMPLETED");
+    const anonymousWorkspace = await fetch(`${baseUrl}/api/private/workspace`);
+    assert.equal(anonymousWorkspace.status, 401);
+    const deniedWorkspace = await fetch(`${baseUrl}/api/private/workspace`, {
+      headers: { cookie: `next-auth.session-token=${badToken}` },
+    });
+    assert.equal(deniedWorkspace.status, 401);
+    const anonymousCreate = await fetch(`${baseUrl}/api/private/entities/tasks`, {
+      method: "POST", headers: { origin: baseUrl, "content-type": "application/json" },
+      body: JSON.stringify({ item: { id: `task-${marker}`, title: "未授权", status: "待开始" } }),
+    });
+    assert.equal(anonymousCreate.status, 401);
+    const taskId = `task-${marker}`;
+    const task = { id: taskId, title: "跨设备任务", status: "待开始", priority: "中",
+      sourceType: "PROJECT", relatedId: projectId, scheduledDate: "2026-10-04",
+      deadline: "2026-10-05T12:00:00.000Z", tags: [], createdAt: "2026-10-04T08:00:00.000Z",
+      updatedAt: "2026-10-04T08:00:00.000Z" };
+    const taskCreated = await fetch(`${baseUrl}/api/private/entities/tasks`, {
+      method: "POST", headers: writeHeaders, body: JSON.stringify({ item: task }),
+    });
+    assert.equal(taskCreated.status, 201);
+    assert.equal(((await taskCreated.json()) as { version: number }).version, 1);
+    const browserTwoRead = await fetch(`${baseUrl}/api/private/workspace`, { headers });
+    assert.equal(browserTwoRead.status, 200);
+    const browserTwoState = (await browserTwoRead.json()) as { domain: { tasks: Array<{ id: string; title: string }> } };
+    assert.equal(browserTwoState.domain.tasks.find((item) => item.id === taskId)?.title, "跨设备任务");
+    const changedTask = await fetch(`${baseUrl}/api/private/entities/tasks/${taskId}`, {
+      method: "PATCH", headers: writeHeaders,
+      body: JSON.stringify({ version: 1, item: { title: "已编辑任务", status: "进行中" } }),
+    });
+    assert.equal(changedTask.status, 200);
+    const staleTask = await fetch(`${baseUrl}/api/private/entities/tasks/${taskId}`, {
+      method: "PATCH", headers: writeHeaders,
+      body: JSON.stringify({ version: 1, item: { title: "旧浏览器覆盖" } }),
+    });
+    assert.equal(staleTask.status, 409);
+    const linkedProjectDelete = await fetch(`${baseUrl}/api/private/entities/projects/${projectId}`, {
+      method: "DELETE", headers: writeHeaders, body: JSON.stringify({ version: 1 }),
+    });
+    assert.equal(linkedProjectDelete.status, 409);
+    const invalidDate = await fetch(`${baseUrl}/api/private/entities/financeTransactions`, {
+      method: "POST", headers: writeHeaders,
+      body: JSON.stringify({ item: { id: `finance-${marker}`, type: "支出", date: "2026-02-30", amount: 1.23 } }),
+    });
+    assert.equal(invalidDate.status, 422);
+    const deletedTask = await fetch(`${baseUrl}/api/private/entities/tasks/${taskId}`, {
+      method: "DELETE", headers: writeHeaders, body: JSON.stringify({ version: 2 }),
+    });
+    assert.equal(deletedTask.status, 200);
+    const afterDelete = await fetch(`${baseUrl}/api/private/workspace`, { headers });
+    assert.equal((await afterDelete.json() as { domain: { tasks: Array<{ id: string }> } }).domain.tasks.some(
+      (item) => item.id === taskId), false);
     const batchResponse = await fetch(`${baseUrl}/api/private/migration/batches/${migrated.result.batchId}`, { headers });
     assert.equal(batchResponse.status, 200);
     const anonymousBatch = await fetch(`${baseUrl}/api/private/migration/batches/${migrated.result.batchId}`);
@@ -176,6 +227,7 @@ test("private HTTP API enforces session and commits versioned reflection CRUD", 
       await db.migrationEntityMap.deleteMany({ where: { workspaceId: workspace.id } });
       await db.migrationBatch.deleteMany({ where: { workspaceId: workspace.id } });
       await db.review.deleteMany({ where: { workspaceId: workspace.id } });
+      await db.task.deleteMany({ where: { workspaceId: workspace.id } });
       if (projectId) await db.project.deleteMany({ where: { id: projectId, workspaceId: workspace.id } });
       await db.workspace.delete({ where: { id: workspace.id } });
     }

@@ -81,9 +81,9 @@ export function CalendarCenter() {
   const cells = monthCells(month);
   const monthLabel = new Intl.DateTimeFormat("zh-CN", { year: "numeric", month: "long" }).format(month);
 
-  const save = (draft: CalendarEventDraft, current: CalendarEvent | null) => {
+  const save = async (draft: CalendarEventDraft, current: CalendarEvent | null) => {
     const now = new Date().toISOString();
-    dispatch(current
+    await dispatch(current
       ? { type: "calendar/updated", event: { ...current, ...draft, sourceType: "manual", sourceId: undefined, updatedAt: now } }
       : { type: "calendar/added", event: { ...draft, sourceType: "manual", sourceId: undefined, id: createWorkspaceId("event"), createdAt: now, updatedAt: now } });
   };
@@ -125,6 +125,6 @@ export function CalendarCenter() {
       })}</div> : <EmptyState title="当前没有日程" description="新增手动日程，或在任务、学习、阅读和项目中设置日期。" />}
     </section>
     <CalendarEventDialog open={formOpen} event={editing} onClose={() => setFormOpen(false)} onSubmit={save} />
-    <ConfirmDialog open={Boolean(deleting)} title="删除手动日程" description="只删除这条手动日程；任务、学习、阅读和项目数据不会受影响。" onCancel={() => setDeleting(null)} onConfirm={() => { if (deleting) dispatch({ type: "calendar/deleted", eventId: deleting.id }); setDeleting(null); }} />
+    <ConfirmDialog open={Boolean(deleting)} title="删除手动日程" description="只删除这条手动日程；任务、学习、阅读和项目数据不会受影响。" onCancel={() => setDeleting(null)} onConfirm={() => { if (!deleting) return; void dispatch({ type: "calendar/deleted", eventId: deleting.id }).then(() => setDeleting(null)).catch((cause: unknown) => window.alert(cause instanceof Error ? cause.message : "删除失败。")); }} />
   </div>;
 }

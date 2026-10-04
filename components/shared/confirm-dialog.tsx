@@ -33,7 +33,7 @@ export function ConfirmDialog({
         </>
       }
     >
-      <p className="text-sm leading-6 text-slate-600">此操作会立即更新本地数据，且无法自动撤销。</p>
+      <p className="text-sm leading-6 text-slate-600">此操作提交后立即生效，且无法自动撤销。</p>
     </Dialog>
   );
 }

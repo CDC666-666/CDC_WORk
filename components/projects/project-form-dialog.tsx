@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { localDateKeyWithOffset, toLocalDateKey } from "@/lib/date";
 import type { Project, ProjectCategory, ProjectDraft, ProjectStatus } from "@/types/project";
 
-interface Props { open: boolean; project: Project | null; onClose: () => void; onSubmit: (draft: ProjectDraft, current: Project | null) => void; }
+interface Props { open: boolean; project: Project | null; onClose: () => void; onSubmit: (draft: ProjectDraft, current: Project | null) => Promise<unknown> | void; }
 
 function stateFrom(project: Project | null) {
   return project ? { ...project, objectives: project.objectives.join("\n"), responsibilities: project.responsibilities.join("\n"), techStack: project.techStack.join(", ") } : {
@@ -23,11 +23,13 @@ export function ProjectFormDialog({ open, project, onClose, onSubmit }: Props) {
   const [form, setForm] = useState(() => stateFrom(project));
   const [error, setError] = useState("");
   useEffect(() => { if (open) { setForm(stateFrom(project)); setError(""); } }, [open, project]);
-  const submit = (event: React.FormEvent<HTMLFormElement>) => {
+  const submit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!form.name.trim() || !form.code.trim()) { setError("项目名称和项目代码不能为空。"); return; }
-    onSubmit({ ...form, name: form.name.trim(), code: form.code.trim().toUpperCase(), description: form.description.trim(), progress: Number(form.progress), objectives: form.objectives.split("\n").map((item) => item.trim()).filter(Boolean), responsibilities: form.responsibilities.split("\n").map((item) => item.trim()).filter(Boolean), techStack: form.techStack.split(/[,，]/).map((item) => item.trim()).filter(Boolean) }, project);
-    onClose();
+    try {
+      await onSubmit({ ...form, name: form.name.trim(), code: form.code.trim().toUpperCase(), description: form.description.trim(), progress: Number(form.progress), objectives: form.objectives.split("\n").map((item) => item.trim()).filter(Boolean), responsibilities: form.responsibilities.split("\n").map((item) => item.trim()).filter(Boolean), techStack: form.techStack.split(/[,，]/).map((item) => item.trim()).filter(Boolean) }, project);
+      onClose();
+    } catch (cause: unknown) { setError(cause instanceof Error ? cause.message : "服务器保存失败。"); }
   };
   return <Dialog open={open} title={project ? "编辑项目" : "新增项目"} description="项目是任务、日志、测试、知识和输出的统一数据源。" onClose={onClose} size="lg" footer={<><Button variant="outline" onClick={onClose}>取消</Button><Button type="submit" form="project-form">{project ? "保存修改" : "创建项目"}</Button></>}>
     <form id="project-form" onSubmit={submit} className="grid gap-4 sm:grid-cols-2">

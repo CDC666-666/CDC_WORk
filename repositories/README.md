@@ -1,5 +1,9 @@
 # Repository data layer
 
+Daily private pages now use `server/browser-entity-repository.ts` to call the
+authenticated entity API. The browser storage repositories below are retained
+for explicit legacy backup and migration operations only.
+
 All browser storage reads and writes pass through `StorageAdapter`. The
 `localStorageAdapter` writes `cdc-workspace-data-v4` and reads the old v3, v2,
 and task keys for migration. A valid v3 key is retained after migration as a
@@ -23,8 +27,6 @@ directly.
 writes. It supports recovery export when normal save is blocked by invalid
 references.
 
-The future database implementation belongs behind server-side repositories and
-an authenticated API or server action. A browser component must never import a
-Prisma client or database credentials. Switching storage will also require a
-versioned import of existing browser backups; the interface alone does not
-migrate user data.
+Server-side repositories and an authenticated API now handle daily records.
+Browser components never import Prisma or database credentials. The isolated
+migration tool provides the explicit versioned import for older browser data.

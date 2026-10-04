@@ -15,8 +15,8 @@ interface TaskFormDialogProps {
   open: boolean;
   task: Task | null;
   onClose: () => void;
-  onCreate: (draft: TaskDraft) => void;
-  onUpdate: (task: Task) => void;
+  onCreate: (draft: TaskDraft) => Promise<unknown> | void;
+  onUpdate: (task: Task) => Promise<unknown> | void;
 }
 
 interface TaskFormState {
@@ -70,7 +70,7 @@ export function TaskFormDialog({ open, task, onClose, onCreate, onUpdate }: Task
     }
   }, [open, task]);
 
-  const submit = (event: React.FormEvent<HTMLFormElement>) => {
+  const submit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const estimateHours = Number(form.estimateHours);
     const nextErrors = {
@@ -97,15 +97,19 @@ export function TaskFormDialog({ open, task, onClose, onCreate, onUpdate }: Task
       sourceId: task?.sourceId,
     };
 
-    if (task) {
-      const completedAt = common.status === "已完成"
-        ? task.completedAt ?? new Date().toISOString()
-        : undefined;
-      onUpdate({ ...task, ...common, completedAt });
-    } else {
-      onCreate(common);
+    try {
+      if (task) {
+        const completedAt = common.status === "已完成"
+          ? task.completedAt ?? new Date().toISOString()
+          : undefined;
+        await onUpdate({ ...task, ...common, completedAt });
+      } else {
+        await onCreate(common);
+      }
+      onClose();
+    } catch (cause: unknown) {
+      setErrors({ title: cause instanceof Error ? cause.message : "服务器保存失败，请重试。" });
     }
-    onClose();
   };
 
   return (

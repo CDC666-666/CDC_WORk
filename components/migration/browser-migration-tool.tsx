@@ -71,7 +71,7 @@ export function BrowserMigrationTool() {
   const counts = result?.counts ?? preview?.counts;
   return <div className="space-y-5">
     <PageHeader eyebrow="SERVER MIGRATION" title="浏览器数据迁移"
-      description="先在本机检查，再主动上传预览并执行。旧 localStorage、备份入口和工作台现有数据源都会保留。" />
+      description="先在本机检查，再主动上传预览并执行。日常工作台读取服务器；旧 localStorage 与备份入口保留供核对。" />
     <section className="rounded-lg border bg-white p-4 text-sm leading-6 text-slate-600">
       <p>原文只在点击“读取原始数据”后读取。点击“上传服务器预览”会发送这份原文，包括个人记录；请先在可信任的本地环境中确认。</p>
       <p>演示原样记录默认跳过。预览会列出个人记录依赖的演示实体；可逐项选择后重新预览。异常关联和数据冲突会留在待处理清单。</p>

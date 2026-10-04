@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toLocalDateKey } from "@/lib/date";
 import type { StudyPlan, StudySessionDraft } from "@/types/learning";
 
-export function StudySessionDialog({ open, plan, onClose, onSubmit }: { open: boolean; plan: StudyPlan | null; onClose: () => void; onSubmit: (draft: StudySessionDraft) => void }) {
+export function StudySessionDialog({ open, plan, onClose, onSubmit }: { open: boolean; plan: StudyPlan | null; onClose: () => void; onSubmit: (draft: StudySessionDraft) => Promise<unknown> | void }) {
   const [date, setDate] = useState(toLocalDateKey());
   const [minutes, setMinutes] = useState("60");
   const [content, setContent] = useState("");
@@ -18,12 +18,14 @@ export function StudySessionDialog({ open, plan, onClose, onSubmit }: { open: bo
   const [notes, setNotes] = useState("");
   const [error, setError] = useState("");
   useEffect(() => { if (open) { setDate(toLocalDateKey()); setMinutes("60"); setContent(""); setResult(""); setNotes(""); setError(""); } }, [open, plan]);
-  const submit = (event: React.FormEvent<HTMLFormElement>) => {
+  const submit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const durationMinutes = Number(minutes);
     if (!plan || !content.trim() || durationMinutes <= 0) { setError("请填写学习内容，时长必须大于 0。"); return; }
-    onSubmit({ studyPlanId: plan.id, date, durationMinutes, content: content.trim(), result: result.trim(), notes: notes.trim() });
-    onClose();
+    try {
+      await onSubmit({ studyPlanId: plan.id, date, durationMinutes, content: content.trim(), result: result.trim(), notes: notes.trim() });
+      onClose();
+    } catch (cause: unknown) { setError(cause instanceof Error ? cause.message : "服务器保存失败。"); }
   };
   return <Dialog open={open} title={`记录学习${plan ? ` · ${plan.title}` : ""}`} description="保存后会自动累计计划完成时长。" onClose={onClose} footer={<><Button variant="outline" onClick={onClose}>取消</Button><Button type="submit" form="study-session-form">保存记录</Button></>}>
     <form id="study-session-form" onSubmit={submit} className="space-y-4">

@@ -108,8 +108,8 @@ export function AcademicCourseDetail({ courseId }: { courseId: string }) {
     try {
       await academic.delete(deleting.kind, deleting.id);
       show("记录已删除", "课程数据已更新；作业会同步到首页和日历。");
+      setDeleting(null);
     } catch (error: unknown) { show("删除失败", error instanceof Error ? error.message : "请重试。"); }
-    setDeleting(null);
   };
 
   if (academic.isLoading) return <p className="p-6 text-sm text-slate-500">正在加载课程…</p>;

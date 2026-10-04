@@ -10,6 +10,7 @@ import { readRawBrowserSnapshot } from "@/repositories/migration/raw-browser-sou
 import { prepareRawMigration } from "@/services/migration/preflight";
 import { executeMigration, previewMigration } from "@/services/migration/migration-service";
 import { MIGRATION_TABLES } from "@/services/migration/registry";
+import { serverWorkspaceEntityService } from "@/services/server/workspace-entity-service";
 import { MIGRATION_COLLECTIONS, RAW_STORAGE_KEYS, type RawBrowserSnapshot } from "@/types/migration";
 import type { WorkspaceDomainState } from "@/types/workspace";
 
@@ -287,6 +288,23 @@ test("every one of the 28 persisted collections can migrate and reconcile in one
       assert.equal(result.counts[collection].conflict, 0, collection);
       assert.equal(result.counts[collection].pending, 0, collection);
     }
+    const aggregate = await serverWorkspaceEntityService.snapshot(workspace.id);
+    const loaded: Record<string, unknown> = { ...aggregate.domain, ...aggregate.domain.academic,
+      ...aggregate.domain.legacy };
+    for (const collection of MIGRATION_COLLECTIONS) {
+      const count = collection === "contentStates" ? Object.keys(aggregate.contentStates).length :
+        Array.isArray(loaded[collection]) ? (loaded[collection] as unknown[]).length : -1;
+      assert.equal(count, result.counts[collection].source, `${collection} aggregate read`);
+    }
+    const financeId = state.legacy.financeTransactions[0].id;
+    await serverWorkspaceEntityService.update(workspace.id, "financeTransactions", financeId,
+      aggregate.versions[`financeTransactions:${financeId}`], { amount: 99.99 });
+    const editedFinance = await db.financeTransaction.findUniqueOrThrow({ where: { id: financeId } });
+    assert.equal(editedFinance.amount?.toString(), "99.99");
+    assert.equal((editedFinance.payload as { amount: number }).amount, 99.99);
+    assert.equal(editedFinance.version, 2);
+    const replay = await previewMigration(workspace.id, raw, includeIds);
+    assert.ok(replay.counts.financeTransactions.conflict > 0);
   } finally {
     await db.migrationPending.deleteMany({ where: { workspaceId: workspace.id } });
     await db.migrationEntityMap.deleteMany({ where: { workspaceId: workspace.id } });

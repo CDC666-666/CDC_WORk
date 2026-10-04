@@ -1,7 +1,9 @@
 import { isDateInCurrentWeek, toLocalDateKey } from "@/lib/date";
+import { mockContentItems } from "@/data/mock-content";
 import { demoDataRepository } from "@/repositories/demo-data-repository";
 import type { DashboardData } from "@/types/dashboard";
 import type { WorkspaceData } from "@/types/workspace";
+import type { ServerWorkspaceSnapshot } from "@/types/server-workspace";
 
 export async function getDashboardData(): Promise<DashboardData> {
   const mockDashboardData = demoDataRepository.readDashboard();
@@ -45,6 +47,7 @@ export function getDemoModule(moduleId: string) {
 export function buildDashboardMetrics(
   baseMetrics: DashboardData["metrics"],
   workspace: WorkspaceData,
+  contentStates: ServerWorkspaceSnapshot["contentStates"] = {},
 ): DashboardData["metrics"] {
   const today = toLocalDateKey();
   const todayTasks = workspace.tasks.filter((task) => task.scheduledDate === today);
@@ -80,6 +83,17 @@ export function buildDashboardMetrics(
     }
     if (metric.id === "finance") {
       return { ...metric, value: (income - expense).toFixed(0), helper: `收入 ¥${income.toFixed(0)} · 支出 ¥${expense.toFixed(0)}` };
+    }
+    if (metric.id === "projects") {
+      const active = workspace.projects.filter((project) => project.status === "进行中").length;
+      return { ...metric, value: String(active), helper: `${workspace.projects.length} 个项目已保存` };
+    }
+    if (metric.id === "content") {
+      const waiting = mockContentItems.filter((item) => {
+        const status = contentStates[item.id]?.status ?? item.status;
+        return status === "unprocessed" || status === "watchLater";
+      }).length;
+      return { ...metric, value: String(waiting), helper: "演示内容目录 · 个人进度在服务器" };
     }
     return metric;
   });

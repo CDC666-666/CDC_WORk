@@ -2,12 +2,12 @@
 
 import { useContext } from "react";
 
-import { WorkspaceDataContext } from "@/components/providers/workspace-data-provider";
+import { ServerWorkspaceContext } from "@/components/providers/server-workspace-provider";
 
 export function useWorkspaceData() {
-  const context = useContext(WorkspaceDataContext);
+  const context = useContext(ServerWorkspaceContext);
   if (!context) {
-    throw new Error("useWorkspaceData must be used inside WorkspaceDataProvider");
+    throw new Error("useWorkspaceData must be used inside ServerWorkspaceProvider");
   }
   return context;
 }

@@ -73,7 +73,9 @@ export function TodayTasks() {
                 className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-md text-slate-400 hover:bg-blue-50 hover:text-blue-600"
                 aria-label={isCompleted ? `将${task.title}标记为未完成` : `完成${task.title}`}
                 aria-pressed={isCompleted}
-                onClick={() => toggleTaskCompleted(task.id)}
+                onClick={() => { void toggleTaskCompleted(task.id).catch((cause: unknown) =>
+                  setNotice({ id: Date.now(), title: "任务更新失败",
+                    description: cause instanceof Error ? cause.message : "请重试。" })); }}
               >
                 {isCompleted ? (
                   <CheckCircle2 className="h-[18px] w-[18px] text-emerald-600" />

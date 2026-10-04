@@ -23,10 +23,8 @@ export async function readMigrationRow(
   tx: Prisma.TransactionClient, workspaceId: string, collection: MigrationCollection, id: string,
 ): Promise<ExistingMigrationRow | null> {
   const table = quote(MIGRATION_TABLES[collection].table);
-  const version = collection === "reviews" ? '"version"' : "NULL::integer";
-  const updatedAt = collection === "projects" || collection === "reviews" ? '"updatedAt"' : "NULL::timestamp";
   const rows = await tx.$queryRawUnsafe<ExistingMigrationRow[]>(
-    `SELECT "payload", "sourceHash", ${version} AS "version", ${updatedAt} AS "updatedAt"
+    `SELECT "payload", "sourceHash", "version", "updatedAt"
       FROM ${table} WHERE "workspaceId" = $1 AND "id" = $2`, workspaceId, id,
   );
   return rows[0] ?? null;

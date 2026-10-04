@@ -16,6 +16,7 @@ const ids = {
   workspace: `compose-workspace-${marker}`,
   project: `compose-project-${marker}`,
   review: `compose-review-${marker}`,
+  task: `compose-task-${marker}`,
   session: `compose-session-${marker}`,
 };
 const db = new PrismaClient();
@@ -36,6 +37,14 @@ async function main(): Promise<void> {
         id: ids.review, workspaceId: ids.workspace, type: "PROJECT", date: new Date("2026-10-03T00:00:00.000Z"),
         summary: "容器重启前已保存", relatedProjectId: ids.project,
       } });
+      const createdTask = await fetch(`${baseUrl}/api/private/entities/tasks`, {
+        method: "POST", headers: { cookie: `next-auth.session-token=${ids.session}`,
+          origin: baseUrl, "content-type": "application/json" },
+        body: JSON.stringify({ item: { id: ids.task, title: "容器重启任务", status: "待开始",
+          priority: "中", sourceType: "PROJECT", relatedId: ids.project,
+          scheduledDate: "2026-10-03", deadline: "2026-10-04T12:00:00.000Z" } }),
+      });
+      assert.equal(createdTask.status, 201);
       process.stdout.write(`PREPARED ${ids.review}\n`);
     } else {
       const saved = await db.review.findUnique({ where: { id: ids.review } });
@@ -51,7 +60,16 @@ async function main(): Promise<void> {
       assert.ok(item && typeof item === "object" && "date" in item && "relatedProjectId" in item);
       assert.equal(item.date, "2026-10-03");
       assert.equal(item.relatedProjectId, ids.project);
+      const persistedTask = await db.task.findUniqueOrThrow({ where: { id: ids.task } });
+      assert.equal((persistedTask.payload as { title: string }).title, "容器重启任务");
+      const workspaceRead = await fetch(`${baseUrl}/api/private/workspace`, {
+        headers: { cookie: `next-auth.session-token=${ids.session}` },
+      });
+      assert.equal(workspaceRead.status, 200);
+      const workspaceBody = (await workspaceRead.json()) as { domain: { tasks: Array<{ id: string }> } };
+      assert.ok(workspaceBody.domain.tasks.some((task) => task.id === ids.task));
       process.stdout.write(`PERSISTED_RECORD ${ids.review}\n`);
+      await db.task.delete({ where: { id: ids.task } });
       await db.review.delete({ where: { id: ids.review } });
       await db.project.delete({ where: { id: ids.project } });
       await db.workspace.delete({ where: { id: ids.workspace } });

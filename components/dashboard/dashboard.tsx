@@ -20,10 +20,10 @@ interface DashboardProps {
 }
 
 export function Dashboard({ data }: DashboardProps) {
-  const { data: workspace } = useWorkspaceData();
+  const { data: workspace, snapshot } = useWorkspaceData();
   const metrics = useMemo(
-    () => buildDashboardMetrics(data.metrics, workspace),
-    [data.metrics, workspace],
+    () => buildDashboardMetrics(data.metrics, workspace, snapshot.contentStates),
+    [data.metrics, workspace, snapshot.contentStates],
   );
 
   return (
