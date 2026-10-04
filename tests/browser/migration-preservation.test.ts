@@ -8,6 +8,7 @@ import { chromium, type Browser, type Page } from "playwright";
 import { createEmptyWorkspaceData, createInitialWorkspaceData } from "@/data/initial-workspace-data";
 import { toLocalDateKey } from "@/lib/date";
 import { migrateWorkspaceV3 } from "@/lib/storage/workspace-migration";
+import { navigationItems } from "@/lib/navigation";
 import { RAW_STORAGE_KEYS, type RawBrowserSnapshot } from "@/types/migration";
 
 const baseUrl = process.env.TEST_BASE_URL;
@@ -174,6 +175,13 @@ async function verifyServerWorkspaceFlow(browser: Browser, sessionToken: string,
     assert.equal((await page.goto(`${baseUrl}/projects`))?.status(), 200);
     await page.getByRole("heading", { name: source.projects[0].name }).waitFor();
     assert.deepEqual(await snapshot(page), raw, "daily page must preserve raw browser keys");
+    for (const route of navigationItems) {
+      const response = await page.goto(`${baseUrl}${route.href}`);
+      assert.equal(response?.status(), 200, `${route.href} should not return 404`);
+      assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1),
+        true, `${route.href} should not overflow at 390px`);
+    }
+    assert.deepEqual(await snapshot(page), raw, "navigation must preserve old browser keys");
     await page.goto(`${baseUrl}/today`);
     await page.getByRole("textbox", { name: "快速任务标题" }).fill(title);
     await page.route("**/api/private/entities/tasks", (route) => route.fulfill({
