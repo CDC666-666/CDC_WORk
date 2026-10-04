@@ -18,5 +18,6 @@ export interface EntityMutationResult {
   id: string;
   item?: Record<string, unknown>;
   version?: number;
+  createdAt?: string;
   updatedAt?: string;
 }

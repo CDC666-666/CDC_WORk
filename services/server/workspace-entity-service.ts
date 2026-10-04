@@ -57,6 +57,15 @@ function payloadOf(collection: MigrationCollection, row: StoredEntity): Item {
   throw new Error(`Server row ${collection}:${row.id} has no business payload.`);
 }
 
+function entityResult(collection: MigrationCollection, row: StoredEntity): EntityMutationResult {
+  const createdAt = row.columns.createdAt;
+  const createdAtIso = typeof createdAt === "string" ? new Date(
+    /(?:Z|[+-]\d{2}:\d{2})$/.test(createdAt) ? createdAt : `${createdAt}Z`,
+  ).toISOString() : undefined;
+  return { collection, id: row.id, item: payloadOf(collection, row), version: row.version,
+    ...(createdAtIso ? { createdAt: createdAtIso } : {}), updatedAt: row.updatedAt.toISOString() };
+}
+
 function normalizeInput(collection: MigrationCollection, value: unknown, id?: string): Item {
   if (!value || typeof value !== "object" || Array.isArray(value)) throw new ApiError(400, "记录必须是对象。");
   const item = { ...(value as Item) };
@@ -79,6 +88,12 @@ function normalizeInput(collection: MigrationCollection, value: unknown, id?: st
   }
   if (collection === "reviews" && item.type === "PROJECT" && !item.relatedProjectId) {
     throw new ApiError(422, "项目复盘必须关联项目。");
+  }
+  if (collection === "reviews") {
+    item.achievement ??= "";
+    item.problem ??= "";
+    item.plan ??= "";
+    if (!item.relatedProjectId) delete item.relatedProjectId;
   }
   if (collection === "tasks") {
     if (!["PROJECT", "COURSE", "LEARNING", "PERSONAL"].includes(String(item.sourceType))) {
@@ -207,8 +222,9 @@ export const serverWorkspaceEntityService = {
         if (!Number.isFinite(minutes) || minutes <= 0) throw new ApiError(422, "工程日志时长必须大于零。");
         const actualHours = Math.round((Number(previous.actualHours ?? 0) + minutes / 60) * 100) / 100;
         const updated = { ...previous, actualHours, updatedAt: new Date().toISOString() };
-        await updateEntity(tx, workspaceId, "tasks", task.id, task.version, updated,
+        const parent = await updateEntity(tx, workspaceId, "tasks", task.id, task.version, updated,
           migrationRelations("tasks", updated), new Date());
+        if (!parent) throw new ApiError(409, "关联任务已在其他设备修改；工程日志未保存，请重新加载后重试。");
       }
       if (collection === "skillEvidence") {
         const skill = await findEntity(tx, workspaceId, "skills", String(item.skillId));
@@ -219,8 +235,9 @@ export const serverWorkspaceEntityService = {
         const score = Math.min(100, Math.max(0, Math.round(Number(previous.score ?? 0) + scoreChange)));
         const updated = { ...previous, score, level: Math.max(1, Math.ceil(score / 20)),
           updatedAt: new Date().toISOString() };
-        await updateEntity(tx, workspaceId, "skills", skill.id, skill.version, updated,
+        const parent = await updateEntity(tx, workspaceId, "skills", skill.id, skill.version, updated,
           migrationRelations("skills", updated), new Date());
+        if (!parent) throw new ApiError(409, "关联技能已在其他设备修改；技能证据未保存，请重新加载后重试。");
       }
       if (collection === "studySessions") {
         const planId = String(item.studyPlanId);
@@ -231,12 +248,12 @@ export const serverWorkspaceEntityService = {
         if (!Number.isFinite(minutes) || minutes <= 0) throw new ApiError(422, "学习时长必须大于零。");
         const completedHours = Math.round((Number(previous.completedHours ?? 0) + minutes / 60) * 100) / 100;
         const progress = Math.min(100, Math.round(completedHours / Math.max(Number(previous.targetHours ?? 0), 0.1) * 100));
-        await updateEntity(tx, workspaceId, "studyPlans", planId, plan.version,
+        const parent = await updateEntity(tx, workspaceId, "studyPlans", planId, plan.version,
           { ...previous, completedHours, progress, status: progress >= 100 ? "已完成" : "进行中",
             updatedAt: new Date().toISOString() }, migrationRelations("studyPlans", previous), new Date());
+        if (!parent) throw new ApiError(409, "关联学习计划已在其他设备修改；学习记录未保存，请重新加载后重试。");
       }
-      return { collection, id: row.id, item: payloadOf(collection, row), version: row.version,
-        updatedAt: row.updatedAt.toISOString() };
+      return entityResult(collection, row);
     });
   },
 
@@ -252,8 +269,15 @@ export const serverWorkspaceEntityService = {
       const refs = await validateRelations(tx, workspaceId, collection, item);
       const row = await updateEntity(tx, workspaceId, collection, id, version, item, refs, new Date());
       if (!row) throw new ApiError(409, "记录已在其他设备修改，请重新加载后重试。");
-      return { collection, id, item: payloadOf(collection, row), version: row.version,
-        updatedAt: row.updatedAt.toISOString() };
+      return entityResult(collection, row);
+    });
+  },
+
+  async get(workspaceId: string, collection: MigrationCollection, id: string): Promise<EntityMutationResult> {
+    return prisma.$transaction(async (tx) => {
+      const row = await findEntity(tx, workspaceId, collection, id);
+      if (!row) throw new ApiError(404, "记录不存在。");
+      return entityResult(collection, row);
     });
   },
 
@@ -275,6 +299,9 @@ export const serverWorkspaceEntityService = {
       if (collection === "projects" && await tx.review.count({ where: { workspaceId, relatedProjectId: id } })) {
         throw new ApiError(409, "项目仍有关联总结，不能删除。");
       }
+      if (collection === "reviews" && await tx.attachment.count({ where: {
+        workspaceId, relatedType: "REVIEW", relatedId: id,
+      } })) throw new ApiError(409, "复盘仍有关联附件，不能删除。");
       if (!(await deleteEntity(tx, workspaceId, collection, id, version))) {
         throw new ApiError(409, "记录已在其他设备修改，请重新加载后重试。");
       }

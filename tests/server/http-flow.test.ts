@@ -8,7 +8,8 @@ import { migrateWorkspaceV3 } from "@/lib/storage/workspace-migration";
 
 const baseUrl = process.env.TEST_BASE_URL;
 
-type ItemResponse = { item: { id: string; version?: number; date?: string; relatedProjectId?: string; summary?: string } };
+type ItemResponse = { item: { id: string; version?: number; date?: string; relatedProjectId?: string;
+  summary?: string; updatedAt?: string; createdAt?: string } };
 
 test("private HTTP API enforces session and commits versioned reflection CRUD", { skip: !baseUrl || !process.env.DATABASE_URL }, async () => {
   const db = new PrismaClient();
@@ -105,6 +106,11 @@ test("private HTTP API enforces session and commits versioned reflection CRUD", 
     assert.equal(created.date, "2026-10-03");
     assert.equal(created.relatedProjectId, projectId);
     assert.equal(created.version, 1);
+    const createdRow = await db.review.findUniqueOrThrow({ where: { id: created.id } });
+    assert.equal((createdRow.payload as { summary?: string } | null)?.summary, projectReview.summary);
+    assert.deepEqual(createdRow.relationRefs, [{ field: "relatedProjectId", collection: "projects", id: projectId }]);
+    assert.equal(created.updatedAt, createdRow.updatedAt.toISOString());
+    assert.equal(created.createdAt, createdRow.createdAt.toISOString());
 
     const list = await fetch(`${baseUrl}/api/private/reviews?type=PROJECT&relatedProjectId=${projectId}`, { headers });
     assert.equal(list.status, 200);
@@ -148,6 +154,86 @@ test("private HTTP API enforces session and commits versioned reflection CRUD", 
     assert.equal(migrationExecuteResponse.status, 200);
     const migrated = (await migrationExecuteResponse.json()) as { result: { batchId: string; status: string } };
     assert.equal(migrated.result.status, "COMPLETED");
+    const batchResponse = await fetch(`${baseUrl}/api/private/migration/batches/${migrated.result.batchId}`, { headers });
+    assert.equal(batchResponse.status, 200);
+    const anonymousBatch = await fetch(`${baseUrl}/api/private/migration/batches/${migrated.result.batchId}`);
+    assert.equal(anonymousBatch.status, 401);
+    const migratedReviewId = `http-migration-${marker}`;
+    const oldEdit = await fetch(`${baseUrl}/api/private/reviews/${migratedReviewId}`, {
+      method: "PATCH", headers: writeHeaders,
+      body: JSON.stringify({ version: 1, type: "PROJECT", relatedProjectId: projectId,
+        summary: "旧接口编辑迁移总结" }),
+    });
+    assert.equal(oldEdit.status, 200);
+    const oldEditResult = ((await oldEdit.json()) as ItemResponse).item;
+    const newRead = await fetch(`${baseUrl}/api/private/entities/reviews/${migratedReviewId}`, { headers });
+    assert.equal(newRead.status, 200);
+    const fromEntity = (await newRead.json()) as { item: { summary: string; relatedProjectId?: string };
+      version: number; updatedAt: string };
+    assert.equal(fromEntity.item.summary, "旧接口编辑迁移总结");
+    assert.equal(fromEntity.item.relatedProjectId, projectId);
+    assert.equal(fromEntity.version, 2);
+    assert.equal(oldEditResult.updatedAt, fromEntity.updatedAt);
+    const aggregateAfterOld = await fetch(`${baseUrl}/api/private/workspace`, { headers });
+    const aggregateOld = (await aggregateAfterOld.json()) as { domain: { reviews: Array<{
+      id: string; summary: string; relatedProjectId?: string }> }; versions: Record<string, number> };
+    assert.equal(aggregateOld.domain.reviews.find((item) => item.id === migratedReviewId)?.summary,
+      "旧接口编辑迁移总结");
+    assert.equal(aggregateOld.domain.reviews.find((item) => item.id === migratedReviewId)?.relatedProjectId,
+      projectId);
+    assert.equal(aggregateOld.versions[`reviews:${migratedReviewId}`], 2);
+    const oldEditedRow = await db.review.findUniqueOrThrow({ where: { id: migratedReviewId } });
+    assert.equal(oldEditedRow.summary, (oldEditedRow.payload as { summary: string }).summary);
+    assert.deepEqual(oldEditedRow.relationRefs, [{ field: "relatedProjectId", collection: "projects", id: projectId }]);
+    assert.equal(oldEditedRow.updatedAt.toISOString(), fromEntity.updatedAt);
+
+    const newEdit = await fetch(`${baseUrl}/api/private/entities/reviews/${migratedReviewId}`, {
+      method: "PATCH", headers: writeHeaders,
+      body: JSON.stringify({ version: 2, item: { type: "DAILY", relatedProjectId: null,
+        summary: "新接口再次编辑" } }),
+    });
+    assert.equal(newEdit.status, 200);
+    const newEditResult = (await newEdit.json()) as { updatedAt: string };
+    const oldRead = await fetch(`${baseUrl}/api/private/reviews/${migratedReviewId}`, { headers });
+    assert.equal(oldRead.status, 200);
+    const fromOld = ((await oldRead.json()) as ItemResponse).item;
+    assert.equal(fromOld.summary, "新接口再次编辑");
+    assert.equal(fromOld.relatedProjectId, undefined);
+    assert.equal(fromOld.version, 3);
+    assert.equal(fromOld.updatedAt, newEditResult.updatedAt);
+    const aggregateAfterNew = await fetch(`${baseUrl}/api/private/workspace`, { headers });
+    const aggregateNew = (await aggregateAfterNew.json()) as { domain: { reviews: Array<{
+      id: string; summary: string; relatedProjectId?: string }> }; versions: Record<string, number> };
+    assert.equal(aggregateNew.domain.reviews.find((item) => item.id === migratedReviewId)?.summary,
+      "新接口再次编辑");
+    assert.equal(aggregateNew.domain.reviews.find((item) => item.id === migratedReviewId)?.relatedProjectId,
+      undefined);
+    assert.equal(aggregateNew.versions[`reviews:${migratedReviewId}`], 3);
+    const newEditedRow = await db.review.findUniqueOrThrow({ where: { id: migratedReviewId } });
+    assert.equal(newEditedRow.summary, (newEditedRow.payload as { summary: string }).summary);
+    assert.equal(newEditedRow.relatedProjectId, null);
+    assert.deepEqual(newEditedRow.relationRefs, []);
+
+    const attachmentId = `http-attachment-${marker}`;
+    const attachment = await fetch(`${baseUrl}/api/private/entities/attachments`, {
+      method: "POST", headers: writeHeaders,
+      body: JSON.stringify({ item: { id: attachmentId, url: "https://example.invalid/review",
+        type: "text/plain", relatedType: "REVIEW", relatedId: migratedReviewId } }),
+    });
+    assert.equal(attachment.status, 201);
+    const linkedOldDelete = await fetch(`${baseUrl}/api/private/reviews/${migratedReviewId}`, {
+      method: "DELETE", headers: { ...writeHeaders, "if-match": '"3"' },
+    });
+    assert.equal(linkedOldDelete.status, 409);
+    const removedAttachment = await fetch(`${baseUrl}/api/private/entities/attachments/${attachmentId}`, {
+      method: "DELETE", headers: writeHeaders, body: JSON.stringify({ version: 1 }),
+    });
+    assert.equal(removedAttachment.status, 200);
+    const removedMigratedReview = await fetch(`${baseUrl}/api/private/reviews/${migratedReviewId}`, {
+      method: "DELETE", headers: { ...writeHeaders, "if-match": '"3"' },
+    });
+    assert.equal(removedMigratedReview.status, 200);
+    assert.equal((await fetch(`${baseUrl}/api/private/entities/reviews/${migratedReviewId}`, { headers })).status, 404);
     const anonymousWorkspace = await fetch(`${baseUrl}/api/private/workspace`);
     assert.equal(anonymousWorkspace.status, 401);
     const deniedWorkspace = await fetch(`${baseUrl}/api/private/workspace`, {
@@ -199,11 +285,6 @@ test("private HTTP API enforces session and commits versioned reflection CRUD", 
     const afterDelete = await fetch(`${baseUrl}/api/private/workspace`, { headers });
     assert.equal((await afterDelete.json() as { domain: { tasks: Array<{ id: string }> } }).domain.tasks.some(
       (item) => item.id === taskId), false);
-    const batchResponse = await fetch(`${baseUrl}/api/private/migration/batches/${migrated.result.batchId}`, { headers });
-    assert.equal(batchResponse.status, 200);
-    const anonymousBatch = await fetch(`${baseUrl}/api/private/migration/batches/${migrated.result.batchId}`);
-    assert.equal(anonymousBatch.status, 401);
-
     const csrfResponse = await fetch(`${baseUrl}/api/auth/csrf`, { headers });
     assert.equal(csrfResponse.status, 200);
     const { csrfToken } = (await csrfResponse.json()) as { csrfToken: string };
@@ -226,6 +307,7 @@ test("private HTTP API enforces session and commits versioned reflection CRUD", 
       await db.migrationPending.deleteMany({ where: { workspaceId: workspace.id } });
       await db.migrationEntityMap.deleteMany({ where: { workspaceId: workspace.id } });
       await db.migrationBatch.deleteMany({ where: { workspaceId: workspace.id } });
+      await db.attachment.deleteMany({ where: { workspaceId: workspace.id } });
       await db.review.deleteMany({ where: { workspaceId: workspace.id } });
       await db.task.deleteMany({ where: { workspaceId: workspace.id } });
       if (projectId) await db.project.deleteMany({ where: { id: projectId, workspaceId: workspace.id } });

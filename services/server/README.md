@@ -1,6 +1,6 @@
 # Server business service
 
-`workspace-entity-service.ts` reads an aggregate for the existing UI and writes one entity per request. A write validates the authenticated workspace, input, referenced records and dependent records, then changes payload, indexed columns, relation references, version and update time in one PostgreSQL transaction. Stale versions return HTTP 409. Engineering log time, learning session progress and skill evidence score are changed in the same transaction as their source record.
+`workspace-entity-service.ts` reads an aggregate for the existing UI and writes one entity per request. A write validates the authenticated workspace, input, referenced records and dependent records, then changes payload, indexed columns, relation references, version and update time in one PostgreSQL transaction. Stale versions return HTTP 409. The older review API delegates all writes to this service, so its indexed fields and payload cannot diverge. Engineering log time, learning session progress and skill evidence score are changed in the same transaction as their source record. A missed parent version rejects the whole transaction with 409; the child row is rolled back and can be retried with the same ID without double counting.
 
 `workspace-action-mapping.ts` converts existing page actions into individual entity mutations. It rejects `workspace/replaced`; the daily workbench never sends or saves an entire Workspace snapshot. Assignment remains the only stored source of an academic task.
 

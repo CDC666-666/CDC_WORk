@@ -27,6 +27,14 @@ The six original browser keys and the migration route stay intact. Settings stil
 
 ## Acceptance and limits
 
+Sprint 5.2B consistency repair: both the earlier review API and the entity API
+now use the same transactional write path. A migrated review edited through
+either API is read consistently through both APIs and the Workspace aggregate.
+Concurrent engineering logs, skill evidence and study sessions use a parent
+version check; a failed parent update rolls back the child insert and returns
+409. PostgreSQL tests hold the same parent version while two transactions
+attempt to update it, then retry the rolled-back child with its original ID.
+
 - Database tests exercise migration of all 28 collections, native CRUD and versions, project/course relations, invalid dates and amounts, failed writes and retry. HTTP tests cover anonymous/denied access, cross request reads, stale versions and linked deletion. Browser tests cover the raw key preservation route and a temporary migrated project followed by daily task creation, completion, conflict, refresh, second browser read and deletion. The same browser test creates a semester, course and assignment, checks one derived home item and its calendar entry, completes the assignment from home, verifies course detail and a second browser, and confirms no Task row was created. It also opens every sidebar navigation route at 390px, checks for HTTP 200 and horizontal overflow, and verifies that those visits leave old browser keys unchanged.
 - CI runs lint, typecheck, unit/database tests, production build, private HTTP/browser tests and `docker compose up --build --wait` with a persistent task and reflection across container restart. The local Windows host has no Docker executable; the Compose result must be read from this PR's CI run.
 - Live GitHub OAuth and actual personal browser data migration require local credentials and user action. ECS deployment and removal of the old import/export controls remain later work.

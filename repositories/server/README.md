@@ -1,7 +1,8 @@
 # Server repositories
 
-`review-repository.ts` implements server reflections. `entity-repository.ts`
-implements the other business collections through a fixed table registry. Every
+`review-repository.ts` keeps the older reflection list/get response shape and
+delegates its writes to the shared entity service. `entity-repository.ts`
+implements all business collections through a fixed table registry. Every
 query is scoped to the authenticated Workspace. Individual writes keep JSON
 payloads, indexed columns, relation references, version, and update time in the
 same transaction. Update and delete require the expected version.

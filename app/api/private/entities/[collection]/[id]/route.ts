@@ -11,6 +11,16 @@ function versionOf(value: unknown): number {
   return value;
 }
 
+export async function GET(_request: NextRequest, { params }: {
+  params: Promise<{ collection: string; id: string }>;
+}) {
+  try {
+    const { workspaceId } = await requirePrivateApi();
+    const { collection: name, id } = await params;
+    return privateJson(await serverWorkspaceEntityService.get(workspaceId, parseEntityCollection(name), id));
+  } catch (cause: unknown) { return apiFailure(cause); }
+}
+
 export async function PATCH(request: NextRequest, { params }: {
   params: Promise<{ collection: string; id: string }>;
 }) {
