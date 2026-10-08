@@ -115,6 +115,9 @@ function normalizeInput(collection: MigrationCollection, value: unknown, id?: st
     throw new ApiError(422, "项目可见性无效。");
   }
   if (collection === "knowledge") {
+    // The editor serializes "不关联" as an empty string. Remove it after merging so payload,
+    // indexed projectId and relationRefs are all written without the former association.
+    if (item.projectId === "" || item.projectId === null) delete item.projectId;
     const experienceIssues = experienceValidationIssues(item);
     if (experienceIssues.length) throw new ApiError(422, experienceIssues.join("；"));
   }

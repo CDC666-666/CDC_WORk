@@ -3,9 +3,6 @@ import { EngineeringExperienceCenter } from "@/components/knowledge/engineering-
 
 export const metadata: Metadata = { title: "工程经验" };
 
-export default async function ExperiencesPage({ searchParams }: {
-  searchParams: Promise<{ record?: string }>;
-}) {
-  const params = await searchParams;
-  return <EngineeringExperienceCenter initialRecordId={params.record} />;
+export default function ExperiencesPage() {
+  return <EngineeringExperienceCenter />;
 }

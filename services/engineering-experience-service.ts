@@ -65,7 +65,9 @@ export function createExperienceKnowledge(draft: ExperienceDraft, current?: Know
     title: draft.title.trim(), content: draft.experience.phenomenon.trim(),
     summary: draft.experience.cause.trim(), itemType: "工程经验", category: "工程经验",
     sourceType: current?.sourceType ?? "manual", sourceId: current?.sourceId,
-    sourceUrl: current?.sourceUrl ?? "", projectId: draft.projectId || undefined,
+    sourceUrl: current?.sourceUrl ?? "",
+    // Undefined keeps the current association; the editor's empty option is an explicit clear marker.
+    projectId: draft.projectId === undefined ? current?.projectId : draft.projectId,
     tags: [...new Set(draft.tags.map((tag) => tag.trim()).filter(Boolean))],
     status: current?.status ?? "已整理", importance: current?.importance ?? 4,
     experience: { ...draft.experience,

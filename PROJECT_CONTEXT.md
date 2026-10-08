@@ -14,6 +14,8 @@
 
 **验证口径（2026-10-08，本机 `codex/engineering-experience`，验收前 HEAD `7ca934b`）：** 本 worktree 独立 `npm ci` 后生成 Prisma Client，`lint`、`typecheck`、`test`（42/42）、`build` 通过；构建路由表包含 `/experiences`。隔离 PostgreSQL 16.14 测试库应用现有 5 个迁移，`test:db` 14/14 通过。合成案例的写入、另一个数据库连接读取、编辑后重读、搜索及三类筛选、审核与证据状态独立、重复导入及不覆盖服务器编辑、版本 409 均通过。构建后的本机 HTTP 测试 2/2 通过：未登录无法访问私有页面及 API；使用合成数据库会话验证私有 API 创建、编辑及刷新读取。证据和限制详见[工程经验验收记录](docs/engineering-experience.md)。真实 GitHub OAuth 配置缺失，实际登录后的桌面/窄屏页面未验收；首条真实自瞄案例只预览，目标个人 Workspace 归属未核对，尚未正式入库。测试数据不代表个人数据。上述结果不代表部署。
 
+**PR #7 修复核对（2026-10-08，`codex/engineering-experience`，修复前 HEAD `2069e87`）：** 项目关联的清除请求现明确发送空值，服务端在合并后清理 payload、索引列与 `relationRefs`；详情弹窗改由 URL `record` 参数驱动。使用隔离 PostgreSQL、合成会话及本机 Chrome 验证了关联→取消→刷新→删除旧项目，搜索 A/B、同页参数切换、关闭后再打开、历史前进/后退、缺失 ID 和 390px 布局。修复后的 `lint`、`typecheck`、`build`、42 条常规测试、14 条数据库测试、2 条 HTTP 测试和 3 条浏览器测试均通过。详见[验收记录](docs/engineering-experience.md)；真实 OAuth 与首案例正式入库状态不变。
+
 ## 下一轮边界
 
 服务器数据库是新模块唯一运行时数据源；`shared-memory` 原文件保持原样。未来单向同步应按来源稳定 ID、SHA-256 来源摘要、数据库实体版本和证据状态比较差异，先人工审阅，再显式写入；禁止自动双向覆盖。真实 QQ 群接入、部署与 PR 合并均不属于本分支当前任务。

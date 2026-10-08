@@ -48,7 +48,7 @@ export function ExperienceEditor({ open, item, projects, onClose, onSubmit }: {
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     const { title, projectId, tags, evidenceSources, ...experience } = form;
-    const draft: ExperienceDraft = { title, projectId: projectId || undefined,
+    const draft: ExperienceDraft = { title, projectId,
       tags: tags.split(/[,，]/).map((tag) => tag.trim()).filter(Boolean),
       experience: { ...experience, evidenceSources: evidenceSources.split(/\r?\n/).map((line) => line.trim()).filter(Boolean) } };
     setSaving(true);

@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Check, Plus } from "lucide-react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ActionToast, type ToastNotice } from "@/components/layout/action-toast";
 import { ExperienceDetail } from "@/components/knowledge/experience-detail";
 import { ExperienceEditor } from "@/components/knowledge/experience-editor";
@@ -15,13 +16,16 @@ import { createExperienceKnowledge, evidenceStatuses, filterExperiences,
   isEngineeringExperience, withExperienceReviewStatus, type ExperienceDraft } from "@/services/engineering-experience-service";
 import type { ExperienceEvidenceStatus, KnowledgeItem } from "@/types/knowledge";
 
-export function EngineeringExperienceCenter({ initialRecordId }: { initialRecordId?: string }) {
+export function EngineeringExperienceCenter() {
   const { data, dispatch, snapshot } = useWorkspaceData();
+  const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const selectedId = searchParams.get("record") ?? "";
   const [query, setQuery] = useState("");
   const [project, setProject] = useState("");
   const [tag, setTag] = useState("");
   const [evidenceStatus, setEvidenceStatus] = useState<ExperienceEvidenceStatus | "全部">("全部");
-  const [selectedId, setSelectedId] = useState(initialRecordId ?? "");
   const [editing, setEditing] = useState<KnowledgeItem | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
   const [notice, setNotice] = useState<ToastNotice | null>(null);
@@ -29,12 +33,20 @@ export function EngineeringExperienceCenter({ initialRecordId }: { initialRecord
     .map((item) => item.experience.sourceProject))].sort(), [data.knowledgeItems]);
   const items = useMemo(() => filterExperiences(data.knowledgeItems, { query, project, tag, evidenceStatus }),
     [data.knowledgeItems, evidenceStatus, project, query, tag]);
-  const selected = data.knowledgeItems.find((item) => item.id === selectedId) ?? null;
+  const selected = data.knowledgeItems.find((item) => item.id === selectedId && isEngineeringExperience(item)) ?? null;
+
+  const selectRecord = (id: string | null) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (id) params.set("record", id);
+    else params.delete("record");
+    const queryString = params.toString();
+    router.push(queryString ? `${pathname}?${queryString}` : pathname, { scroll: false });
+  };
 
   const save = async (draft: ExperienceDraft, current: KnowledgeItem | null) => {
     const item = createExperienceKnowledge(draft, current ?? undefined);
     await dispatch(current ? { type: "knowledge/updated", item } : { type: "knowledge/added", item });
-    setSelectedId(item.id);
+    selectRecord(item.id);
     setNotice({ id: Date.now(), title: "经验已保存", description: "数据已写入私人服务器知识库。" });
   };
   const review = async (item: KnowledgeItem) => {
@@ -73,7 +85,7 @@ export function EngineeringExperienceCenter({ initialRecordId }: { initialRecord
           <span key={value} className="rounded bg-slate-100 px-2 py-0.5 text-xs">#{value}</span>)}</div>
         <p className="mt-3 line-clamp-2 text-xs text-slate-500">适用：{item.experience.applicability}</p>
         <div className="mt-4 flex flex-wrap gap-2 border-t pt-3">
-          <Button size="sm" variant="outline" onClick={() => setSelectedId(item.id)}>查看详情</Button>
+          <Button size="sm" variant="outline" onClick={() => selectRecord(item.id)}>查看详情</Button>
           <Button size="sm" variant="ghost" onClick={() => { setEditing(item); setEditorOpen(true); }}>编辑</Button>
           {item.experience.reviewStatus === "待审核" && <Button size="sm" variant="ghost"
             onClick={() => { void review(item); }}><Check />标记已审核</Button>}
@@ -82,8 +94,12 @@ export function EngineeringExperienceCenter({ initialRecordId }: { initialRecord
     })}</section> : <EmptyState title={data.knowledgeItems.some(isEngineeringExperience) ? "没有符合条件的经验" : "还没有工程经验"}
       description="可从调试记录提炼经验，或运行限定范围的共享案例导入工具。"
       actionLabel="新增经验" onAction={() => { setEditing(null); setEditorOpen(true); }} />}
+    {selectedId && !selected && <section role="status" className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+      <p>未找到这条工程经验。记录可能已删除，或链接中的 ID 有误。</p>
+      <Button className="mt-3" size="sm" variant="outline" onClick={() => selectRecord(null)}>返回经验列表</Button>
+    </section>}
     <ExperienceDetail item={selected} version={selected ? snapshot.versions[`knowledge:${selected.id}`] : undefined}
-      onClose={() => setSelectedId("")} onEdit={(item) => { setSelectedId(""); setEditing(item); setEditorOpen(true); }} />
+      onClose={() => selectRecord(null)} onEdit={(item) => { selectRecord(null); setEditing(item); setEditorOpen(true); }} />
     <ExperienceEditor open={editorOpen} item={editing} projects={data.projects}
       onClose={() => setEditorOpen(false)} onSubmit={save} />
     <ActionToast notice={notice} onDismiss={() => setNotice(null)} />

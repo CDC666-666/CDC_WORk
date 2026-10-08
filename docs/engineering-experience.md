@@ -30,6 +30,14 @@ npm.cmd run import:experience -- --workspace-id=<目标 Workspace ID> --execute
 
 本机没有真实 GitHub OAuth 配置，因此实际登录后的桌面和窄屏页面验收仍受阻。须仅在本机配置 `DATABASE_URL`、`NEXTAUTH_URL`、`NEXTAUTH_SECRET`、`GITHUB_CLIENT_ID`、`GITHUB_CLIENT_SECRET`、`ALLOWED_GITHUB_USER_ID`；不要把值写入仓库或聊天。完成 OAuth 登录并核对目标 Workspace 归属后，再做真实页面验收和明确授权的一次性导入。
 
+## PR #7 衔接修复验收（2026-10-08）
+
+适用分支 `codex/engineering-experience`，修复前 HEAD `2069e872c3af2f0b33ceda156ca7ae7ee5f2d937`。本轮仅改工程经验的项目清除与详情导航，测试使用隔离 PostgreSQL 和现有合成数据库会话；不代表真实 GitHub OAuth 登录。
+
+- **取消项目关联：** 修复前浏览器编辑表单选择“不关联”后，PATCH JSON 省略 `projectId`，旧关联仍留在服务器。修复后，`undefined` 表示不修改，表单空选项以 `""` 明确请求清除；服务端在合并旧值后规范化空值，单次写入把 Knowledge 索引列设为 `NULL`、从 payload 移除 `projectId`，并清空对应 `relationRefs`。浏览器回归通过实际请求和数据库行核对：关联项目 → 取消 → 刷新重读后仍不关联，旧项目可删除；另核对省略字段的 PATCH 仍保留关联。
+- **搜索详情导航：** 修复前打开经验 A、关闭弹窗再从全局搜索进入 B 时，URL 指向 B 而详情未打开。详情现在以 URL 的 `record` 参数为准，打开与关闭都会更新路由。浏览器回归覆盖弹窗打开时同页 A→B、关闭后搜索 B、再次搜索 A、前进/后退，以及不存在的 ID 显示明确提示；桌面和 390px 窄屏稳定布局无水平溢出。
+- 修复后本机 `lint`、`typecheck`、`build`、`test`（42/42）、`test:db`（14/14）、`test:api`（2/2）、`test:browser`（3/3）通过。浏览器测试使用本机 Chrome 和合成会话；真实 OAuth、个人案例正式入库仍待完成。
+
 ## 下一轮单向同步准备
 
 比较 `sourceKey`、`sourceRevision`、服务器 `Knowledge.id/version` 与独立的 `reviewStatus/evidenceStatus`，生成差异预览。只有明确指定来源到服务器的一次性更新，且人工检查证据等级后才写入；服务器编辑和本地共享目录互不自动覆盖。
