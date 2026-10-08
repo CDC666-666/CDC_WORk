@@ -1,6 +1,6 @@
 # 个人工作台开发分支背景（2026-10-07）
 
-**文档归属（2026-10-08）：** 本背景与本分支的 `AGENTS.md` 由 `CDC_WORK` 仓库的 `codex/engineering-experience` 分支管理；下文的 `6b3e20d` 是工程经验功能开发前的代码基线。本轮文档提交不包含尚未提交的业务功能，也不构成真实数据库或登录验证。
+**文档归属（2026-10-08）：** 本背景与本分支的 `AGENTS.md` 由 `CDC_WORK` 仓库的 `codex/engineering-experience` 分支管理。`6b3e20d` 是工程经验功能开发前的代码基线；本轮验收前本地 HEAD 为 `7ca934b`。验收记录只适用于本机功能分支源码和隔离测试库，不构成生产部署或实车验证。
 
 ## 位置、版本与职责
 
@@ -12,7 +12,7 @@
 
 工程经验是从日志、测试或技术问题中提炼的可复用结论，复用现有 `Knowledge` 私有数据库实体和服务端 Workspace API，新增结构化 `experience` 内容与 `/experiences` 页面。审核状态和证据状态是两个独立字段；历史现场反馈不会因为审核或导入自动变成实车验证。字段、访问路径和限定范围导入见 [实现与导入说明](docs/engineering-experience.md)。本分支中的工具只读取 `../shared-memory/cases/auto-aim-init-alignment.md`；案例正文仍在 Workplace 本地文件，不进入公开代码仓库。
 
-**验证口径（2026-10-08，本机开发分支 `codex/engineering-experience`，HEAD 仍为基线 `6b3e20d` 且本轮改动未提交）：** `npm run lint`、`typecheck`、`test`（42/42）和 `build` 通过；构建路由表包含 `/experiences`。本地工具实际读取共享案例并完成标题/项目/标签/证据状态联合检索预览，结果为 1 条，预览不写数据库。启动本机构建后，未登录访问 `/experiences` 被重定向，读取及写入私有 API 返回 401。`DATABASE_URL` 未配置，本机未发现 PostgreSQL/容器运行环境，因此真实数据库持久化、重复导入数据库结果、授权账号登录和私人页面布局仍待验证；新增数据库用例在无连接环境下被跳过。上述构建和测试验证的是本机源码，不代表部署。
+**验证口径（2026-10-08，本机 `codex/engineering-experience`，验收前 HEAD `7ca934b`）：** 本 worktree 独立 `npm ci` 后生成 Prisma Client，`lint`、`typecheck`、`test`（42/42）、`build` 通过；构建路由表包含 `/experiences`。隔离 PostgreSQL 16.14 测试库应用现有 5 个迁移，`test:db` 14/14 通过。合成案例的写入、另一个数据库连接读取、编辑后重读、搜索及三类筛选、审核与证据状态独立、重复导入及不覆盖服务器编辑、版本 409 均通过。构建后的本机 HTTP 测试 2/2 通过：未登录无法访问私有页面及 API；使用合成数据库会话验证私有 API 创建、编辑及刷新读取。证据和限制详见[工程经验验收记录](docs/engineering-experience.md)。真实 GitHub OAuth 配置缺失，实际登录后的桌面/窄屏页面未验收；首条真实自瞄案例只预览，目标个人 Workspace 归属未核对，尚未正式入库。测试数据不代表个人数据。上述结果不代表部署。
 
 ## 下一轮边界
 

@@ -1,5 +1,7 @@
 # CDC AI Workspace
 
+> 当前独立开发 worktree 基于 Sprint 5.2B 服务器分支，新增工程经验管理；本 README 的 Sprint 5.1 阶段描述是历史说明，不代表此分支的当前状态。请先读 [本分支背景](PROJECT_CONTEXT.md) 与 [工程经验实现说明](docs/engineering-experience.md)。
+
 面向大学生和工程学习者的个人 AI 工作台，统一管理课程学习、任务、阅读、技术内容、工程项目、测试复盘、知识沉淀、技能成长、报告素材、日历与个人收支。
 
 当前正在进行 **Sprint 5.1: 服务器存储基础与总结 API 闭环**。Sprint 3 的工程成长闭环仍是现有产品功能；RoboMaster 是一级业务模块之一，不是产品的唯一定位。
@@ -51,6 +53,7 @@
 - `/logs` 工程日志
 - `/reviews` 测试与复盘
 - `/knowledge` 知识库
+- `/experiences` 工程经验（复用私人知识记录，显示证据与适用边界）
 - `/skills` 技能树
 - `/reports` 报告中心
 - `/resume` 简历素材

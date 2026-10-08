@@ -8,6 +8,7 @@ import { prisma } from "@/lib/server/prisma";
 import { migrateWorkspaceV3 } from "@/lib/storage/workspace-migration";
 import { deleteEntity, findEntity, insertEntity, listEntities, updateEntity, type StoredEntity } from "@/repositories/server/entity-repository";
 import { migrationRelations, migrationValueIssues } from "@/services/migration/preflight";
+import { experienceValidationIssues } from "@/services/engineering-experience-service";
 import { MIGRATION_TABLES } from "@/services/migration/registry";
 import { canonicalReflectionDate } from "@/services/reflection-period";
 import { MIGRATION_COLLECTIONS, type MigrationCollection, type MigrationRelation } from "@/types/migration";
@@ -112,6 +113,10 @@ function normalizeInput(collection: MigrationCollection, value: unknown, id?: st
   }
   if (collection === "projects" && !["PRIVATE", "PUBLIC"].includes(String(item.visibility))) {
     throw new ApiError(422, "项目可见性无效。");
+  }
+  if (collection === "knowledge") {
+    const experienceIssues = experienceValidationIssues(item);
+    if (experienceIssues.length) throw new ApiError(422, experienceIssues.join("；"));
   }
   if (collection === "financeTransactions" && Number(item.amount) <= 0) {
     throw new ApiError(422, "金额必须大于零。");
@@ -265,6 +270,15 @@ export const serverWorkspaceEntityService = {
       if (current.version !== version) throw new ApiError(409, "记录已在其他设备修改，请重新加载后重试。");
       if (!input || typeof input !== "object" || Array.isArray(input)) throw new ApiError(400, "更新内容必须是对象。");
       const item = normalizeInput(collection, { ...payloadOf(collection, current), ...(input as Item), id }, id);
+      if (collection === "knowledge") {
+        const previous = payloadOf(collection, current);
+        const oldExperience = previous.experience as Item | undefined;
+        const newExperience = item.experience as Item | undefined;
+        if (oldExperience?.sourceKey && (newExperience?.sourceKey !== oldExperience.sourceKey ||
+          newExperience?.sourceRevision !== oldExperience.sourceRevision || item.sourceId !== previous.sourceId)) {
+          throw new ApiError(422, "共享来源标识与版本不可由编辑操作改写。");
+        }
+      }
       if ("updatedAt" in item) item.updatedAt = new Date().toISOString();
       const refs = await validateRelations(tx, workspaceId, collection, item);
       const row = await updateEntity(tx, workspaceId, collection, id, version, item, refs, new Date());

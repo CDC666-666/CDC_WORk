@@ -5,6 +5,8 @@ import test from "node:test";
 import { PrismaClient } from "@prisma/client";
 import { createEmptyWorkspaceData } from "@/data/initial-workspace-data";
 import { migrateWorkspaceV3 } from "@/lib/storage/workspace-migration";
+import { parseAutoAimCase } from "@/services/shared-memory-experience";
+import { syntheticCase } from "@/tests/fixtures/experience-case";
 
 const baseUrl = process.env.TEST_BASE_URL;
 
@@ -259,6 +261,36 @@ test("private HTTP API enforces session and commits versioned reflection CRUD", 
     assert.equal(browserTwoRead.status, 200);
     const browserTwoState = (await browserTwoRead.json()) as { domain: { tasks: Array<{ id: string; title: string }> } };
     assert.equal(browserTwoState.domain.tasks.find((item) => item.id === taskId)?.title, "跨设备任务");
+    const experienceWorkspace = await db.workspace.findUniqueOrThrow({ where: { userId: allowed.id } });
+    const experience = parseAutoAimCase(syntheticCase, experienceWorkspace.id);
+    const experienceCreate = await fetch(`${baseUrl}/api/private/entities/knowledge`, {
+      method: "POST", headers: writeHeaders, body: JSON.stringify({ item: experience }),
+    });
+    assert.equal(experienceCreate.status, 201);
+    const experienceGet = await fetch(`${baseUrl}/api/private/entities/knowledge/${experience.id}`, { headers });
+    assert.equal(experienceGet.status, 200);
+    const experienceRead = (await experienceGet.json()) as { item: typeof experience; version: number };
+    assert.equal(experienceRead.item.experience?.evidenceStatus, "历史现场反馈");
+    const experienceEdit = await fetch(`${baseUrl}/api/private/entities/knowledge/${experience.id}`, {
+      method: "PATCH", headers: writeHeaders,
+      body: JSON.stringify({ version: experienceRead.version,
+        item: { title: "服务器编辑后的测试经验", experience: { ...experience.experience,
+          reviewStatus: "已审核", phenomenon: "服务器编辑后的现象" } } }),
+    });
+    assert.equal(experienceEdit.status, 200);
+    const experienceReload = await fetch(`${baseUrl}/api/private/workspace`, { headers });
+    assert.equal(experienceReload.status, 200);
+    const experienceSnapshot = (await experienceReload.json()) as { domain: { knowledge: Array<typeof experience> } };
+    const reloadedExperience = experienceSnapshot.domain.knowledge.find((item) => item.id === experience.id);
+    assert.equal(reloadedExperience?.title, "服务器编辑后的测试经验");
+    assert.equal(reloadedExperience?.experience?.phenomenon, "服务器编辑后的现象");
+    assert.equal(reloadedExperience?.experience?.reviewStatus, "已审核");
+    assert.equal(reloadedExperience?.experience?.evidenceStatus, "历史现场反馈");
+    const staleExperience = await fetch(`${baseUrl}/api/private/entities/knowledge/${experience.id}`, {
+      method: "PATCH", headers: writeHeaders,
+      body: JSON.stringify({ version: experienceRead.version, item: { title: "旧版本覆盖" } }),
+    });
+    assert.equal(staleExperience.status, 409);
     const changedTask = await fetch(`${baseUrl}/api/private/entities/tasks/${taskId}`, {
       method: "PATCH", headers: writeHeaders,
       body: JSON.stringify({ version: 1, item: { title: "已编辑任务", status: "进行中" } }),
@@ -310,6 +342,7 @@ test("private HTTP API enforces session and commits versioned reflection CRUD", 
       await db.attachment.deleteMany({ where: { workspaceId: workspace.id } });
       await db.review.deleteMany({ where: { workspaceId: workspace.id } });
       await db.task.deleteMany({ where: { workspaceId: workspace.id } });
+      await db.knowledge.deleteMany({ where: { workspaceId: workspace.id } });
       if (projectId) await db.project.deleteMany({ where: { id: projectId, workspaceId: workspace.id } });
       await db.workspace.delete({ where: { id: workspace.id } });
     }
