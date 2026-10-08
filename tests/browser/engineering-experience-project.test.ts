@@ -77,6 +77,8 @@ test("experience editor explicitly clears a project through HTTP and database co
     assert.equal((row.payload as Record<string, unknown>).projectId, undefined,
       "payload must not retain the old project");
     assert.deepEqual(row.relationRefs, [], "relationRefs must not retain the old project");
+    // Saving pushes the record URL asynchronously; reload only after that navigation has committed.
+    await page.waitForURL((url) => url.searchParams.get("record") === item.id);
     await page.reload();
     await page.getByRole("dialog").getByRole("button", { name: "编辑经验" }).click();
     assert.equal(await page.getByRole("dialog").locator("#experience-linked-project").inputValue(), "");
