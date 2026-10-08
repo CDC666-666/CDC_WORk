@@ -8,14 +8,15 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit --incremental false",
-    "test": "tsx --test tests/workspace-calendar.test.ts tests/repository-data.test.ts tests/domain-persistence.test.ts tests/academic-flow.test.ts tests/reflections-flow.test.ts tests/server/auth-policy.test.ts tests/server/auth-logging.test.ts tests/server/review-domain.test.ts tests/migration-dependencies.test.ts tests/engineering-experience.test.ts",
+    "test": "tsx --test tests/workspace-calendar.test.ts tests/repository-data.test.ts tests/domain-persistence.test.ts tests/academic-flow.test.ts tests/reflections-flow.test.ts tests/server/auth-policy.test.ts tests/server/auth-logging.test.ts tests/server/review-domain.test.ts tests/migration-dependencies.test.ts tests/engineering-experience.test.ts tests/server/experience-snapshot.test.ts",
     "test:browser": "node --import tsx --test --test-concurrency=1 tests/browser/migration-preservation.test.ts tests/browser/engineering-experience-navigation.test.ts tests/browser/engineering-experience-project.test.ts",
     "test:db": "node --conditions=react-server --import tsx --test tests/server/database-flow.test.ts tests/server/migration-flow.test.ts tests/server/daily-entity-flow.test.ts tests/server/linked-accumulation-concurrency.test.ts tests/server/experience-flow.test.ts tests/server/auth-configuration.test.ts",
     "test:api": "tsx --test tests/server/http-flow.test.ts tests/server/experience-http.test.ts",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
-    "import:experience": "node --conditions=react-server --import tsx scripts/import-auto-aim-experience.ts"
+    "import:experience": "node --conditions=react-server --import tsx scripts/import-auto-aim-experience.ts",
+    "snapshot:experience": "node --env-file=.env --import tsx scripts/snapshot-experience.ts"
   },
   "dependencies": {
     "@next-auth/prisma-adapter": "1.0.7",
