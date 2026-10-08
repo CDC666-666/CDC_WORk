@@ -20,10 +20,13 @@ export function Dialog({ open, title, description, onClose, children, footer, si
       if (event.key === "Escape") onClose();
     };
     window.addEventListener("keydown", handleKeyDown);
+    const previousRootOverflow = document.documentElement.style.overflow;
     const previousOverflow = document.body.style.overflow;
+    document.documentElement.style.overflow = "hidden";
     document.body.style.overflow = "hidden";
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
+      document.documentElement.style.overflow = previousRootOverflow;
       document.body.style.overflow = previousOverflow;
     };
   }, [onClose, open]);
@@ -31,12 +34,13 @@ export function Dialog({ open, title, description, onClose, children, footer, si
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[90] grid place-items-center overflow-y-auto bg-slate-950/35 p-3 sm:p-6" onMouseDown={onClose}>
+    <div className="fixed inset-0 z-[90] grid place-items-center overflow-hidden bg-slate-950/35 p-3 sm:p-6"
+      style={{ margin: 0 }} onMouseDown={onClose}>
       <section
         role="dialog"
         aria-modal="true"
         aria-labelledby="shared-dialog-title"
-        className={`my-auto flex max-h-[calc(100vh-1.5rem)] w-full flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-2xl ${size === "lg" ? "max-w-3xl" : "max-w-xl"}`}
+        className={`my-auto flex max-h-[calc(100vh-1.5rem)] w-full flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-2xl sm:max-h-[calc(100vh-3rem)] ${size === "lg" ? "max-w-3xl" : "max-w-xl"}`}
         onMouseDown={(event) => event.stopPropagation()}
       >
         <header className="flex items-start justify-between gap-4 border-b border-border px-5 py-4">
