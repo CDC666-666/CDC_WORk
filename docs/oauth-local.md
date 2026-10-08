@@ -39,6 +39,26 @@
 CI 使用伪造的数据库测试会话验证服务端访问控制与退出接口，不代表真实 GitHub
 授权回调已完成验收。真实 OAuth 验收需要以上 Client ID/Secret 在本机配置完成。
 
+若浏览器能打开 GitHub，但本机服务端在 OAuth 回调时出现 `ECONNRESET` 或请求超时，
+应先检查 Node.js 是否走了本机网络代理。Node.js 26 可通过 `--use-env-proxy` 使用
+`HTTP_PROXY` / `HTTPS_PROXY`，同时将 `localhost,127.0.0.1` 放入 `NO_PROXY`。
+这些值按本机网络环境设置，不写入仓库。排查回调错误时不要直接复制原始服务端日志；
+NextAuth / Prisma 的错误内容可能包含 OAuth 令牌。
+
+## 本机真实 OAuth 验收（2026-10-08）
+
+在 `codex/engineering-experience` 上基于 `0980943` 的本轮修复中，
+用户亲自完成 GitHub 授权，数据库核对数字账号准入、会话和 Workspace 归属；
+刷新后会话保持、退出后私有页面返回登录页。可见 Chrome 窗口中的真实会话还通过了
+工程经验临时记录的新增、详情、编辑、搜索、刷新和 390px 详情布局检查；记录已清理。
+这些是本机开发库结果，不代表部署。自动化数据库/API 测试使用另一隔离库和合成会话。
+
+本分支增加可空的 `Account.refresh_token_expires_in` 字段及迁移，账户关联只接收明确列出的
+持久化字段。NextAuth 的错误、警告和调试日志不输出原始认证元数据；针对含模拟令牌、
+客户端密钥和完整提供者响应的错误路径有脱敏回归测试。若认证失败，先查看受限错误代码
+和网络类别；不要复制原始回调 URL 或令牌。当前工作台只用 GitHub 完成身份认证，
+尚未实现供未来 GitHub API 调用的令牌续期。
+
 参考：[GitHub 创建 OAuth App](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/creating-an-oauth-app)、
 [NextAuth GitHub Provider](https://next-auth.js.org/providers/github)、
 [NextAuth 环境变量](https://next-auth.js.org/configuration/options)。

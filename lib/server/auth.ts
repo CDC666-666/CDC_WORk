@@ -2,18 +2,46 @@ import "server-only";
 
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import type { NextAuthOptions } from "next-auth";
+import type { AdapterAccount } from "next-auth/adapters";
 import { getServerSession } from "next-auth";
 import GitHubProvider from "next-auth/providers/github";
 
+import { authLogger } from "@/lib/server/auth-logger";
 import { prisma } from "@/lib/server/prisma";
 import { isAllowedGithubId } from "@/services/server/github-allowlist";
 
+const prismaAdapter = PrismaAdapter(prisma);
+
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma),
+  logger: authLogger,
+  adapter: {
+    ...prismaAdapter,
+    // Project provider data explicitly so unexpected OAuth fields cannot reach Prisma.
+    linkAccount: (account: AdapterAccount) => {
+      const oauthAccount = account as typeof account & { refresh_token_expires_in?: number };
+      return prisma.account.create({
+        data: {
+          userId: account.userId,
+          type: account.type,
+          provider: account.provider,
+          providerAccountId: account.providerAccountId,
+          refresh_token: account.refresh_token,
+          refresh_token_expires_in: oauthAccount.refresh_token_expires_in,
+          access_token: account.access_token,
+          expires_at: account.expires_at,
+          token_type: account.token_type,
+          scope: account.scope,
+          id_token: account.id_token,
+          session_state: account.session_state,
+        },
+      });
+    },
+  },
   session: { strategy: "database" },
   providers: [GitHubProvider({
     clientId: process.env.GITHUB_CLIENT_ID ?? "",
     clientSecret: process.env.GITHUB_CLIENT_SECRET ?? "",
+    httpOptions: { timeout: 15000 },
   })],
   callbacks: {
     async signIn({ account }) {

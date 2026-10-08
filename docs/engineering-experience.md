@@ -28,7 +28,17 @@ npm.cmd run import:experience -- --workspace-id=<目标 Workspace ID> --execute
 - 构建后启动本机 HTTP 服务，`npm run test:api` 2/2 通过。匿名访问 `/experiences` 重定向到登录，私有读写 API 返回 401；现有测试通过**合成数据库会话**验证私有页面和工程经验 API 创建、编辑、刷新读取、证据状态不随审核提升及旧版本 409。该测试没有走真实 GitHub OAuth，也没有给生产代码增加认证绕过。
 - 真实共享案例的预览此前成功，**未执行正式 `--execute`**；个人 Workspace 归属未核对，首案例尚未正式入库。测试库里的合成案例不是个人数据。
 
-本机没有真实 GitHub OAuth 配置，因此实际登录后的桌面和窄屏页面验收仍受阻。须仅在本机配置 `DATABASE_URL`、`NEXTAUTH_URL`、`NEXTAUTH_SECRET`、`GITHUB_CLIENT_ID`、`GITHUB_CLIENT_SECRET`、`ALLOWED_GITHUB_USER_ID`；不要把值写入仓库或聊天。完成 OAuth 登录并核对目标 Workspace 归属后，再做真实页面验收和明确授权的一次性导入。
+上述记录形成时本机尚无真实 GitHub OAuth 配置；2026-10-08 后续验收见下文。凭据仅保存在本机忽略的 `.env`，未写入仓库或聊天。
+
+## 真实 GitHub OAuth 与首案例预览（2026-10-08）
+
+适用分支 `codex/engineering-experience@0980943800ffbddaf00d57929dcdd2f6aaae8ace` 加当时尚未提交的修复，环境为 `localhost:3000`、本 worktree 独立 PostgreSQL 16.14 开发库及本机 GitHub OAuth App；未部署、未推送。Prisma Client 已生成，第 6 个迁移 `20261008110000_github_oauth_refresh_expiry` 在此开发库应用成功；`prisma migrate status` 显示 schema 已更新。`lint`、`typecheck`、42 条常规测试和 `build` 在修复后通过。
+
+- 首次真实回调已获得允许的 GitHub 数字账号，但 Prisma `Account` 不接受提供者返回的 `refresh_token_expires_in`，未建立账户和会话。修复为 Account 新增可空字段，并在 NextAuth 的账户关联路径显式投影持久化字段，避免未知提供者字段直接进入 Prisma。失败回调的 NextAuth 错误日志曾包含 OAuth 令牌；用户反馈已撤销该次 GitHub 授权，随后重新授权。文档和提交均不含令牌值。
+- 第二阶段服务端日志记录 OAuth 请求 `ECONNRESET` 及默认 3.5 秒、调整后 15 秒超时；无凭据的 Node.js 直连 GitHub OAuth 端点连续失败，经本机现有 Windows 代理约 1 秒返回。仅本地开发进程启用 Node.js `--use-env-proxy` 后，回调成功；该机器的代理地址不写入仓库配置。
+- 成功回调后的数据库核对：允许的 GitHub 数字 ID 对应账户存在，`User.githubId` 与其相等，Workspace 的 `userId` 与账户用户一致，且有有效会话。用户在 Chrome 反馈已进入工作台、刷新后仍保持登录，`/experiences` 页面可显示。此为真实 OAuth，不是合成测试会话；页面布局细节尚未由自动化工具验收。
+- 对已核对归属的目标 Workspace 运行首条自瞄案例的**只读预览**：返回固定来源路径、来源 SHA-256、稳定记录 ID、“待审核 / 历史现场反馈”，标题/项目/标签/证据状态联合检索命中 1 条。预览后开发库 Knowledge 记录为 0；未运行 `--execute`，个人案例尚未正式入库。
+- 用户在 Chrome 点击退出后，再访问 `/experiences` 被带回 `/login`；数据库有效会话数由 4 降为 3，独立无 Cookie 请求 `/api/private/reviews` 返回 401。此前多次尝试产生多个数据库会话，单个浏览器退出只撤销当前会话，不能用会话总数为零作为退出判据。本轮验收结束后仅清理该账号在隔离开发库残留的 3 条测试会话，现为 0；用户、GitHub 账户与 Workspace 保留。
 
 ## PR #7 衔接修复验收（2026-10-08）
 
@@ -41,3 +51,14 @@ npm.cmd run import:experience -- --workspace-id=<目标 Workspace ID> --execute
 ## 下一轮单向同步准备
 
 比较 `sourceKey`、`sourceRevision`、服务器 `Knowledge.id/version` 与独立的 `reviewStatus/evidenceStatus`，生成差异预览。只有明确指定来源到服务器的一次性更新，且人工检查证据等级后才写入；服务器编辑和本地共享目录互不自动覆盖。
+
+## 真实会话页面与日志脱敏复验（2026-10-08）
+
+适用分支 `codex/engineering-experience@0980943800ffbddaf00d57929dcdd2f6aaae8ace` 上的本轮修复。本机个人开发库用于真实登录和界面验收；同一 PostgreSQL 集群内的独立 `oauth_acceptance_regression` 数据库仅用于自动化迁移、数据库和 API 测试。两者都不是生产数据源。
+
+- **日志边界：** NextAuth 自定义 logger 只输出受限的错误代码与 `timeout`、`connection_reset` 或 `unspecified` 类别，不转储错误对象、提供者响应、访问/刷新令牌及客户端密钥。单测用哨兵值构造含令牌和完整响应的失败元数据，确认输出不含这些值；数据库集成测试确认 `authOptions` 实际使用该 logger，账户关联只持久化列出的字段并接受 `refresh_token_expires_in`。这些测试覆盖 NextAuth 认证日志路径，不声称其他第三方日志绝无敏感信息。
+- **真实浏览器会话：** 用户在可见的独立 Chrome 窗口亲自完成 GitHub 授权；Playwright 没有注入测试 Cookie。私有 Workspace API 返回 200，本机数据库核对允许的 GitHub 数字 ID、用户与 Workspace 关系。仅在该 Workspace 原有 Knowledge 数量为 0 时，创建一条标题含“临时验收”的记录。新增后详情可读；搜索命中及不命中正确；刷新后字段仍在；编辑后再次刷新，数据库版本递增且新内容一致。退出后再访私有页回到登录页。临时记录仅按本轮 ID 清理，Knowledge 数量回到 0；验收浏览器配置已从本机忽略目录移除。
+- **390px：** 真实会话的经验详情在 390px 视口没有水平溢出，弹窗边界、标题、证据状态和底部按钮经本机截图目视检查未重叠。列表在该视口的完整视觉细节仍以先前合成会话浏览器测试为补充，不能把截图误称为本轮实车或生产页面验收。
+- **自动化：** 第 6 个迁移在两个本地开发/回归数据库应用成功；独立回归库的原 14 条数据库测试、1 条认证配置/字段投影测试、2 条 HTTP API 测试通过。常规测试 43/43、`lint`、`typecheck`、`build` 通过。HTTP API 测试使用合成会话，与上述真实浏览器会话分开记录。
+
+真实自瞄案例仍只做过只读导入预览，未运行 `--execute`；正式入库、生产部署及 GitHub API 令牌续期均未完成。
