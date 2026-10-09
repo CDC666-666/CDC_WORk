@@ -1,5 +1,7 @@
 # 个人工作台开发分支背景（2026-10-07）
 
+**当前入口（2026-10-09）：** 本文件保留了原连续开发分支的历史章节；当前 worktree 是 `D:/Workplace/CDC_WORK_DB_BACKUP@codex/personal-db-backup`，基线为 `origin/main@f4c173a`。本轮状态以文末“本机数据库备份演练”为准，历史段落中的“本目录”仅适用于当时的 worktree。
+
 **文档归属（2026-10-08）：** 本背景与本分支的 `AGENTS.md` 由 `CDC_WORK` 仓库的 `codex/engineering-experience` 分支管理。`6b3e20d` 是工程经验功能开发前的代码基线；本轮验收前本地 HEAD 为 `7ca934b`。验收记录只适用于本机功能分支源码和隔离测试库，不构成生产部署或实车验证。
 
 ## 位置、版本与职责
@@ -51,3 +53,7 @@
 [整合 PR #10](https://github.com/CDC666-666/CDC_WORk/pull/10) 从已审查 head a918ca7 以 merge commit 43fde8b 合入 origin/main。该提交的两个父提交分别是合并前 main@a9de174 和 a918ca7；PR #3 自动成为 merged，#4～#9 的 head 均为新 main 的祖先，已附 #10 链接关闭，但原分支及 worktree 保留。合并后 main 的 GitHub Actions CI 在 43fde8b 上通过 quality 和 compose。上述是源码与 CI 状态，不是生产环境状态。
 
 推荐主分支工作目录为 D:/Workplace/CDC_WORK_MAIN：它在合并提交上保持干净，使用跟踪 origin/main 的 codex/main-synced 分支。原本地 main@9e5d91f 与远端分叉，含一笔独有历史提交，故未重置或覆盖；旧 CDC_WORK checkout 的 24 项现场改动保留。后续从此目录的最新远端 main 建立功能分支。个人开发数据库未因合并改变，之前核对的一条自瞄经验仍属本机私有数据，不能由源码合并推定生产数据库已有该记录。生产数据库备份与迁移、真实浏览器旧数据迁移、生产 OAuth 配置和部署验收仍待执行。
+
+## 本机数据库备份演练（2026-10-09）
+
+本 worktree `D:/Workplace/CDC_WORK_DB_BACKUP` 位于 `codex/personal-db-backup`，从最新 `origin/main@f4c173a` 独立建立；`CDC_WORK_MAIN`、旧 `CDC_WORK` 的 24 项修改及原本地 `main@9e5d91f` 保留。原 PostgreSQL 16.14 数据目录经文件和连接身份双重核对后重新启动，原 `cdc_workspace` 的 GitHub Account、User 与 Workspace 归属一致。只读基线、PostgreSQL 16.15 `pg_dump -Fc -b` 自定义归档、全新演练库的 `pg_restore --single-transaction` 均已完成。37 张表的数量、主键及整行摘要、6 条 Prisma 迁移、唯一工程经验的版本/审核/证据状态与内容摘要在源库和恢复库一致；应用现有数据访问函数可从恢复库读取。恢复后源库再次只读核对，整库指纹与备份前相同。私人归档和详细清单留在被 Git 忽略且受本机 ACL 保护的目录，不在本仓库保存正文或凭据；流程与限制见[备份恢复说明](docs/database-backup-restore.md)。本机备份已验证，服务器迁移、旧浏览器数据迁移和部署仍未执行；历史时间字段原值未改。
