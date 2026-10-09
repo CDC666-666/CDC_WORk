@@ -19,3 +19,5 @@
 2026-10-09 在隔离 PostgreSQL 的合成记录上验证了两项目、手动和 sharedMemory 来源、账号归属失败、其他知识类型/其他 Workspace 排除、编辑版本更新、归档与删除撤下；只读事务不写入个人库。批量文件测试验证重复运行、内容漂移重建、失败时旧完整批次保留、凭据形态文本拒绝。显式在 PostgreSQL 会话执行 SET LOCAL TIME ZONE 'Asia/Shanghai' 后，原生实体写入/重读的 UTC 时间一致；该测试列入 test:db，CI 的 quality 与 compose 作业均运行此脚本。
 
 本机个人开发库在升级前后由原始入库基线工具比对：仍只有一条自瞄工程经验，版本 1，规范化正文摘要与更新时间未变，审核“待审核”，证据“历史现场反馈”。新格式 4 快照实际输出一条当前记录；再次运行返回 unchanged，错误允许账号返回 GITHUB_ALLOWLIST_MISMATCH 且索引哈希不变，恢复后仍返回 unchanged。两项目合成测试不表示真实个人 Workspace 已有底盘或其他项目经验。该案例未做本轮实车验证，具体应用仍需核对车辆模式、参考/反馈及运行版本。独立新会话 01a11f49-9561-7ba3-9b4f-ef15b3f18aec 仅收到“自瞄切入时云台突然转动，应先检查什么？”一句，工作目录 D:/Workplace。首个文件执行器调用在进程创建前报 setup refresh had errors；只读重试后实际打开根 AGENTS.md、共享索引、STATUS.md、格式 4 快照索引及索引指向的独立案例文件。读取输出显示实体版本 1、审核“待审核”、证据“历史现场反馈”；回答区分历史机械对齐案例与当前车辆尚需确认的模式、参考/反馈、实际固件及 Ubuntu 程序版本。该独立检索验收通过；默认执行器仍有间歇性环境错误，重试可用。
+
+Draft PR #9：https://github.com/CDC666-666/CDC_WORk/pull/9，base 为 codex/engineering-experience-snapshot；2026-10-09 功能提交 24cb050 的 GitHub Actions quality 与 compose 均通过。未合并或部署。
