@@ -31,3 +31,5 @@
 ## 独立快照分支（2026-10-09）
 
 `D:/Workplace/CDC_WORK_ENGINEERING_SNAPSHOT` 在 `codex/engineering-experience-snapshot`，从 PR #7 最新的 `c3737a1` 建立；原 `codex/engineering-experience` worktree 保持不变。本分支提供手动 `npm.cmd run snapshot:experience`，只读核对本机个人开发库、允许的 GitHub 数字 ID 和 Workspace 归属，将唯一已入库自瞄经验写为 `../shared-memory/server-snapshots/` 的本机派生 Markdown 与索引。快照目录被根文档仓库忽略，不包含在公开代码提交；原共享案例不修改。重复运行、失败保留、归档/删除失效和本机真实数据库内容/版本未变化的证据见[快照说明](docs/engineering-experience-snapshot.md)。待审核与历史现场反馈继续分开；快照并未增加实车证据。
+
+**2026-10-09 本轮核查（本地 `codex/engineering-experience-snapshot@1c75f37` 加待提交修复）：** Windows/Node/PostgreSQL 当前 UTC 时钟一致；个人库 `Knowledge.updatedAt` 为无时区列，旧原生写入路径受 PostgreSQL 上海时区转换影响，使该历史索引值比正文 UTC 时间约晚八小时。修正了后续原生写入及浏览器数据迁移的 UTC 口径，不改历史案例；快照将生成、最近成功核对及原始数据库更新时间分开记录。隔离库 15 条数据库检查、47 条常规测试、lint、typecheck、build 通过；个人库快照重读一致，重复执行无重复、失败保留原内容，个人案例数量/版本/正文摘要不变。独立只读会话已实际读取根规则、索引和快照并给出有边界的排查建议，**检索验收通过**；默认文件执行器仍故障，经授权的只读重试可用。详情与具体错误见[快照说明](docs/engineering-experience-snapshot.md)。

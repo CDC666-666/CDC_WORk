@@ -5,7 +5,7 @@ import type { KnowledgeItem } from "@/types/knowledge";
 
 export const SNAPSHOT_SOURCE = "shared-memory/cases/auto-aim-init-alignment.md";
 const CASE_NAME = "auto-aim-init-alignment.md";
-const SNAPSHOT_FORMAT_VERSION = 2;
+const SNAPSHOT_FORMAT_VERSION = 3;
 
 export interface SnapshotRecord {
   id: string;
@@ -28,9 +28,16 @@ interface IndexMeta {
   file?: string;
 }
 
+interface StatusMeta {
+  lastSuccessfulCheckAt: string;
+  lastGeneratedAt: string;
+  databaseUpdatedAt?: string;
+}
+
 export interface SnapshotResult {
   result: "created" | "updated" | "unchanged" | "retired";
   generatedAt: string;
+  checkedAt: string;
   file?: string;
   version?: number;
   payloadHash?: string;
@@ -71,8 +78,8 @@ export function renderCase(record: SnapshotRecord, outputFile: string, workplace
   const detail = item.experience;
   const body = (value: string) => rewriteRelativeLinks(value, outputFile, workplaceRoot);
   const sources = detail.evidenceSources.map((value) => `- ${body(value)}`).join("\n");
-  const clockWarning = record.updatedAt.getTime() > new Date(generatedAt).getTime()
-    ? `> 时间提示：数据库更新时间晚于快照生成时间；本机时间或时区口径待核实。请以实体版本和摘要比较内容，不据此推断时间先后。\n`
+  const clockWarning = Math.abs(record.updatedAt.getTime() - new Date(item.updatedAt).getTime()) > 60_000
+    ? `> 时间提示：数据库索引列与正文中的更新时间不一致。历史写入时区需单独核对；保留原值，以版本和摘要比较内容。\n`
     : "";
   return `# ${safeText(item.title)}\n\n` +
     `> 数据库派生快照，请勿手动修改。数据库是工作台经验的主数据源；此文件只代表 ${generatedAt} 的读取结果。\n` +
@@ -117,6 +124,40 @@ async function readMeta(outputRoot: string): Promise<IndexMeta | undefined> {
   }
 }
 
+async function readStatusMeta(outputRoot: string): Promise<StatusMeta | undefined> {
+  try {
+    const status = await readFile(join(outputRoot, "STATUS.md"), "utf8");
+    const match = /^<!-- status-meta: (\{[^\n]+\}) -->/m.exec(status);
+    if (match) {
+      const parsed: unknown = JSON.parse(match[1]);
+      if (parsed && typeof parsed === "object") {
+        const meta = parsed as Partial<StatusMeta>;
+        if (typeof meta.lastSuccessfulCheckAt === "string" && typeof meta.lastGeneratedAt === "string") {
+          return meta as StatusMeta;
+        }
+      }
+    }
+    // Previous STATUS.md used a separate check time without machine-readable metadata.
+    const legacy = /- 检查时间：`([^`]+)`/.exec(status);
+    const generated = (await readMeta(outputRoot))?.generatedAt;
+    return legacy && generated ? { lastSuccessfulCheckAt: legacy[1], lastGeneratedAt: generated } : undefined;
+  } catch (cause: unknown) {
+    if ((cause as NodeJS.ErrnoException).code === "ENOENT") return undefined;
+    throw cause;
+  }
+}
+
+async function writeSuccessStatus(outputRoot: string, checkedAt: string, meta: IndexMeta): Promise<void> {
+  const status: StatusMeta = { lastSuccessfulCheckAt: checkedAt, lastGeneratedAt: meta.generatedAt,
+    ...(meta.updatedAt ? { databaseUpdatedAt: meta.updatedAt } : {}) };
+  await atomicText(join(outputRoot, "STATUS.md"),
+    `<!-- status-meta: ${JSON.stringify(status)} -->\n# 快照刷新状态\n\n` +
+    `最近一次数据库读取成功；当前状态以 [索引](INDEX.md) 为准。\n\n` +
+    `- 最近成功核对时间：\`${checkedAt}\`\n` +
+    `- 当前快照生成时间：\`${meta.generatedAt}\`\n` +
+    `- 数据库更新时间：${meta.updatedAt ? `\`${meta.updatedAt}\`` : "无当前记录"}\n`);
+}
+
 async function atomicText(path: string, content: string): Promise<void> {
   await mkdir(dirname(path), { recursive: true });
   const temporary = `${path}.tmp-${randomUUID()}`;
@@ -151,7 +192,7 @@ function renderIndex(meta: IndexMeta, state: SnapshotState, title?: string, tags
   const header = `<!-- snapshot-meta: ${JSON.stringify(meta)} -->\n# 工作台工程经验数据库快照索引\n\n` +
     `> 数据库派生快照，请勿手动修改。只以本索引列出的记录作为当前快照；隐藏的旧版本不是另一条经验，也不代表数据库现状。\n` +
     `> 快照只反映上次成功读取时的数据库状态。读取前查看 [刷新状态](STATUS.md)；失败时将旧快照仅作为历史线索。\n\n` +
-    `- 最后成功时间：\`${meta.generatedAt}\`\n- 来源项目：\`auto_aim\`\n` +
+    `- 当前快照生成时间：\`${meta.generatedAt}\`\n- 来源项目：\`auto_aim\`\n` +
     `- 原始共享案例：[${SNAPSHOT_SOURCE}](../cases/auto-aim-init-alignment.md)（同一来源，不是独立证据）\n\n`;
   if (state.kind === "retired") return header +
     `## 当前有效记录\n\n无。数据库记录已${state.reason === "deleted" ? "删除" : state.reason === "archived" ? "归档" : "不再属于工程经验"}；旧快照不可作为当前有效经验。\n`;
@@ -160,19 +201,27 @@ function renderIndex(meta: IndexMeta, state: SnapshotState, title?: string, tags
     `关键词 ${tags?.map(safeText).join("、") ?? state.record.item.tags.map(safeText).join("、")}；` +
     `审核 **${state.record.item.experience.reviewStatus}**，证据 **${state.record.item.experience.evidenceStatus}**。` +
     `版本 \`${meta.version}\`，来源摘要 \`${state.record.item.experience.sourceRevision}\`。\n` +
-    (state.record.updatedAt.getTime() > new Date(meta.generatedAt).getTime()
-      ? "\n时间提示：数据库更新时间晚于快照生成时间；时钟或时区口径待核实，以版本和摘要比较内容。\n" : "");
+    (Math.abs(state.record.updatedAt.getTime() - new Date(state.record.item.updatedAt).getTime()) > 60_000
+      ? "\n时间提示：数据库索引列与正文更新时间不一致；历史写入时区待核对，以版本和摘要比较内容。\n" : "");
 }
 
-export async function lastSuccessfulAt(outputRoot: string): Promise<string | null> {
-  return (await readMeta(outputRoot))?.generatedAt ?? null;
+export async function lastSuccessfulCheckAt(outputRoot: string): Promise<string | null> {
+  return (await readStatusMeta(outputRoot))?.lastSuccessfulCheckAt ??
+    (await readMeta(outputRoot))?.generatedAt ?? null;
 }
 
 export async function markRefreshFailure(outputRoot: string, code: string, attemptedAt: string): Promise<void> {
-  const last = await lastSuccessfulAt(outputRoot);
-  await atomicText(join(outputRoot, "STATUS.md"), `# 快照刷新状态\n\n` +
+  const previous = await readMeta(outputRoot);
+  const last = await lastSuccessfulCheckAt(outputRoot);
+  const statusMeta: StatusMeta | undefined = last && previous
+    ? { lastSuccessfulCheckAt: last, lastGeneratedAt: previous.generatedAt,
+      ...(previous.updatedAt ? { databaseUpdatedAt: previous.updatedAt } : {}) } : undefined;
+  await atomicText(join(outputRoot, "STATUS.md"),
+    `${statusMeta ? `<!-- status-meta: ${JSON.stringify(statusMeta)} -->\n` : ""}# 快照刷新状态\n\n` +
     `**刷新失败；当前数据库状态未知。** 上次完整快照保留，但只能作为历史排查线索。\n\n` +
     `- 尝试时间：\`${attemptedAt}\`\n- 最后成功时间：${last ? `\`${last}\`` : "无"}\n` +
+    `- 当前快照生成时间：${previous ? `\`${previous.generatedAt}\`` : "无"}\n` +
+    `- 上次核对的数据库更新时间：${previous?.updatedAt ? `\`${previous.updatedAt}\`` : "无当前记录"}\n` +
     `- 错误代码：\`${code}\`\n`);
 }
 
@@ -199,8 +248,8 @@ export async function publishSnapshot(outputRoot: string, workplaceRoot: string,
         if (currentText !== renderCase(state.record, candidate, workplaceRoot, previous.generatedAt)) {
           throw new Error("SNAPSHOT_CONTENT_DRIFT");
         }
-        await atomicText(join(outputRoot, "STATUS.md"), `# 快照刷新状态\n\n最近一次读取成功；当前索引仍是完整快照。\n\n- 检查时间：\`${generatedAt}\`\n- 最后成功时间：\`${previous.generatedAt}\`\n`);
-        return { result: "unchanged", generatedAt: previous.generatedAt, file: previous.file,
+        await writeSuccessStatus(outputRoot, generatedAt, previous);
+        return { result: "unchanged", generatedAt: previous.generatedAt, checkedAt: generatedAt, file: previous.file,
           version: previous.version, payloadHash: hash };
       } catch (cause: unknown) {
         if ((cause as NodeJS.ErrnoException).code !== "ENOENT" &&
@@ -223,8 +272,9 @@ export async function publishSnapshot(outputRoot: string, workplaceRoot: string,
   const index = renderIndex(meta, state);
   if (beforeIndexPublish) await beforeIndexPublish();
   await atomicText(join(outputRoot, "INDEX.md"), index);
-  await atomicText(join(outputRoot, "STATUS.md"), `# 快照刷新状态\n\n最近一次读取成功；当前状态以 [索引](INDEX.md) 为准。\n\n- 最后成功时间：\`${generatedAt}\`\n`);
+  await writeSuccessStatus(outputRoot, generatedAt, meta);
   // Cleanup is best effort after publication; a leftover hidden version is never indexed as current.
   await pruneUnlinkedVersions(outputRoot, meta.file).catch(() => undefined);
-  return { result, generatedAt, file: meta.file, version: meta.version, payloadHash: meta.payloadHash };
+  return { result, generatedAt, checkedAt: generatedAt, file: meta.file, version: meta.version,
+    payloadHash: meta.payloadHash };
 }

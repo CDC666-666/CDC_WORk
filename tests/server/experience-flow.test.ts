@@ -26,6 +26,10 @@ test("database experience persists edits, filters, protects evidence and version
       try {
         const persisted = await fresh.knowledge.findFirst({ where: { workspaceId: workspace.id, id: first.id } });
         assert.ok(persisted?.payload);
+        const importedPayload = persisted.payload as Record<string, unknown>;
+        assert.equal(typeof importedPayload.updatedAt, "string");
+        assert.ok(Math.abs(persisted.updatedAt.getTime() - Date.parse(String(importedPayload.updatedAt))) < 10_000,
+          "database updatedAt must use UTC wall time, independent of the PostgreSQL session time zone");
         const snapshot = await serverWorkspaceEntityService.snapshot(workspace.id);
         const found = filterExperiences(snapshot.domain.knowledge as KnowledgeItem[], {
           query: "机械对齐", project: "auto_aim", tag: "初始化", evidenceStatus: "历史现场反馈",
@@ -59,6 +63,8 @@ test("database experience persists edits, filters, protects evidence and version
           updated.version, edited), (error: unknown) => (error as { status?: number }).status === 409);
         const reloaded = await fresh.knowledge.findFirst({ where: { workspaceId: workspace.id, id: first.id } });
         assert.ok(reloaded?.payload);
+        const editedPayload = reloaded.payload as Record<string, unknown>;
+        assert.ok(Math.abs(reloaded.updatedAt.getTime() - Date.parse(String(editedPayload.updatedAt))) < 10_000);
         const reloadedItem = (await serverWorkspaceEntityService.get(workspace.id, "knowledge", first.id)).item as unknown as KnowledgeItem;
         assert.equal(reloadedItem.title, edited.title);
         assert.deepEqual(reloadedItem.tags, edited.tags);

@@ -42,7 +42,12 @@ test("publishes one indexed experience and does not duplicate an unchanged datab
       "2026-10-08T14:00:00.000Z");
     assert.equal(second.result, "unchanged");
     assert.equal(second.generatedAt, first.generatedAt);
+    assert.equal(second.checkedAt, "2026-10-08T14:00:00.000Z");
     assert.equal(await readFile(join(output, "INDEX.md"), "utf8"), index);
+    const status = await readFile(join(output, "STATUS.md"), "utf8");
+    assert.match(status, /最近成功核对时间：`2026-10-08T14:00:00.000Z`/);
+    assert.match(status, /当前快照生成时间：`2026-10-08T13:00:00.000Z`/);
+    assert.match(status, /数据库更新时间：`2026-10-08T12:00:00.000Z`/);
     assert.equal((await readdir(join(output, ".versions"))).length, 1);
     await writeFile(resolve(output, first.file ?? ""), "local drift");
     const repaired = await publishSnapshot(output, root, { kind: "active", record: source },
@@ -57,8 +62,11 @@ test("generation failure keeps the previous complete snapshot and reports its su
   const root = await mkdtemp(join(tmpdir(), "experience-snapshot-"));
   try {
     const output = join(root, "server-snapshots");
-    const first = await publishSnapshot(output, root, { kind: "active", record: record() },
+    const source = record();
+    const first = await publishSnapshot(output, root, { kind: "active", record: source },
       "2026-10-08T13:00:00.000Z");
+    await publishSnapshot(output, root, { kind: "active", record: source },
+      "2026-10-08T13:30:00.000Z");
     const oldIndex = await readFile(join(output, "INDEX.md"), "utf8");
     const oldCase = await readFile(resolve(output, first.file ?? ""), "utf8");
     const changed = record(2);
@@ -70,7 +78,11 @@ test("generation failure keeps the previous complete snapshot and reports its su
     assert.equal(await readFile(resolve(output, first.file ?? ""), "utf8"), oldCase);
     const status = await readFile(join(output, "STATUS.md"), "utf8");
     assert.match(status, /刷新失败；当前数据库状态未知/);
-    assert.match(status, /2026-10-08T13:00:00.000Z/);
+    assert.match(status, /最后成功时间：`2026-10-08T13:30:00.000Z`/);
+    assert.match(status, /当前快照生成时间：`2026-10-08T13:00:00.000Z`/);
+    await markRefreshFailure(output, "SNAPSHOT_FAILED", "2026-10-08T14:30:00.000Z");
+    assert.match(await readFile(join(output, "STATUS.md"), "utf8"),
+      /最后成功时间：`2026-10-08T13:30:00.000Z`/);
     const recovered = await publishSnapshot(output, root, { kind: "active", record: changed },
       "2026-10-08T15:00:00.000Z");
     assert.equal(recovered.result, "updated");

@@ -3,7 +3,7 @@ import { fileURLToPath } from "node:url";
 import { Prisma, PrismaClient } from "@prisma/client";
 import { experienceValidationIssues } from "@/services/engineering-experience-service";
 import { sharedCaseKnowledgeId } from "@/services/shared-memory-experience";
-import { lastSuccessfulAt, markRefreshFailure, publishSnapshot, SNAPSHOT_SOURCE,
+import { lastSuccessfulCheckAt, markRefreshFailure, publishSnapshot, SNAPSHOT_SOURCE,
   type SnapshotRecord, type SnapshotState } from "@/services/experience-snapshot";
 import type { KnowledgeItem } from "@/types/knowledge";
 
@@ -100,7 +100,7 @@ main().catch(async (cause: unknown) => {
   const attemptedAt = new Date().toISOString();
   try { await markRefreshFailure(outputRoot, code, attemptedAt); }
   catch { /* The last complete index and case remain untouched even if status cannot be written. */ }
-  const last = await lastSuccessfulAt(outputRoot).catch(() => null);
-  console.error(JSON.stringify({ status: "failed", code, lastSuccessfulAt: last }));
+  const last = await lastSuccessfulCheckAt(outputRoot).catch(() => null);
+  console.error(JSON.stringify({ status: "failed", code, lastSuccessfulCheckAt: last }));
   process.exitCode = 1;
 });

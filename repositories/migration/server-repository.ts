@@ -34,9 +34,8 @@ export async function insertMigrationRow(
   tx: Prisma.TransactionClient, workspaceId: string, batchId: string, entity: MigrationEntity, sourceHash: string,
 ): Promise<ExistingMigrationRow> {
   const spec = MIGRATION_TABLES[entity.collection];
-  const needsUpdatedAt = entity.collection === "projects" || entity.collection === "reviews";
   const columns = ["id", "workspaceId", "payload", "sourceHash", "migrationBatchId", "relationRefs",
-    ...spec.fields, ...(needsUpdatedAt ? ["updatedAt"] : [])];
+    ...spec.fields, "updatedAt"];
   const values: unknown[] = [entity.id, workspaceId, JSON.stringify(entity.payload), sourceHash,
     batchId, JSON.stringify(entity.relations)];
   for (const field of spec.fields) {
@@ -44,9 +43,10 @@ export async function insertMigrationRow(
     values.push(value === undefined || (spec.dateFields?.includes(field) && value === "") ? null :
       field === "amount" && typeof value === "number" ? value.toString() : value);
   }
-  if (needsUpdatedAt) values.push(new Date());
+  values.push(new Date());
   const placeholders = columns.map((field, index) => {
     const parameter = `$${index + 1}`;
+    if (field === "updatedAt") return `(${parameter}::timestamptz AT TIME ZONE 'UTC')`;
     if (field === "payload" || field === "relationRefs") return `${parameter}::jsonb`;
     if (spec.dateFields?.includes(field)) return `${parameter}::date`;
     if (field === "amount") return `${parameter}::numeric(20,2)`;

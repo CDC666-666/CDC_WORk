@@ -136,8 +136,11 @@ test("PostgreSQL migration is verified, repeatable, preserves relations and deci
     assert.equal(await db.assignment.count({ where: { workspaceId: workspace.id } }), 1);
     const amount = await db.financeTransaction.findUniqueOrThrow({ where: { id: `finance-${marker}` } });
     assert.equal(amount.amount?.toString(), "123.45");
+    assert.ok(Math.abs(amount.updatedAt.getTime() - Date.now()) < 60_000,
+      "migration default timestamp must be stored as UTC wall time");
     const relation = await db.review.findUniqueOrThrow({ where: { id: `review-${marker}` } });
     assert.equal(relation.relatedProjectId, `project-${marker}`);
+    assert.ok(Math.abs(relation.updatedAt.getTime() - Date.now()) < 60_000);
     const contents = await db.contentState.findUniqueOrThrow({ where: { id: "content-m3508-pid" } });
     assert.equal(contents.status, "completed");
     assert.equal(contents.isInKnowledgeBase, true);

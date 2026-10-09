@@ -26,6 +26,9 @@ function table(collection: MigrationCollection): string {
 function placeholder(collection: MigrationCollection, field: string, position: number): string {
   const parameter = `$${position}`;
   const spec = MIGRATION_TABLES[collection];
+  // Entity columns are TIMESTAMP WITHOUT TIME ZONE; store the UTC wall time
+  // explicitly so the PostgreSQL session time zone cannot shift a Date value.
+  if (field === "updatedAt") return `(${parameter}::timestamptz AT TIME ZONE 'UTC')`;
   if (["payload", "relationRefs"].includes(field)) return `${parameter}::jsonb`;
   if (spec.dateFields?.includes(field)) return `${parameter}::date`;
   if (field === "amount") return `${parameter}::numeric(20,2)`;
