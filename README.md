@@ -1,10 +1,10 @@
 # CDC AI Workspace
 
-> 本目录是从 PR #9 最新提交建立的 main 整合候选分支；已包含总结复盘、认证与 PostgreSQL、旧数据迁移、日常服务器数据源、工程经验及多项目只读快照。尚未合并或部署。下文 Sprint 3/5.1 章节保留开发历史，不能代替当前状态；请先读 [项目背景](PROJECT_CONTEXT.md)、[迁移覆盖](docs/migration-coverage.md)和[多项目快照说明](docs/engineering-experience-multi-snapshot.md)。
+> **2026-10-09 状态：** PR #10 已通过 merge commit 43fde8b 合入 main；总结复盘、认证与 PostgreSQL、旧数据迁移、日常服务器数据源、工程经验及多项目只读快照均在源码中，尚未生产部署。先前“main 整合候选”属于合并前的历史阶段。下文 Sprint 3/5.1 章节也保留开发历史；当前边界见 [项目背景](PROJECT_CONTEXT.md)、[迁移覆盖](docs/migration-coverage.md)和[多项目快照说明](docs/engineering-experience-multi-snapshot.md)。
 
 面向大学生和工程学习者的个人 AI 工作台，统一管理课程学习、任务、阅读、技术内容、工程项目、测试复盘、知识沉淀、技能成长、报告素材、日历与个人收支。
 
-**当前整合候选：** Sprint 4.5 至工程经验多项目快照的连续开发已进入同一提交链；Sprint 3 的工程成长闭环仍是产品基础。RoboMaster 是一级业务模块之一，不是产品的唯一定位。生产部署、真实浏览器旧数据迁移和服务器备份恢复仍待完成。
+**已合入 main（2026-10-09）：** Sprint 4.5 至工程经验多项目快照的连续开发已由 PR #10 整合；Sprint 3 的工程成长闭环仍是产品基础。RoboMaster 是一级业务模块之一，不是产品的唯一定位。生产部署、真实浏览器旧数据迁移和服务器备份恢复仍待完成。
 
 ## 技术栈
 
