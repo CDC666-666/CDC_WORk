@@ -33,3 +33,9 @@
 `D:/Workplace/CDC_WORK_ENGINEERING_SNAPSHOT` 在 `codex/engineering-experience-snapshot`，从 PR #7 最新的 `c3737a1` 建立；原 `codex/engineering-experience` worktree 保持不变。本分支提供手动 `npm.cmd run snapshot:experience`，只读核对本机个人开发库、允许的 GitHub 数字 ID 和 Workspace 归属，将唯一已入库自瞄经验写为 `../shared-memory/server-snapshots/` 的本机派生 Markdown 与索引。快照目录被根文档仓库忽略，不包含在公开代码提交；原共享案例不修改。重复运行、失败保留、归档/删除失效和本机真实数据库内容/版本未变化的证据见[快照说明](docs/engineering-experience-snapshot.md)。待审核与历史现场反馈继续分开；快照并未增加实车证据。
 
 **2026-10-09 本轮核查（本地 `codex/engineering-experience-snapshot@1c75f37` 加待提交修复）：** Windows/Node/PostgreSQL 当前 UTC 时钟一致；个人库 `Knowledge.updatedAt` 为无时区列，旧原生写入路径受 PostgreSQL 上海时区转换影响，使该历史索引值比正文 UTC 时间约晚八小时。修正了后续原生写入及浏览器数据迁移的 UTC 口径，不改历史案例；快照将生成、最近成功核对及原始数据库更新时间分开记录。隔离库 15 条数据库检查、47 条常规测试、lint、typecheck、build 通过；个人库快照重读一致，重复执行无重复、失败保留原内容，个人案例数量/版本/正文摘要不变。独立只读会话已实际读取根规则、索引和快照并给出有边界的排查建议，**检索验收通过**；默认文件执行器仍故障，经授权的只读重试可用。详情与具体错误见[快照说明](docs/engineering-experience-snapshot.md)。
+
+## 多项目只读快照分支（2026-10-09）
+
+本 worktree D:/Workplace/CDC_WORK_ENGINEERING_MULTI_SNAPSHOT 位于 codex/engineering-experience-multi-snapshot，从 PR #8 最新提交 3c8d408 建立；原工程经验和快照 worktree 未切换。手动命令 npm.cmd run snapshot:experiences 在只读可重复读事务中核对本机个人开发库、允许的 GitHub 数字 ID、Account/User/Workspace 关联，选择本人 Workspace 下全部未归档工程经验（手动及 sharedMemory）。它不查询其他知识类型、账户令牌或会话。输出按来源项目分组，按实体 ID 哈希命名独立 Markdown；来源标识和来源摘要缺失时明确为“未提供”。文件批量生成完成后才切换索引，重复读取只更新最近成功核对时间；删改/归档/改类型在成功刷新后撤下旧入口。详细命令、元数据及边界见[多项目快照说明](docs/engineering-experience-multi-snapshot.md)。
+
+2026-10-09 本机隔离 PostgreSQL 16.14 的合成测试：两个项目、手动和共享来源、错误数据库/归属、非经验和其他 Workspace 排除、版本编辑、归档删除、重复运行、内容漂移修复、批量失败恢复均通过；另显式设置会话时区 Asia/Shanghai 验证 UTC 写入回读。单元测试 47/47，数据库测试 17/17，lint 与 typecheck 通过。个人开发库只读生成格式 4 快照，当前真实记录仍仅一条自瞄经验，版本 1，审核“待审核”、证据“历史现场反馈”；升级前后与入库基线比对，数量、版本、正文摘要和更新时间未变。错误允许账号预检失败时索引哈希不变，恢复后返回 unchanged。合成的两项目案例不能当作个人 Workspace 已有跨项目经验，也不代表实车验证。独立新会话 01a11f49-9561-7ba3-9b4f-ef15b3f18aec 已实际打开根规则、共享索引、快照状态/索引/案例，正确引用版本 1 与审核/证据边界；首个文件执行器调用失败，重试成功。build 通过；远端 PR/CI 状态将在完成后记入。
