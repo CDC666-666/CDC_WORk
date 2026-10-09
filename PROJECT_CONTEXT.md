@@ -39,3 +39,10 @@
 本 worktree D:/Workplace/CDC_WORK_ENGINEERING_MULTI_SNAPSHOT 位于 codex/engineering-experience-multi-snapshot，从 PR #8 最新提交 3c8d408 建立；原工程经验和快照 worktree 未切换。手动命令 npm.cmd run snapshot:experiences 在只读可重复读事务中核对本机个人开发库、允许的 GitHub 数字 ID、Account/User/Workspace 关联，选择本人 Workspace 下全部未归档工程经验（手动及 sharedMemory）。它不查询其他知识类型、账户令牌或会话。输出按来源项目分组，按实体 ID 哈希命名独立 Markdown；来源标识和来源摘要缺失时明确为“未提供”。文件批量生成完成后才切换索引，重复读取只更新最近成功核对时间；删改/归档/改类型在成功刷新后撤下旧入口。详细命令、元数据及边界见[多项目快照说明](docs/engineering-experience-multi-snapshot.md)。
 
 2026-10-09 本机隔离 PostgreSQL 16.14 的合成测试：两个项目、手动和共享来源、错误数据库/归属、非经验和其他 Workspace 排除、版本编辑、归档删除、重复运行、内容漂移修复、批量失败恢复均通过；另显式设置会话时区 Asia/Shanghai 验证 UTC 写入回读。单元测试 47/47，数据库测试 17/17，lint 与 typecheck 通过。个人开发库只读生成格式 4 快照，当前真实记录仍仅一条自瞄经验，版本 1，审核“待审核”、证据“历史现场反馈”；升级前后与入库基线比对，数量、版本、正文摘要和更新时间未变。错误允许账号预检失败时索引哈希不变，恢复后返回 unchanged。合成的两项目案例不能当作个人 Workspace 已有跨项目经验，也不代表实车验证。独立新会话 01a11f49-9561-7ba3-9b4f-ef15b3f18aec 已实际打开根规则、共享索引、快照状态/索引/案例，正确引用版本 1 与审核/证据边界；首个文件执行器调用失败，重试成功。build 通过；Draft PR #9 以 codex/engineering-experience-snapshot 为 base，功能提交 24cb050 的 GitHub Actions quality 与 compose 于 2026-10-09 均通过。PR 保持未合并、未部署。
+## main 整合候选（2026-10-09）
+
+本 worktree D:/Workplace/CDC_WORK_MAIN_INTEGRATION 位于 codex/workplace-main-integration，从 PR #9 最新提交 ce4594f 建立。2026-10-09 获取远端后，origin/main@a9de174 是该提交的祖先；PR #3～#9 的 head 均沿同一提交链，故无需合并 main、没有冲突，也未重置或改写历史。新分支相对 main 的业务实现与通过 CI 的 PR #9 相同；本轮只更新整合背景和说明。原分支与 worktree 全部保留。
+
+整合内容按依赖顺序为：#3 总结复盘；#4 GitHub 认证、PostgreSQL 和服务器总结；#5 全领域 Prisma 模型及显式浏览器旧数据迁移；#6 日常模块服务器数据源；#7 工程经验管理和真实 OAuth/页面验收；#8 手动只读数据库快照及 UTC 时间口径；#9 多项目工程经验快照。六个 SQL 迁移及 migration_lock.toml 随代码提交，部署前须在备份和环境核对后执行 db:deploy，不能直接假定个人开发库或生产库已迁移。新整合 PR 的完整 CI 结果以 GitHub Actions 为准。
+
+状态须分别看待：origin/main@a9de174 只有已合并的 Sprint 4.3/4.4；本整合分支包含上述未合并实现；本机个人开发库只读核查时有一条真实自瞄经验，属于本机数据，不进入公开仓库；生产部署及真实旧浏览器数据迁移均未验证完成。后续整合 PR 的审查与修复推荐在本 worktree 进行；合入 main 后的新开发应从更新后的 main 建立工作区。快照输出仍位于 Workplace 根目录下被 Git 忽略的 shared-memory/server-snapshots/，不是代码提交内容。
