@@ -1,6 +1,6 @@
 # 个人工作台开发分支背景（2026-10-07）
 
-**当前入口（2026-10-09）：** 本文件保留了原连续开发分支的历史章节；当前 worktree 是 `D:/Workplace/CDC_WORK_DB_BACKUP@codex/personal-db-backup`，基线为 `origin/main@f4c173a`。本轮状态以文末“本机数据库备份演练”为准，历史段落中的“本目录”仅适用于当时的 worktree。
+**日常入口（2026-10-09）：** 推荐在 `D:/Workplace/CDC_WORK_MAIN` 继续主分支工作。`D:/Workplace/CDC_WORK_DB_BACKUP@codex/personal-db-backup` 是从 `origin/main@f4c173a` 建立的本轮备份与恢复历史演练目录；本文件保留原连续开发分支的历史章节，演练事实与范围见文末对应小节。历史段落中的“本目录”仅适用于当时的 worktree。
 
 **文档归属（2026-10-08）：** 本背景与本分支的 `AGENTS.md` 由 `CDC_WORK` 仓库的 `codex/engineering-experience` 分支管理。`6b3e20d` 是工程经验功能开发前的代码基线；本轮验收前本地 HEAD 为 `7ca934b`。验收记录只适用于本机功能分支源码和隔离测试库，不构成生产部署或实车验证。
 
