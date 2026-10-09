@@ -200,8 +200,8 @@ export function isIssueSolution(value: unknown): value is IssueSolution {
 export function isKnowledgeItem(value: unknown): value is KnowledgeItem {
   if (!isRecord(value)) return false;
   return hasEntityBase(value) && isString(value.title) && isString(value.content) && isString(value.summary) &&
-    isOneOf(value.itemType, ["笔记", "视频总结", "文章", "项目经验", "故障方案", "测试结论", "读书笔记", "代码说明"] as const) &&
-    isString(value.category) && isOneOf(value.sourceType, ["manual", "content", "workLog", "issue", "test", "reading", "project"] as const) &&
+    isOneOf(value.itemType, ["笔记", "视频总结", "文章", "项目经验", "故障方案", "测试结论", "读书笔记", "代码说明", "工程经验"] as const) &&
+    isString(value.category) && isOneOf(value.sourceType, ["manual", "content", "workLog", "issue", "test", "reading", "project", "sharedMemory"] as const) &&
     hasOptionalString(value, "sourceId") && hasOptionalString(value, "projectId") && hasOptionalString(value, "moduleId") &&
     isString(value.sourceUrl) && isStringArray(value.tags) && isOneOf(value.status, ["收件箱", "已整理", "已归档"] as const) &&
     isFiniteNumber(value.importance) && value.importance >= 1 && value.importance <= 5;

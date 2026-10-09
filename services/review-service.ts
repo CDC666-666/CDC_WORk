@@ -1,21 +1,34 @@
 import { localWorkspaceRepository, type WorkspaceRepository } from "@/repositories/workspace-repository";
 import { createWorkspaceId } from "@/services/workspace-service";
-import type { Review, ReviewType } from "@/types/review";
+import { canonicalReflectionDate, filterReflections, type ReflectionFilter } from "@/services/reflection-period";
+import type { Review } from "@/types/review";
+import type { ProjectVNext } from "@/types/project";
 
 export interface ReviewService {
   create(draft: Omit<Review, "id">): Promise<Review>;
   update(id: string, patch: Partial<Omit<Review, "id">>): Promise<Review>;
   delete(id: string): Promise<boolean>;
-  query(filter?: { id?: string; type?: ReviewType; relatedProjectId?: string }): Promise<Review[]>;
+  query(filter?: ReflectionFilter & { id?: string }): Promise<Review[]>;
+  loadState(): Promise<{ reviews: Review[]; projects: ProjectVNext[] }>;
+}
+
+function validateReview(review: Review, projects: ProjectVNext[]): Review {
+  if (!review.summary.trim()) throw new Error("请填写总结内容。");
+  const relatedProjectId = review.relatedProjectId || undefined;
+  if (review.type === "PROJECT" && !relatedProjectId) throw new Error("项目复盘必须关联现有项目。");
+  if (relatedProjectId && !projects.some((item) => item.id === relatedProjectId)) {
+    throw new Error("关联项目不存在，请选择现有项目。");
+  }
+  return { ...review, summary: review.summary.trim(), relatedProjectId,
+    date: canonicalReflectionDate(review.type, review.date) };
 }
 
 export function createReviewService(repository: WorkspaceRepository): ReviewService {
   return {
     async create(draft) {
-      const review: Review = { ...draft, id: createWorkspaceId("review") };
+      let review: Review = { ...draft, id: createWorkspaceId("review") };
       await repository.updateDomain((state) => {
-        if (review.type === "PROJECT" && (!review.relatedProjectId ||
-          !state.projects.some((item) => item.id === review.relatedProjectId))) throw new Error("项目复盘必须关联现有项目。");
+        review = validateReview(review, state.projects);
         return { ...state, reviews: [...state.reviews, review] };
       });
       return review;
@@ -25,9 +38,7 @@ export function createReviewService(repository: WorkspaceRepository): ReviewServ
       await repository.updateDomain((state) => {
         const current = state.reviews.find((item) => item.id === id);
         if (!current) throw new Error("复盘不存在。");
-        updated = { ...current, ...patch, id };
-        if (updated.type === "PROJECT" && (!updated.relatedProjectId ||
-          !state.projects.some((item) => item.id === updated!.relatedProjectId))) throw new Error("项目复盘必须关联现有项目。");
+        updated = validateReview({ ...current, ...patch, id }, state.projects);
         return { ...state, reviews: state.reviews.map((item) => item.id === id ? updated! : item) };
       });
       if (!updated) throw new Error("复盘更新失败。");
@@ -46,9 +57,11 @@ export function createReviewService(repository: WorkspaceRepository): ReviewServ
     },
     async query(filter = {}) {
       const state = await repository.loadDomain();
-      return state.reviews.filter((item) => (!filter.id || item.id === filter.id) &&
-        (!filter.type || item.type === filter.type) &&
-        (!filter.relatedProjectId || item.relatedProjectId === filter.relatedProjectId));
+      return filterReflections(state.reviews, filter).filter((item) => !filter.id || item.id === filter.id);
+    },
+    async loadState() {
+      const state = await repository.loadDomain();
+      return { reviews: state.reviews, projects: state.projects };
     },
   };
 }

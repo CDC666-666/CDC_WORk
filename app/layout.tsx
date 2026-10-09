@@ -1,9 +1,5 @@
 import type { Metadata, Viewport } from "next";
 
-import { AppShell } from "@/components/layout/app-shell";
-import { WorkspaceDataProvider } from "@/components/providers/workspace-data-provider";
-import { AcademicProvider } from "@/components/providers/academic-provider";
-
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -27,11 +23,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="zh-CN">
-      <body>
-        <WorkspaceDataProvider>
-          <AcademicProvider><AppShell>{children}</AppShell></AcademicProvider>
-        </WorkspaceDataProvider>
-      </body>
+      <body>{children}</body>
     </html>
   );
 }

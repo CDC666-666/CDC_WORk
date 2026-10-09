@@ -1,5 +1,8 @@
 # dependencies
 /node_modules
+/.local-test-tools
+/.local-test-db
+/.playwright-browsers
 /.npm-cache
 /.pnp
 .pnp.*
@@ -17,6 +20,7 @@
 # local files
 .DS_Store
 *.pem
+/shared-memory/server-snapshots/
 
 # debug
 npm-debug.log*
@@ -26,6 +30,7 @@ yarn-error.log*
 
 # environment files
 .env*
+!.env.example
 
 # typescript
 *.tsbuildinfo

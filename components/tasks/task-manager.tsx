@@ -78,25 +78,26 @@ export function TaskManager({ openCreate = false }: { openCreate?: boolean }) {
 
   const showNotice = (title: string, description: string) => setNotice({ id: Date.now(), title, description });
 
-  const quickCreate = (event: React.FormEvent<HTMLFormElement>) => {
+  const quickCreate = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const estimateHours = Number(quickHours);
     if (!quickTitle.trim() || estimateHours <= 0) {
       showNotice("无法创建任务", "请填写任务标题，并确保预计耗时大于 0。 ");
       return;
     }
-    workspace.addTask({
+    try { await workspace.addTask({
       title: quickTitle.trim(), description: "", status: "待开始", priority: quickPriority,
       domain: quickDomain, scheduledDate: quickDate, dueAt: combineDateAndTime(quickDate, quickTime),
       estimateHours, actualHours: 0, tags: [], sourceType: "manual",
     });
-    setQuickTitle("");
-    showNotice("任务已创建", "新任务已同步到工作台首页。 ");
+      setQuickTitle("");
+      showNotice("任务已创建", "新任务已同步到工作台首页。 ");
+    } catch (cause: unknown) { showNotice("创建失败", cause instanceof Error ? cause.message : "服务器写入失败。"); }
   };
 
-  const createTask = (draft: TaskDraft) => {
-    workspace.addTask(draft);
-    showNotice("任务已创建", "任务数据已保存到本地 Workspace。 ");
+  const createTask = async (draft: TaskDraft) => {
+    await workspace.addTask(draft);
+    showNotice("任务已创建", "任务数据已保存到服务器。 ");
   };
 
   const hasAnyTasks = workspace.data.tasks.length > 0;
@@ -149,9 +150,9 @@ export function TaskManager({ openCreate = false }: { openCreate?: boolean }) {
               {task.description && <p className="mt-2 text-xs leading-5 text-slate-500">{task.description}</p>}
               <div className="mt-3 flex flex-wrap gap-3 text-[11px] text-slate-500"><span>截止 {formatChineseDateTime(task.dueAt)}</span><span>预计 {task.estimateHours}h</span>{task.tags.map((item) => <span key={item}>#{item}</span>)}</div></div>
               <div className="flex flex-wrap gap-1.5">
-                <Button size="sm" variant={isCompleted ? "outline" : "secondary"} onClick={() => { workspace.toggleTaskCompleted(task.id); showNotice(isCompleted ? "任务已恢复" : "任务已完成", task.title); }}>{isCompleted ? <RotateCcw /> : <Check />}{isCompleted ? "恢复" : "完成"}</Button>
+                <Button size="sm" variant={isCompleted ? "outline" : "secondary"} onClick={() => { void workspace.toggleTaskCompleted(task.id).then(() => showNotice(isCompleted ? "任务已恢复" : "任务已完成", task.title)).catch((cause: unknown) => showNotice("保存失败", cause instanceof Error ? cause.message : "服务器写入失败。")); }}>{isCompleted ? <RotateCcw /> : <Check />}{isCompleted ? "恢复" : "完成"}</Button>
                 <Button size="sm" variant="ghost" onClick={() => { setEditingTask(task); setFormOpen(true); }}><Edit3 />编辑</Button>
-                <Button size="sm" variant="ghost" onClick={() => { workspace.duplicateTask(task); showNotice("任务已复制", "副本已设为待开始状态。 "); }}><Copy />复制</Button>
+                <Button size="sm" variant="ghost" onClick={() => { void workspace.duplicateTask(task).then(() => showNotice("任务已复制", "副本已设为待开始状态。 ")).catch((cause: unknown) => showNotice("复制失败", cause instanceof Error ? cause.message : "服务器写入失败。")); }}><Copy />复制</Button>
                 {task.projectId && <Button asChild size="sm" variant="ghost"><Link href={`/logs?projectId=${task.projectId}&taskId=${task.id}&create=1`}>写日志</Link></Button>}
                 <Button size="sm" variant="destructive" onClick={() => setDeletingTask(task)}><Trash2 />删除</Button>
               </div>
@@ -160,8 +161,8 @@ export function TaskManager({ openCreate = false }: { openCreate?: boolean }) {
         })}</div> : <EmptyState title={hasAnyTasks ? "没有符合条件的任务" : "还没有任务"} description={hasAnyTasks ? "调整视图或清除筛选条件后再试。" : "创建第一条任务，开始建立个人执行闭环。"} actionLabel="新增任务" onAction={() => { setEditingTask(null); setFormOpen(true); }} />}
       </section>
 
-      <TaskFormDialog open={formOpen} task={editingTask} onClose={() => setFormOpen(false)} onCreate={createTask} onUpdate={(task) => { workspace.updateTask(task); showNotice("任务已更新", "首页和任务页面已同步。 "); }} />
-      <ConfirmDialog open={Boolean(deletingTask)} title="删除任务" description={`确定删除“${deletingTask?.title ?? "该任务"}”吗？`} onCancel={() => setDeletingTask(null)} onConfirm={() => { if (deletingTask) { workspace.deleteTask(deletingTask.id); showNotice("任务已删除", deletingTask.title); } setDeletingTask(null); }} />
+      <TaskFormDialog open={formOpen} task={editingTask} onClose={() => setFormOpen(false)} onCreate={createTask} onUpdate={async (task) => { await workspace.updateTask(task); showNotice("任务已更新", "首页和任务页面已同步。 "); }} />
+      <ConfirmDialog open={Boolean(deletingTask)} title="删除任务" description={`确定删除“${deletingTask?.title ?? "该任务"}”吗？`} onCancel={() => setDeletingTask(null)} onConfirm={() => { if (!deletingTask) return; void workspace.deleteTask(deletingTask.id).then(() => { showNotice("任务已删除", deletingTask.title); setDeletingTask(null); }).catch((cause: unknown) => showNotice("删除失败", cause instanceof Error ? cause.message : "服务器写入失败。")); }} />
       <ActionToast notice={notice} onDismiss={() => setNotice(null)} />
     </div>
   );

@@ -11,10 +11,6 @@ interface SectionPageProps {
   params: Promise<{ section: string }>;
 }
 
-export function generateStaticParams() {
-  return placeholderSections.map((section) => ({ section }));
-}
-
 export async function generateMetadata({ params }: SectionPageProps): Promise<Metadata> {
   const { section } = await params;
   const item = getNavigationItemBySection(section);

@@ -12,7 +12,7 @@ function omitKeys<T extends object, K extends keyof T>(item: T, keys: readonly K
   return copy as Omit<T, K>;
 }
 
-function migrateTaskToV4(task: WorkspaceData["tasks"][number], previous?: DomainTask): DomainTask {
+export function migrateTaskToV4(task: WorkspaceData["tasks"][number], previous?: DomainTask): DomainTask {
   const { dueAt, projectId, sourceType, sourceId, ...fields } = task;
   const relationship = projectId
     ? { sourceType: "PROJECT" as const, relatedId: projectId }

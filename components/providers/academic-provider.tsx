@@ -1,14 +1,11 @@
 "use client";
 
-import { createContext, useCallback, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useMemo, useState } from "react";
 
 import { useWorkspaceData } from "@/hooks/use-workspace-data";
-import { academicDomainService, type AcademicCollection, type AcademicEntity, type AcademicService } from "@/services/academic-service";
+import { createWorkspaceId } from "@/services/workspace-service";
+import type { AcademicCollection, AcademicEntity, AcademicService } from "@/services/academic-service";
 import type { AcademicState } from "@/types/workspace";
-
-const emptyAcademic: AcademicState = {
-  semesters: [], courses: [], chapters: [], classSessions: [], assignments: [], exams: [],
-};
 
 export interface AcademicContextValue extends Pick<AcademicService, "create" | "update" | "delete"> {
   state: AcademicState;
@@ -21,61 +18,44 @@ export interface AcademicContextValue extends Pick<AcademicService, "create" | "
 
 export const AcademicContext = createContext<AcademicContextValue | null>(null);
 
-function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : "课程数据操作失败，请重试。";
-}
-
 export function AcademicProvider({ children }: { children: React.ReactNode }) {
   const workspace = useWorkspaceData();
-  const [state, setState] = useState<AcademicState>(emptyAcademic);
-  const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const reload = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      setState(await academicDomainService.loadState());
-      setError(null);
-    } catch (cause: unknown) {
-      setError(errorMessage(cause));
-      throw cause;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (workspace.isHydrated) void reload().catch(() => undefined);
-  }, [reload, workspace.domainRevision, workspace.isHydrated]);
 
   const commit = useCallback(async <T,>(operation: () => Promise<T>): Promise<T> => {
     setIsSaving(true);
     try {
       const result = await operation();
-      setState(await academicDomainService.loadState());
       setError(null);
       return result;
     } catch (cause: unknown) {
-      setError(errorMessage(cause));
+      setError(cause instanceof Error ? cause.message : "课程数据保存失败。");
       throw cause;
-    } finally {
-      setIsSaving(false);
-    }
+    } finally { setIsSaving(false); }
   }, []);
 
-  const create = useCallback(<K extends AcademicCollection,>(collection: K, draft: Omit<AcademicEntity<K>, "id">) =>
-    commit(() => academicDomainService.create(collection, draft)), [commit]);
+  const create = useCallback(<K extends AcademicCollection,>(collection: K,
+    draft: Omit<AcademicEntity<K>, "id">): Promise<AcademicEntity<K>> => commit(async () => {
+    const item = { ...draft, id: createWorkspaceId(collection.slice(0, -1)) } as AcademicEntity<K>;
+    await workspace.mutateEntity(collection, "create", item.id, item as unknown as Record<string, unknown>);
+    return item;
+  }), [commit, workspace]);
   const update = useCallback(<K extends AcademicCollection,>(collection: K, id: string,
-    patch: Partial<Omit<AcademicEntity<K>, "id">>) =>
-    commit(() => academicDomainService.update(collection, id, patch)), [commit]);
-  const remove = useCallback(<K extends AcademicCollection,>(collection: K, id: string) =>
-    commit(() => academicDomainService.delete(collection, id)), [commit]);
+    patch: Partial<Omit<AcademicEntity<K>, "id">>): Promise<AcademicEntity<K>> => commit(async () => {
+    const result = await workspace.mutateEntity(collection, "update", id, patch as Record<string, unknown>);
+    return result.item as unknown as AcademicEntity<K>;
+  }), [commit, workspace]);
+  const remove = useCallback(<K extends AcademicCollection,>(collection: K, id: string): Promise<boolean> =>
+    commit(async () => {
+      await workspace.mutateEntity(collection, "delete", id);
+      return true;
+    }), [commit, workspace]);
 
   const value = useMemo<AcademicContextValue>(() => ({
-    state, isLoading, isSaving, error, reload, clearError: () => setError(null),
+    state: workspace.domain.academic, isLoading: !workspace.isHydrated, isSaving,
+    error: error ?? workspace.error, reload: workspace.reload, clearError: () => setError(null),
     create, update, delete: remove,
-  }), [state, isLoading, isSaving, error, reload, create, update, remove]);
-
+  }), [workspace, isSaving, error, create, update, remove]);
   return <AcademicContext.Provider value={value}>{children}</AcademicContext.Provider>;
 }

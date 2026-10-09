@@ -1,15 +1,18 @@
 # CDC AI Workspace
 
+> 本目录是从 PR #9 最新提交建立的 main 整合候选分支；已包含总结复盘、认证与 PostgreSQL、旧数据迁移、日常服务器数据源、工程经验及多项目只读快照。尚未合并或部署。下文 Sprint 3/5.1 章节保留开发历史，不能代替当前状态；请先读 [项目背景](PROJECT_CONTEXT.md)、[迁移覆盖](docs/migration-coverage.md)和[多项目快照说明](docs/engineering-experience-multi-snapshot.md)。
+
 面向大学生和工程学习者的个人 AI 工作台，统一管理课程学习、任务、阅读、技术内容、工程项目、测试复盘、知识沉淀、技能成长、报告素材、日历与个人收支。
 
-当前正在进行 **Sprint 4.3: 数据持久化架构准备**。Sprint 3 的工程成长闭环仍是现有产品功能；RoboMaster 是一级业务模块之一，不是产品的唯一定位。
+**当前整合候选：** Sprint 4.5 至工程经验多项目快照的连续开发已进入同一提交链；Sprint 3 的工程成长闭环仍是产品基础。RoboMaster 是一级业务模块之一，不是产品的唯一定位。生产部署、真实浏览器旧数据迁移和服务器备份恢复仍待完成。
 
 ## 技术栈
 
 - Next.js 15 App Router、React 19、TypeScript
 - Tailwind CSS、shadcn/ui 风格组件、Lucide Icons
 - React Context + useReducer
-- Repository + LocalStorage Adapter、版本化迁移、校验和 JSON 备份
+- 日常模块使用受认证保护的 PostgreSQL/Prisma 服务器工作区；旧浏览器数据由显式迁移工具预览和确认
+- GitHub OAuth 单账号准入；私人页面和 API 在服务端校验数据库会话
 - ESLint、TypeScript typecheck、GitHub Actions CI
 
 ## Sprint 3 完成内容
@@ -50,6 +53,7 @@
 - `/logs` 工程日志
 - `/reviews` 测试与复盘
 - `/knowledge` 知识库
+- `/experiences` 工程经验（复用私人知识记录，显示证据与适用边界）
 - `/skills` 技能树
 - `/reports` 报告中心
 - `/resume` 简历素材
@@ -61,9 +65,9 @@
 
 ## 本地数据与迁移
 
-Sprint 4.1 的持久化路径为 `Component → Hook → Service → Repository → LocalStorage Adapter`。Repository 方法采用 Promise 接口，客户端组件不直接调用 localStorage。当前仍只在本机浏览器保存数据；尚未接入 Prisma、PostgreSQL、GitHub 登录或跨设备同步。Repository 的具体契约与存储键见 [`repositories/README.md`](repositories/README.md)。
+Sprint 4.1 的日常工作台持久化路径为 `Component → Hook → Service → Repository → LocalStorage Adapter`。Repository 方法采用 Promise 接口，客户端组件不直接调用 localStorage。Sprint 5.1 另外增加独立的 PostgreSQL/Prisma 总结 API 和 GitHub 登录代码；现有浏览器数据尚未迁移，也不能跨设备同步。Repository 的具体契约与存储键见 [`repositories/README.md`](repositories/README.md)。
 
-Sprint 4.3 将 `WorkspaceDomainState` v4 作为本地持久化源；现有页面继续使用 `WorkspaceData` v3 投影。Review、Academic、Timeline、Attachment 等新领域记录可随 v4 数据保存和备份；详见 [`types/README.md`](types/README.md) 与 [`lib/storage/README.md`](lib/storage/README.md)。未创建 Prisma Schema。
+Sprint 4.3 将 `WorkspaceDomainState` v4 作为本地持久化源；现有页面继续使用 `WorkspaceData` v3 投影。Review、Academic、Timeline、Attachment 等新领域记录可随 v4 数据保存和备份；详见 [`types/README.md`](types/README.md) 与 [`lib/storage/README.md`](lib/storage/README.md)。Sprint 5.1 已新增 Prisma Schema，但尚未迁移现有浏览器数据，也未把日常页面切换到服务器。
 
 - 当前统一存储键：`cdc-workspace-data-v4`
 - 内容中心兼容键：`cdc-content-state-v1`
@@ -77,6 +81,16 @@ Sprint 4.3 将 `WorkspaceDomainState` v4 作为本地持久化源；现有页面
 
 设置页支持导出完整 schema v4 JSON、导入 v2/v3/v4 备份时先验证并预览数量、二次确认覆盖，以及恢复演示数据。文件名格式为 `cdc-workspace-backup-YYYY-MM-DD.json`。
 
+## Sprint 5.1 服务器闭环
+
+`/login` 通过 GitHub OAuth 登录，且只接受服务端 `ALLOWED_GITHUB_USER_ID` 指定的数字 ID。现有私人页面统一置于受保护的路由组；每个 `/api/private/*` 处理函数再次校验数据库会话与 Workspace。没有 OAuth 配置时不会开放私人访问，也没有开发环境认证绕过。
+
+本轮服务器只持久化 Project、Review 和预留的 Attachment 引用。`/api/private/projects` 可创建关联项目；`/api/private/reviews` 提供增删改查、筛选和版本冲突检测。旧 `/reflections` 页面依然读取 localStorage v4，**不会展示服务器 API 新建的总结**；全量数据迁移与页面切换属于 Sprint 5.2。
+
+本地启动：复制 `.env.example` 为 `.env`，填写本地 PostgreSQL 密码、随机 `NEXTAUTH_SECRET`、GitHub OAuth Client ID/Secret，并确认允许的 GitHub 数字 ID 为 `248133835`。本地访问 `http://localhost:3000`，OAuth 回调为 `http://localhost:3000/api/auth/callback/github`；详细操作见 [`docs/oauth-local.md`](docs/oauth-local.md)。生产机使用 HTTPS 域名的对应回调，不把密钥提交到 Git。运行 `docker compose up --build --wait -d` 可启动数据库和应用并应用迁移；也可只运行 `docker compose up -d db`，随后执行 `npm ci`、`npm run db:generate`、`npm run db:deploy`、`npm run dev`。
+
+私人 API 日期统一为 `YYYY-MM-DD`，时间戳为 UTC ISO 8601；未来金额以十进制字符串传输。PATCH 总结时提交整数 `version`；DELETE 使用 `If-Match: "<version>"`。数据库仅在写入事务成功后返回成功，过期版本返回 409。详细接口见 [`app/api/private/README.md`](app/api/private/README.md)。
+
 ## 目录结构
 
 ```text
@@ -86,7 +100,10 @@ data/                独立演示数据
 hooks/               Workspace 数据 Hook
 lib/storage/         迁移、规范化和类型验证
 repositories/        本地存储 Adapter、Repository 契约及演示数据读取
+repositories/server/ PostgreSQL 总结 Repository
 services/            领域服务、迁移、选择器和未来 API 边界
+services/server/     服务端总结校验与操作
+prisma/              数据库模型与 SQL 迁移
 types/               独立领域类型
 .github/workflows/   CI 工作流
 ```
@@ -113,11 +130,11 @@ npm.cmd run start
 
 ## CI
 
-`.github/workflows/ci.yml` 在推送到 `main`、针对 `main` 的 Pull Request 和手动触发时执行 `npm ci`、lint、typecheck 和 production build。Workflow 使用 Node.js 20、`contents: read` 最小权限和分支 concurrency，不包含 secret 或部署步骤。
+`.github/workflows/ci.yml` 在推送到 `main`、任意目标分支的 Pull Request 和手动触发时运行。`quality` job 使用临时 PostgreSQL 执行 Prisma 迁移、lint、typecheck、测试和 production build；`compose` job 实际构建并启动数据库和应用容器，检查迁移、健康状态、私有 API，并在重启两个容器后再次读取记录。Workflow 使用 `contents: read` 最小权限；测试密码与密钥仅在 CI 内临时生成，不包含部署步骤。
 
 ## 演示与安全说明
 
-- 当前数据保存在浏览器本地，没有后端、数据库、账号或云同步
+- 日常工作台数据仍保存在浏览器本地；服务端已提供受 GitHub 登录保护的总结 API，但尚未切换页面数据源或实现跨设备同步
 - 当前没有真实 AI API；报告和简历素材使用确定性本地规则生成
 - 视频与技术内容为明确标识的演示数据，没有真实平台搜索、字幕下载或爬虫
 - 不抓取需要登录、验证码或绕过反爬机制的平台

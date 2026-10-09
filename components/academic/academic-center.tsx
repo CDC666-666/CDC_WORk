@@ -74,8 +74,8 @@ export function AcademicCenter() {
     try {
       await academic.delete(deleting.kind, deleting.id);
       show("记录已删除", "更改已保存。");
+      setDeleting(null);
     } catch (error: unknown) { show("无法删除", error instanceof Error ? error.message : "请重试。"); }
-    setDeleting(null);
   };
 
   const card = (course: Course) => <article key={course.id} className="rounded-lg border border-border bg-white p-5 shadow-sm">

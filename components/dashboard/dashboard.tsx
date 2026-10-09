@@ -6,6 +6,7 @@ import { AiCommand } from "@/components/dashboard/ai-command";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { EngineeringPulse } from "@/components/dashboard/engineering-pulse";
 import { ProjectOverview } from "@/components/dashboard/project-overview";
+import { RecentReflections } from "@/components/dashboard/recent-reflections";
 import { SkillGrowth } from "@/components/dashboard/skill-growth";
 import { StudyOverview } from "@/components/dashboard/study-overview";
 import { TodayTasks } from "@/components/dashboard/today-tasks";
@@ -19,10 +20,10 @@ interface DashboardProps {
 }
 
 export function Dashboard({ data }: DashboardProps) {
-  const { data: workspace } = useWorkspaceData();
+  const { data: workspace, snapshot } = useWorkspaceData();
   const metrics = useMemo(
-    () => buildDashboardMetrics(data.metrics, workspace),
-    [data.metrics, workspace],
+    () => buildDashboardMetrics(data.metrics, workspace, snapshot.contentStates),
+    [data.metrics, workspace, snapshot.contentStates],
   );
 
   return (
@@ -48,6 +49,9 @@ export function Dashboard({ data }: DashboardProps) {
         </section>
         <section className="col-span-12 xl:col-span-5">
           <AiCommand />
+        </section>
+        <section className="col-span-12 xl:col-span-5">
+          <RecentReflections />
         </section>
       </div>
     </div>

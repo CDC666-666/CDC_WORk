@@ -12,6 +12,7 @@ export type NavigationIconKey =
   | "notebookPen"
   | "flaskConical"
   | "calendarDays"
+  | "notebookTabs"
   | "fileChartColumn"
   | "briefcaseBusiness"
   | "walletCards"
@@ -112,6 +113,12 @@ export const navigationGroups: NavigationGroup[] = [
         description: "开发与调试记录",
       },
       {
+        label: "工程经验",
+        href: "/experiences",
+        icon: "library",
+        description: "有来源和适用边界的调试结论",
+      },
+      {
         label: "测试与复盘",
         href: "/reviews",
         icon: "flaskConical",
@@ -122,6 +129,12 @@ export const navigationGroups: NavigationGroup[] = [
   {
     label: "个人管理",
     items: [
+      {
+        label: "总结与复盘",
+        href: "/reflections",
+        icon: "notebookTabs",
+        description: "每日、每周、每月与项目复盘",
+      },
       {
         label: "日历计划",
         href: "/calendar",
@@ -177,7 +190,7 @@ export function getNavigationItemByPathname(pathname: string) {
 }
 
 export const placeholderSections = navigationItems
-  .filter((item) => !["/", "/content", "/today", "/learning", "/academic", "/reading", "/knowledge", "/skills", "/projects", "/robomaster", "/logs", "/reviews", "/calendar", "/reports", "/resume", "/finance", "/settings"].includes(item.href))
+  .filter((item) => !["/", "/content", "/today", "/learning", "/academic", "/reading", "/knowledge", "/skills", "/projects", "/robomaster", "/logs", "/experiences", "/reviews", "/reflections", "/calendar", "/reports", "/resume", "/finance", "/settings"].includes(item.href))
   .map((item) => item.href.slice(1));
 
 export function getNavigationItemBySection(section: string) {

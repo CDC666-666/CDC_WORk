@@ -35,7 +35,7 @@ interface ContentCenterProps {
 
 export function ContentCenter({ initialItems, tags }: ContentCenterProps) {
   const workspace = useWorkspaceData();
-  const { items, setItems } = useContentItems(initialItems);
+  const { items, updateItem: saveItem } = useContentItems(initialItems);
   const [filters, setFilters] = useState<ContentFilters>(defaultContentFilters);
   const [viewMode, setViewMode] = useState<ContentViewMode>("card");
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
@@ -52,8 +52,9 @@ export function ContentCenter({ initialItems, tags }: ContentCenterProps) {
     setNotice({ id: Date.now(), title, description });
   };
 
-  const updateItem = (itemId: string, updater: (item: ContentItem) => ContentItem) => {
-    setItems((current) => current.map((item) => (item.id === itemId ? updater(item) : item)));
+  const updateItem = async (itemId: string, updater: (item: ContentItem) => ContentItem) => {
+    try { await saveItem(itemId, updater); }
+    catch (cause: unknown) { showNotice("保存失败", cause instanceof Error ? cause.message : "服务器写入失败。"); }
   };
 
   const toggleFavorite = (itemId: string) => {
@@ -74,27 +75,32 @@ export function ContentCenter({ initialItems, tags }: ContentCenterProps) {
     }));
   };
 
-  const addToKnowledgeBase = (itemId: string) => {
+  const addToKnowledgeBase = async (itemId: string) => {
     const content = items.find((item) => item.id === itemId);
     if (content && !workspace.data.knowledgeItems.some((item) => item.sourceType === "content" && item.sourceId === content.id)) {
-      workspace.dispatch({ type: "knowledge/added", item: knowledgeFromContent(content) });
+      try { await workspace.dispatch({ type: "knowledge/added", item: knowledgeFromContent(content) }); }
+      catch (cause: unknown) { showNotice("加入失败", cause instanceof Error ? cause.message : "服务器写入失败。"); return; }
     }
-    updateItem(itemId, (item) => ({ ...item, isInKnowledgeBase: true }));
+    try { await saveItem(itemId, (item) => ({ ...item, isInKnowledgeBase: true })); }
+    catch (cause: unknown) { showNotice("保存失败", cause instanceof Error ? cause.message : "服务器写入失败。"); return; }
     showNotice("已加入知识库", content ? "已创建可追溯的视频或文章知识条目。" : "没有找到对应内容。");
   };
 
-  const addToStudyPlan = (itemId: string) => {
+  const addToStudyPlan = async (itemId: string) => {
     const content = items.find((item) => item.id === itemId);
     if (!content) {
       showNotice("加入失败", "没有找到对应的技术内容。 ");
       return;
     }
-    const wasAdded = workspace.addTaskFromContent({
-      id: content.id,
-      title: content.title,
-      durationMinutes: content.durationMinutes,
-    });
-    updateItem(itemId, (item) => ({ ...item, isInStudyPlan: true }));
+    let wasAdded: boolean;
+    try {
+      wasAdded = await workspace.addTaskFromContent({ id: content.id, title: content.title,
+        durationMinutes: content.durationMinutes });
+      await saveItem(itemId, (item) => ({ ...item, isInStudyPlan: true }));
+    } catch (cause: unknown) {
+      showNotice("加入失败", cause instanceof Error ? cause.message : "服务器写入失败。");
+      return;
+    }
     showNotice(
       wasAdded ? "已加入今日任务" : "任务已存在",
       wasAdded
