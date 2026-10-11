@@ -1,40 +1,47 @@
-import Link from "next/link";
-import type { ReactNode } from "react";
+"use client";
 
-import { publicPortfolio } from "@/data/public-portfolio";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { Github, Menu, X } from "lucide-react";
+
+import { PortfolioTracker } from "@/components/portfolio/portfolio-tracker";
+import { StatsSummaryInline } from "@/components/portfolio/stats-summary";
+import { publicContact } from "@/data/public-contact";
 
 const navigation = [
   { href: "/portfolio", label: "首页" },
   { href: "/portfolio/projects", label: "项目" },
-  { href: "/portfolio/timeline", label: "成长时间线" },
   { href: "/portfolio/about", label: "关于我" },
+  { href: "/portfolio/stats", label: "站点统计" },
+  { href: "/portfolio/contact", label: "联系" },
 ] as const;
 
 export function PortfolioShell({ children }: { children: ReactNode }) {
+  const [open, setOpen] = useState(false);
+  const path = usePathname();
+  const menuRef = useRef<HTMLDivElement>(null);
+  const toggleRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => { setOpen(false); }, [path]);
+  useEffect(() => {
+    if (!open) return;
+    const close = (event: KeyboardEvent) => { if (event.key === "Escape") { setOpen(false); toggleRef.current?.focus(); } };
+    const outside = (event: MouseEvent) => { if (menuRef.current && !menuRef.current.contains(event.target as Node)) setOpen(false); };
+    document.addEventListener("keydown", close);
+    document.addEventListener("mousedown", outside);
+    return () => { document.removeEventListener("keydown", close); document.removeEventListener("mousedown", outside); };
+  }, [open]);
+
   return <div className="portfolio-site">
+    <PortfolioTracker />
     <a className="portfolio-skip" href="#portfolio-main">跳到正文</a>
-    <header className="portfolio-header">
-      <div className="portfolio-wrap portfolio-header-inner">
-        <Link className="portfolio-brand" href="/portfolio" aria-label="Caider 作品集首页">
-          <span className="portfolio-brand-mark" aria-hidden="true">C<span>.</span></span>
-          <span className="portfolio-brand-name">CAIDER <span>/ CDC666</span></span>
-        </Link>
-        <nav className="portfolio-nav" aria-label="展示站主导航">
-          {navigation.map((item) => <Link key={item.href} href={item.href}>{item.label}</Link>)}
-        </nav>
-        <Link className="portfolio-private-link" href="/login">私人工作台 <span aria-hidden="true">↗</span></Link>
-      </div>
-    </header>
+    <div className="portfolio-stars" aria-hidden="true" />
+    <header className="portfolio-header"><div className="portfolio-nav-shell" ref={menuRef}>
+      <Link className="portfolio-brand" href="/portfolio" aria-label="Caider 作品集首页"><span className="portfolio-brand-orbit" aria-hidden="true">✦</span><span><small>ENGINEERING / PORTFOLIO</small><strong>CAIDER</strong></span></Link>
+      <button ref={toggleRef} className="portfolio-menu-toggle" type="button" aria-label={open ? "关闭菜单" : "打开菜单"} aria-controls="portfolio-nav-panel" aria-expanded={open} onClick={() => setOpen(!open)}>{open ? <X /> : <Menu />}</button>
+      <div className={`portfolio-nav-panel${open ? " is-open" : ""}`} id="portfolio-nav-panel"><nav aria-label="展示站主导航">{navigation.map((item) => <Link key={item.href} href={item.href} aria-current={path === item.href ? "page" : undefined}>{item.label}</Link>)}</nav><Link className="portfolio-glow-button portfolio-nav-cta" href="/login"><span>私人工作台 ↗</span></Link></div>
+    </div></header>
     <main id="portfolio-main">{children}</main>
-    <footer className="portfolio-footer">
-      <div className="portfolio-wrap portfolio-footer-inner">
-        <div><strong>CAIDER / CDC666</strong><p>学习、实践、记录。作品集内容按可核对资料维护。</p></div>
-        <div className="portfolio-footer-links">
-          <Link href="/portfolio/about">关于我</Link>
-          <a href={publicPortfolio.githubUrl} target="_blank" rel="noopener noreferrer">GitHub <span className="sr-only">（新窗口打开）</span>↗</a>
-          <Link href="/login">私人工作台</Link>
-        </div>
-      </div>
-    </footer>
+    <footer className="portfolio-footer"><div className="portfolio-wrap portfolio-footer-inner"><div><strong>CAIDER / CDC666</strong><p>学习、实践、记录。项目内容仅按可核对资料维护。</p></div><div className="portfolio-footer-links"><Link href="/portfolio/projects">项目</Link><Link href="/portfolio/stats">站点统计</Link><Link href="/portfolio/contact">联系</Link><a href={publicContact.githubUrl} target="_blank" rel="noopener noreferrer" aria-label="GitHub 主页"><Github size={17} /></a></div></div><div className="portfolio-wrap portfolio-footer-stats"><StatsSummaryInline /></div></footer>
   </div>;
 }

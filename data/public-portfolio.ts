@@ -1,4 +1,4 @@
-import type { PublicCapability, PublicMilestone, PublicProject } from "@/types/public-portfolio";
+import type { PublicCapability, PublicProject } from "@/types/public-portfolio";
 
 /**
  * Manually reviewed copy for public display. Do not import private Workspace,
@@ -7,9 +7,9 @@ import type { PublicCapability, PublicMilestone, PublicProject } from "@/types/p
 export const publicPortfolio = {
   name: "Caider / CDC666",
   githubUrl: "https://github.com/CDC666-666",
-  updatedAt: "2026-10-11",
+  updatedAt: "2026-10-12",
+  launchedAt: null as string | null,
   introduction: "电气工程学习者，关注嵌入式、电机控制与机器人实践。通过项目把控制链路、软件实现和调试过程逐步连接起来。",
-  currentFocus: "继续整理 RoboMaster 控制链路与现场版本，同时完善个人工作台的工程经验管理。",
 } as const;
 
 export const publicProjects: readonly PublicProject[] = [
@@ -21,6 +21,7 @@ export const publicProjects: readonly PublicProject[] = [
     status: "持续调试",
     summary: "围绕全向轮步兵的底盘、云台与视觉接口，梳理控制链路并持续做联调。",
     role: "参与电控与视觉联调；整理上下位机接口和云台问题的排查记录。",
+    sourceDate: "2026-10-07",
     technologies: ["STM32", "CAN", "电机控制", "Ubuntu 视觉"],
     goal: "让底盘、云台与视觉模块在明确的模式和版本边界下协同工作。",
     approach: [
@@ -56,6 +57,7 @@ export const publicProjects: readonly PublicProject[] = [
     status: "持续迭代",
     summary: "为学习、项目与工程经验建立统一的私人工作区，并逐步迁移到服务器数据源。",
     role: "提出功能需求，核对工程经验的数据与访问边界，并参与页面和部署验收；具体编码分工待补充。",
+    sourceDate: "2026-10-11",
     technologies: ["Next.js", "TypeScript", "PostgreSQL", "Prisma"],
     goal: "将学习、项目和工程记录放入可持续维护的私人工作区。",
     approach: [
@@ -69,34 +71,6 @@ export const publicProjects: readonly PublicProject[] = [
     visual: "workspace",
   },
 ];
-
-export const publicMilestones: readonly PublicMilestone[] = [
-  {
-    date: "2026-10-07",
-    title: "梳理 RoboMaster 控制链路",
-    summary: "区分本机源码、已烧录固件与 Ubuntu 运行程序，整理后续联调需要核对的信号。",
-    tags: ["控制链路", "版本核对"],
-    direction: "机器人",
-    projectSlug: "robomaster-infantry",
-  },
-  {
-    date: "2026-10-09",
-    title: "工作台工程经验模块进入主分支",
-    summary: "建立结构化经验记录与只读检索快照，保留来源和证据状态。",
-    tags: ["知识管理", "数据建模"],
-    direction: "软件工程",
-    projectSlug: "personal-workspace",
-  },
-  {
-    date: "2026-10-11",
-    title: "工作台完成隧道方式的页面验收",
-    summary: "验证私人登录、经验记录读写与备份恢复；公开域名与上线验收仍在后续计划中。",
-    tags: ["部署验收", "数据保护"],
-    direction: "软件工程",
-    projectSlug: "personal-workspace",
-  },
-];
-
 export const publicCapabilities: readonly PublicCapability[] = [
   {
     title: "嵌入式",
@@ -116,14 +90,4 @@ export const publicCapabilities: readonly PublicCapability[] = [
     description: "通过全向轮步兵实践整理底盘、云台和视觉之间的接口。",
     projectSlugs: ["robomaster-infantry"],
   },
-  {
-    title: "仿真",
-    level: "资料待补",
-    description: "本版没有已核准公开的代表项目或成果，暂不展示具体仿真工作。",
-    projectSlugs: [],
-  },
 ];
-
-export function getPublicProject(slug: string): PublicProject | undefined {
-  return publicProjects.find((project) => project.slug === slug);
-}

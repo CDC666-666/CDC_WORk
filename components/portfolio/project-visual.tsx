@@ -14,7 +14,7 @@ export function ProjectVisual({ kind }: { kind: PublicProject["visual"] }) {
       <circle cx="220" cy="121" r="4" fill="currentColor"/><circle cx="349" cy="89" r="3" fill="currentColor"/>
       <text x="64" y="72" fill="currentColor" fontSize="9">VISION</text><text x="334" y="79" fill="currentColor" fontSize="9">MOTION</text>
     </svg>
-    <span className="visual-bottom">EMBEDDED · CONTROL · ROBOTICS</span>
+    <span className="visual-bottom">自绘示意 · EMBEDDED / CONTROL</span>
   </div>;
   if (kind === "arm") return <div className="project-visual project-visual-arm" role="img" aria-label="自绘三轴机械臂示意图，非实物照片">
     <span className="visual-label">MOTION / 02</span>
@@ -28,7 +28,7 @@ export function ProjectVisual({ kind }: { kind: PublicProject["visual"] }) {
       <path d="M137 132C168 75 245 56 304 81" stroke="currentColor" opacity=".35" strokeDasharray="5 7"/>
       <text x="105" y="145" fill="currentColor" fontSize="9">AXIS 01</text><text x="249" y="74" fill="currentColor" fontSize="9">AXIS 03</text>
     </svg>
-    <span className="visual-bottom">THREE AXES · MOTOR CONTROL</span>
+    <span className="visual-bottom">自绘示意 · THREE AXES / MOTOR</span>
   </div>;
   return <div className="project-visual project-visual-workspace" role="img" aria-label="自绘工作台模块示意图，非实际界面截图">
     <span className="visual-label">SYSTEM / 03</span>
@@ -42,6 +42,6 @@ export function ProjectVisual({ kind }: { kind: PublicProject["visual"] }) {
       <rect x="174" y="164" width="186" height="31" rx="3" stroke="currentColor"/>
       <path d="M190 123H245M190 135H222M295 123H345M295 135H324M190 179H341" stroke="currentColor" opacity=".5"/>
     </svg>
-    <span className="visual-bottom">KNOWLEDGE · PROJECTS · DATA</span>
+    <span className="visual-bottom">自绘示意 · KNOWLEDGE / DATA</span>
   </div>;
 }

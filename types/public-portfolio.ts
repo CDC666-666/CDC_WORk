@@ -10,6 +10,10 @@ export interface PublicProject {
   status: ProjectStatus;
   summary: string;
   role: string;
+  /** Verified project dates only. Never infer these from documentation dates. */
+  startDate?: string;
+  endDate?: string;
+  sourceDate?: string;
   technologies: readonly string[];
   goal: string;
   approach: readonly string[];
@@ -18,15 +22,6 @@ export interface PublicProject {
   next: string;
   repositoryUrl?: string;
   visual: "robot" | "arm" | "workspace";
-}
-
-export interface PublicMilestone {
-  date: string;
-  title: string;
-  summary: string;
-  tags: readonly string[];
-  direction: ProjectDirection;
-  projectSlug: string;
 }
 
 export interface PublicCapability {

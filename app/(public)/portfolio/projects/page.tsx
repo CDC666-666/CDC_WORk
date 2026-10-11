@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { ProjectCard } from "@/components/portfolio/project-card";
-import { publicProjects } from "@/data/public-portfolio";
+import { listPublicProjects } from "@/lib/portfolio/public-content";
 import type { ProjectDirection, ProjectStatus } from "@/types/public-portfolio";
 
 export const metadata: Metadata = { title: "项目 · Caider / CDC666", robots: { index: false, follow: false } };
@@ -18,6 +18,7 @@ function filterHref(direction: string, status: string) {
 }
 
 export default async function PortfolioProjects({ searchParams }: { searchParams: Promise<{ direction?: string; status?: string }> }) {
+  const publicProjects = listPublicProjects();
   const params = await searchParams;
   const direction = directions.includes(params.direction as ProjectDirection) ? params.direction! : "全部方向";
   const status = statuses.includes(params.status as ProjectStatus) ? params.status! : "全部状态";

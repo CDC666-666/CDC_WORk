@@ -10,11 +10,12 @@ export function ProjectCard({ project }: { project: PublicProject }) {
     </Link>
     <div className="portfolio-project-body">
       <div className="portfolio-project-meta"><span>PROJECT / {project.number}</span><span className="portfolio-status">{project.status}</span></div>
+      <p className="portfolio-project-time">项目起止时间：{project.startDate ?? "待补充"}{project.startDate ? ` — ${project.endDate ?? "进行中"}` : ""}</p>
       <h3><Link href={`/portfolio/projects/${project.slug}`}>{project.title}</Link></h3>
       <p>{project.summary}</p>
       <p className="portfolio-project-role"><strong>我的职责</strong>{project.role}</p>
       <div className="portfolio-tags">{project.technologies.map((tag) => <span key={tag}>{tag}</span>)}</div>
-      <Link className="portfolio-text-link" href={`/portfolio/projects/${project.slug}`}>查看项目详情 <span aria-hidden="true">↗</span></Link>
+      <div className="portfolio-project-actions"><Link className="portfolio-text-link" href={`/portfolio/projects/${project.slug}`}>查看项目详情 ↗</Link>{project.repositoryUrl && <a className="portfolio-text-link" href={project.repositoryUrl} target="_blank" rel="noopener noreferrer">GitHub ↗</a>}</div>
     </div>
   </article>;
 }

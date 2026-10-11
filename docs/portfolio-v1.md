@@ -1,37 +1,28 @@
-# 个人展示站第一版（本地预览）
+# 个人展示站第一版：深色作品集与公开站点统计
 
-核对日期：2026-10-11。开发目录：`D:/Workplace/CDC_WORK_PORTFOLIO`，分支 `codex/portfolio-v1`，从 Draft PR #12 的 `c4d00deb1d88dc20d1c18884a1fbc4ec8f95c627` 建立。该提交的 `quality`、`compose` 均通过；它包含服务器备份与依赖修复，但服务器当前 Web 镜像实际由更早的 `795f7cdab1c539a4c633cf915c73dd0f9f34d56c` 构建。此展示站分支未部署。`CDC_WORK_MAIN` 的既有本地修改保持不动。
+核对日期：2026-10-12。开发目录 `D:/Workplace/CDC_WORK_PORTFOLIO`，分支 `codex/portfolio-v1`；原基线为 Draft PR #12 已通过 CI 的 `c4d00deb1d88dc20d1c18884a1fbc4ec8f95c627`，本版仅在本地预览，未合并或部署。当前服务器镜像仍由较早的 `795f7cdab1c539a4c633cf915c73dd0f9f34d56c` 构建。私人工作台、个人数据库与其他 worktree 均未修改。
 
-## 路由与公开边界
+## 页面与内容边界
 
-- 本地入口：`http://localhost:3100/portfolio`，项目 `/portfolio/projects`、详情 `/portfolio/projects/[slug]`、时间线 `/portfolio/timeline`、关于 `/portfolio/about`。端口 3100 避开当前 3000 的 SSH 隧道。
-- `/`、`/login` 和已有私人路由仍属工作台；`middleware.ts` 仅放行 `/portfolio` 路径，私人 layout 和 API 继续做数据库会话校验。公开路由不读取 Workspace、个人数据库、共享调试案例原文、账号或会话。
-- 公开内容仅从 [`data/public-portfolio.ts`](../data/public-portfolio.ts) 中人工整理的结构化字段读取；类型在 [`types/public-portfolio.ts`](../types/public-portfolio.ts)。第一版没有 CMS 或从私人工作台自动发布。未来发布功能须经过字段白名单、内容审核和显式批准。
-- GitHub 主页是 `https://github.com/CDC666-666`。工作台源码仓库已核对为公开，可在该项目详情放链接；自瞄上位机仓库为私有，机械臂公开仓库未核实，因此不生成这两个项目的仓库链接。
+- 本地入口：`http://127.0.0.1:3100/portfolio`。公开路由：首页、`/portfolio/projects`、三个详情、`/portfolio/about`、`/portfolio/stats`、`/portfolio/contact`。原“成长时间线”路由及公开数据已移除；“当前关注”和“最近成长”区域不再展示。
+- 视觉参考为用户 2026-10-11 提供的风格文档；三张截图仅作为统计功能与层级参考。首屏采用深色星点、固定图标块徽章、内底部青蓝光线按钮、透视项目卡片环和前景浏览器结构示意。卡片重复展示**同三个项目的视觉素材**，不是额外项目；自绘 SVG 与示意界面均不含私人数据、非实拍或真实工作台截图。页面正常纵向滚动，移动端为流式排版。
+- `data/public-portfolio.ts` 只维护人工核对的公开字段，页面通过 `lib/portfolio/public-content.ts` 读取；未来发布工作流须先进行字段审查，不能枚举私人实体。三个项目是 RoboMaster 全向轮步兵电控、三轴机械臂与达妙电机控制、个人工作台。机械臂仅有用户确认的名称与方向。项目起止日期没有可靠依据，因此显示“待补”；`sourceDate` 只是资料核对日，不代表开工日。公开项目详情不读取私人 Workspace、原始调试记录或数据库快照。工作台源码仓库已核对为公开，另两个项目没有已确认的公开仓库地址。
+- 联系信息集中在 `data/public-contact.ts`。目前仅 GitHub 主页已被用户明确提供。`email`、`wechatId`、`wechatQrPath` 未配置时不渲染按钮或假联系方式；配置后邮件、复制和二维码弹窗提供反馈、Escape、焦点与键盘操作。二维码应放经本人批准公开的静态路径。正式上线起点在 `data/public-portfolio.ts` 的 `launchedAt`；目前为 `null`，运行时长明确显示“尚未正式上线”。
 
-## 内容证据与待补
+## 统计口径与隐私
 
-| 项目或节点 | 当前表述依据 | 公开边界 |
-|---|---|---|
-| RoboMaster 全向轮步兵电控 | `D:/Workplace/auto_aim/PROJECT_CONTEXT.md` 与维护手册的系统架构、2026-10-07 版本核对 | 只给概要和排查方法，不展示原始日志、硬件参数、截图或实车性能结论；运行版本仍需核对 |
-| 三轴机械臂与达妙电机控制 | 用户本轮提供的项目名称及方向 | 职责、方案、日期、实验结果、图片与仓库链接均标为待补，不放入时间线 |
-| 个人工作台 | 本仓库源码及项目背景，2026-10-09 主分支整合与 2026-10-11 隧道验收记录 | 只描述功能范围和验证边界，不读取或展示私人记录、真实案例正文、服务器地址与账号资料 |
-| 成长节点 | 上述项目背景中的 2026-10-07、09、11 记录 | 是有文档日期的技术节点，不代表比赛成绩或学历时间线 |
+- 复用本应用 PostgreSQL，不部署 Umami 或第二套服务。新迁移 `20261012010000_portfolio_analytics` 建立 `PortfolioVisitor` 和 `PortfolioPageView`。只在 `/portfolio` 的已列明公开路由完成实际浏览器导航后 POST `/api/public/portfolio-visit`；预加载、组件重渲染与筛选参数变化不计入。刷新是一次新 PV。事件 UUID 作为幂等键；同一匿名访客每分钟最多记录 20 次。仅接受与请求 Host 同源的上报，拒绝私人路径与未知项目路径。
+- 浏览器得到随机、HttpOnly、SameSite=Lax 的第一方 Cookie；数据库只保存其服务端 HMAC 摘要，不保存原始 Cookie、IP、原始 User-Agent、完整引荐 URL、账号或指纹。来源在浏览器端先归类，仅把类别传给服务端；设备与浏览器也在写入前归类。累计 UV = 全周期不同随机 Cookie 摘要数量，**不是每日 UV 求和**；今日 UV = 上海自然日内出现的不同摘要数。用户清除 Cookie 或换浏览器会计作新访客。PV = 成功写入的公开页面导航事件数。数据聚合统一用 `Asia/Shanghai`；访客地域没有可靠来源，不展示地图。
+- `GET /api/public/portfolio-stats` 只返回聚合数、白名单公开路径的排行与时间桶，不返回访客摘要或原始事件。支持 7/30/90 天趋势，设备、浏览器与来源按最近 30 天，活跃热力图按最近 30 天的周一至周日和小时。无访问返回 0；缺少服务端配置返回 `not_configured`；数据库故障返回 `error`。首页/页脚仅显示少量摘要。GitHub 贡献由**另一数据源**（官方 GraphQL）按小时缓存，缺少独立公开只读凭据时显示降级状态与 GitHub 链接，不生成虚构图格。
+- 本地 `.env` 被 Git 忽略，需设置独立数据库 `DATABASE_URL` 与至少 32 字符的 `PORTFOLIO_ANALYTICS_SECRET` 才开启采集。未来线上需要独立生成服务端密钥并执行迁移，**不得**把本地预览库或其数据复制进线上库。正式上线时间经确认后填写带时区的 ISO 时间；刷新或重启不改变该起点。统计服务不可用不阻断公开页面。
 
-双螺旋管道及热泵 Fluent 仿真不属于本版公开展示范围。真实照片、机械臂测试资料、学校/学历细节、简历、邮箱均未提供；页面使用自绘示意图，未放置无效附件或下载入口。
+## 本轮验证
 
-## GitHub 贡献图
+- 本 worktree 以既有 PostgreSQL 16.14 程序在 `127.0.0.1:5544` 建立独立 `portfolio_preview` 库，应用 7 个迁移，未连接个人库或服务器库。`npm run lint`、`npm run typecheck`、`npm test`（50/50）、`npm run test:db`（18/18）和 `npm run build` 通过。新增数据库测试覆盖真实写入、重复事件不增加记录、累计 UV 不按每日相加、公开聚合不含访客摘要、20 次/分钟限制；策略测试覆盖公开路径白名单及上海午夜边界。
+- 生产构建在 Chrome 实测桌面 1440px 和手机 390px：首页、项目列表、详情、统计、联系均为 200，无横向溢出和控制台错误；手机菜单、Escape、项目筛选/详情返回、7/90 天切换、刷新及热门页面链接可操作。筛选后仅显示匹配项目，原时间线路由返回 404。未登录私人 API 为 401，私人页面跳转登录。独立浏览器会话验证访问前 `3 UV / 11 PV`，首页访问后 `4/12`，刷新后 `4/13`，SPA 切换项目页后 `4/14`；筛选参数变化未额外上报。另经真实 HTTP JSON 请求验证同一事件第一次为 `recorded`、第二次为 `duplicate`，PV 只增加 1。这些数字仅是**隔离本地库的合成浏览器验收数据**，不是正式站点流量。
+- 断开隔离数据库时，统计 API 返回 HTTP 503 与 `error`，公开首页仍为 HTTP 200；恢复后同库计数仍可读取。尚未对已配置的真实邮箱/微信复制和二维码弹窗做浏览器验收，因为未提供批准公开的实际字段；真实 GitHub 贡献凭据也未在本 worktree 配置。私人 OAuth 增删改查沿用旧部署证据，未把旧镜像结果算成本地展示站分支的验收。
+- 被 Git 忽略的验收截图：`.local-preview/home-desktop.png`、`projects-desktop.png`、`stats-desktop.png`、`contact-desktop.png`，以及 `home-mobile.png`、`stats-mobile.png`、`contact-mobile.png`、`project-detail-mobile.png`。截图与数据库测试数据不进入仓库。
 
-GitHub 官方 GraphQL `user.contributionsCollection.contributionCalendar` 返回逐日数据。服务端可选 `PORTFOLIO_GITHUB_PUBLIC_TOKEN`，只用于调用官方 API，按小时缓存；浏览器只收到渲染后的数据，不收到令牌。读取前要求 `restrictedContributionsCount === 0`，响应结构异常、超时或无凭据时只显示 GitHub 链接及简短状态，不制造贡献数。配置时使用独立、仅可读取公开资料且没有 `read:user`/私有仓库权限的凭据，不复用私人工作台 OAuth 会话或数据库里的 Account 令牌。
+## 后续补充与上线条件
 
-2026-10-11 本机曾使用当前 GitHub CLI 的已登录会话只读查询该字段，返回 365 天与 0 条受限贡献；这验证 API 可达，不表示未来服务器已经配置专用凭据。日历最多每小时刷新一次，是准实时而非逐秒更新。GitHub 文档：[GraphQL 认证](https://docs.github.com/en/graphql/guides/forming-calls-with-graphql)、[贡献日历字段](https://docs.github.com/en/graphql/reference/users#contributioncalendar)、[速率限制](https://docs.github.com/en/graphql/overview/rate-limits-and-query-limits-for-the-graphql-api)。
-
-## 域名预案（未启用）
-
-未来 `cdc666.cn` 对应公开展示站首页与项目路由，`work.cdc666.cn` 对应已有私人工作台及其登录和私有 API。当前同一 Next.js 应用只在 `/portfolio` 暴露公开内容；公网切换时还需在反向代理或独立站点配置主域名的公开根路径映射，并拒绝主域名访问私人页面与 API。必须先完成备案、DNS、HTTPS、专用 OAuth 与公网安全验收。本轮不配置 Caddy、不更改 OAuth、不开放 80/443。
-
-## 本地验收
-
-2026-10-11 在本 worktree 独立运行 `npm ci`、`npm run db:generate`、`npm run lint`、`npm run typecheck`、`npm test`（47/47）和 `npm run build`，均通过。构建路由表含四类公开页面与三个项目详情；原有私人页面和 API 路由仍在。浏览器通过本机 Chrome 检查 1440px 与 390px 两种视口共 14 次公开路由加载，均为 200、无横向溢出；项目方向/状态筛选、时间线筛选与空状态、详情打开和浏览器返回均通过。未登录访问 `/experiences` 跳转登录，私人 Workspace API 返回 401。页面 HTML 未出现已排除项目；实测在有本机临时服务端凭据时显示 GitHub 官方真实日历，生产构建的截图不含开发角标。
-
-本地截图留在 Git 忽略的 `.local-preview/`：`home-1440.png`、`home-390.png`、`detail-390.png`，另有首屏视口截图。没有任何真实个人案例或令牌进入截图。另以独立 3101 端口、**无 GitHub 凭据**启动同一生产构建：首页返回 200，显示明确降级文案、不显示伪造贡献数；该临时进程已停止。远端错误注入未专项验收。真实私人 OAuth 登录及服务器数据库增删改查已在 PR #12 的提交版隧道验收中通过，但展示站本地进程尚未再次以真实 OAuth 验收；不要把旧镜像的验收算作本分支完整认证回归。
+需要本人确认可公开的邮箱、微信号/二维码；三个项目的起止日期、机械臂职责与可公开记录、本人机器人照片或项目截图；正式上线时间；可只读公开 GitHub 贡献的专用凭据。第一版只在本机预览。未来 `cdc666.cn` 计划承载展示站，`work.cdc666.cn` 计划承载私人工作台；目前尚无 ICP、DNS、HTTPS、生产 OAuth 和公网站点验收，继续保持原 SSH 隧道私人访问方式。
