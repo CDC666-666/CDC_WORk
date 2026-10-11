@@ -16,6 +16,8 @@ Keep that PowerShell window open and browse to `http://localhost:3000/login` (us
 
 This tunnel preserves the existing local GitHub OAuth App and `NEXTAUTH_URL=http://localhost:3000`. Nothing in this plan changes the running `.env`, public firewall, DNS, or Caddy.
 
+On 2026-10-11 the committed Web image from `795f7cdab1c539a4c633cf915c73dd0f9f34d56c` was tested through this tunnel. GitHub login entered directly without another password or consent prompt; the existing browser login/authorization can explain that behavior. The same browser's private Workspace API returned 200, and a read-only database check found active sessions only for the allowed GitHub numeric ID with its Account and Workspace relation. A temporary synthetic experience passed create, edit, reload and search, then was deleted by its ID. After logout the private API returned 401 and `/experiences` redirected to `/login`. This verifies the tunnel session, not the future public OAuth App.
+
 ## Future public cutover (inactive plan)
 
 The NextAuth handler is `app/api/auth/[...nextauth]/route.ts` with GitHubProvider in `lib/server/auth.ts`, so the future GitHub OAuth App settings are:
