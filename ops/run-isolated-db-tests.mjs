@@ -1,4 +1,4 @@
-const { spawnSync } = require('node:child_process');
+import { spawnSync } from 'node:child_process';
 
 const database = process.argv[2];
 if (!/^cdc_launchprep_test_\d{8}T\d{6}Z$/.test(database)) throw new Error('Invalid isolated test database name');
