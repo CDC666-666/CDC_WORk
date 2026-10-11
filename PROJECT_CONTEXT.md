@@ -1,5 +1,9 @@
 # 个人工作台开发分支背景（2026-10-07）
 
+**个人展示站第一版开发（2026-10-11）：** 独立 `D:/Workplace/CDC_WORK_PORTFOLIO@codex/portfolio-v1` 从 Draft PR #12 已通过 CI 的 `c4d00deb1d88dc20d1c18884a1fbc4ec8f95c627` 建立；远端 `main` 与日常 `CDC_WORK_MAIN` 仍为 `2eb7087`，后者原有本地背景修改未动。服务器当前镜像由 PR #12 较早的 `795f7cd` 构建，本分支仅本地预览，不属于实际部署。公开入口 `/portfolio` 与原有私人 `/`、`/login` 并存；本版只展示 RoboMaster 全向轮步兵电控、三轴机械臂与达妙电机控制、个人工作台三个项目。公开字段由独立内容文件维护，不读取私人 Workspace。机械臂细节与图片待补，Fluent 项目不进入公开内容。GitHub 官方贡献日历可用服务器端公开只读凭据按小时读取，失败时只保留链接；不使用工作台账户令牌。页面、证据范围、未来域名映射及本地验收见[展示站说明](docs/portfolio-v1.md)。下文历史分支章节按当时状态保留。
+
+**本地验收（2026-10-11，`codex/portfolio-v1` 基于 `c4d00de`，来源：本 worktree 命令与本机 Chrome）：** 独立依赖安装与 Prisma 生成后，lint、typecheck、47 条现有测试、生产构建通过。1440px 和 390px 共 14 次公开路由加载、项目与时间线筛选、详情和返回均通过；页面无横向溢出，真实 GitHub 官方贡献图在本机服务端临时凭据下显示。未登录私人页面仍跳登录、私人 API 401。真实 OAuth 与私人数据增删改查沿用 PR #12 已部署镜像的先前验收，尚未对本展示站本地进程复测，不能混为同一版本通过。生产域名与服务器均未改变，详细证据与截图路径见[展示站说明](docs/portfolio-v1.md)。
+
 **日常入口（2026-10-09）：** 推荐在 `D:/Workplace/CDC_WORK_MAIN` 继续主分支工作。`D:/Workplace/CDC_WORK_DB_BACKUP@codex/personal-db-backup` 是从 `origin/main@f4c173a` 建立的本轮备份与恢复历史演练目录；本文件保留原连续开发分支的历史章节，演练事实与范围见文末对应小节。历史段落中的“本目录”仅适用于当时的 worktree。
 
 **上线准备入口（2026-10-11）：** 本 worktree 为 `D:/Workplace/CDC_WORK_LAUNCH_PREP@codex/launch-prep`，基于 `origin/main@2eb70879cc47e984839f59cf694aa3605e597908`。日常主分支入口仍为 `CDC_WORK_MAIN`。下述候选镜像首次验收时由尚未提交的依赖修复构建，不能称为当时的 main 镜像；后续提交与重新部署须按实际 Git SHA 和镜像摘要另行记录。详见 [备份操作与演练](docs/server-backup-operations.md)、[依赖审计](docs/dependency-audit-20261011.md)及[隧道与域名方案](docs/tunnel-and-future-domain.md)。下文的历史分支状态保持当时语境。
