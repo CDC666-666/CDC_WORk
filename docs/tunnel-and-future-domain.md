@@ -2,6 +2,8 @@
 
 Checked 2026-10-11 against `codex/launch-prep` based on `origin/main@2eb70879cc47e984839f59cf694aa3605e597908`, `lib/server/auth.ts`, `app/api/auth/[...nextauth]/route.ts`, server instance metadata, and the server's listening sockets. Domain registration is user-reported; ICP filing has not been verified and the user plans to defer it. The server reports `cn-hangzhou` (mainland China). Caddy is inactive; Web and PostgreSQL bind only to server `127.0.0.1:3000` and `127.0.0.1:5432`.
 
+On 2026-10-11, a local `A`-record lookup for `work.cdc666.cn` did not resolve. This is a point-in-time DNS observation, not proof of registration or filing status. No record is being added during tunnel-only use.
+
 ## Daily private access
 
 In a **new PowerShell window on the user's Windows machine**, check that local port 3000 is free or reuse the existing project tunnel. Then run:
@@ -25,7 +27,7 @@ The NextAuth handler is `app/api/auth/[...nextauth]/route.ts` with GitHubProvide
 
 Disable wildcard callback matching. In the server's protected `.env`, the future cutover would set `NEXTAUTH_URL=https://work.cdc666.cn`, the **new production OAuth App's** `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET`, retain `ALLOWED_GITHUB_USER_ID=248133835`, and supply a protected `NEXTAUTH_SECRET`. Keep database credentials and OAuth values out of Git and chat. The `cdc666.cn` apex is reserved for a later personal site; do not point it at the private workspace as a shortcut.
 
-After ICP filing is confirmed and a cutover is authorized, create a DNS `A` record for host `work` pointing to the server's verified public IP, and allow inbound 80/443 in both the instance firewall and host firewall. Keep 3000 and 5432 bound to loopback. A future Caddyfile site block would be:
+After ICP filing is confirmed and a cutover is authorized, recheck the instance's public IP (currently reached through SSH at `114.215.174.39`), then create a DNS `A` record for host `work` pointing to that address. Allow inbound 80/443 in both the instance firewall and host firewall. Keep 3000 and 5432 bound to loopback. A future Caddyfile site block would be:
 
 ```caddyfile
 work.cdc666.cn {

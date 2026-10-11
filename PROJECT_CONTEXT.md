@@ -8,6 +8,8 @@
 
 **候选运行与访问控制（2026-10-11）：** 候选 Web 镜像摘要为 `sha256:31320a567035ddf48525068cad5e70441149ff6cc4b26bf605c7e02a6e3a54a0`，Web 与数据库容器健康，仅监听服务器回环地址，Caddy 未发布域名。依赖审计从 19 个受影响包条目（15 高、4 中）降为完整开发依赖图 7 高、运行时生产依赖图 0；余下为 Tailwind 3/ESLint 开发链，需单独升级。隔离构建的 lint、typecheck、47 条常规测试、17 条数据库测试、六个迁移和 build 通过。用户经 SSH 隧道在独立 Chrome 窗口亲自登录；真实会话私人 API 200，原案例可读；仅对本轮一条临时经验完成新增、编辑、刷新、搜索和删除。退出后 API 401，经验页返回登录页。清理后的只读清单显示原案例 ID、版本 1、正文摘要、待审核/历史现场反馈、来源及更新时间与备份前基线一致；本轮会话表因登录发生变化，不能称整库字节级不变。正式域名/ICP备案、生产专用 OAuth、旧浏览器数据迁移、异地备份与公网验收仍待完成。
 
+**提交版部署（2026-10-11，来源：PR #12 CI、服务器 Docker/Prisma、只读数据库清单）：** 首次 CI 发现新增脚本的 CommonJS lint 与运行镜像缺少 Compose 验证所需的 `tsx`，经修复后的代码提交 `795f7cdab1c539a4c633cf915c73dd0f9f34d56c` 的 quality、compose 均通过。服务器从该提交的独立 release worktree 及仓库 Dockerfile 构建并部署 Web 镜像 `sha256:828110ce4ce7837f5465fb22ba076328f8cf5a614350482c52f9c105d5a46429`，OCI revision 标签指向上述完整 SHA；旧候选镜像和先前 Compose override 留作回滚。服务器干净的 `/opt/cdc-work/app` 仍为 `main@2eb7087`，不能把备份清单中的 checkout `applicationCommit` 当成实际 Web 构建提交。Web 健康，生产依赖审计 0、迁移已应用、匿名私有 API 401；部署前后 37 表、迁移、归属和真实案例的只读摘要完全一致。提交版备份任务再次成功、计时器有效，最新归档 SHA-256 与镜像摘要见[备份操作说明](docs/server-backup-operations.md)。真实 GitHub 登录后的页面复验须按本轮浏览器结果另记，不由健康检查推断通过。用户决定暂缓 ICP，继续只用 SSH 隧道；域名/HTTPS/生产 OAuth 仅有[未启用的配置方案](docs/tunnel-and-future-domain.md)。
+
 **文档归属（2026-10-08）：** 本背景与本分支的 `AGENTS.md` 由 `CDC_WORK` 仓库的 `codex/engineering-experience` 分支管理。`6b3e20d` 是工程经验功能开发前的代码基线；本轮验收前本地 HEAD 为 `7ca934b`。验收记录只适用于本机功能分支源码和隔离测试库，不构成生产部署或实车验证。
 
 ## 位置、版本与职责
