@@ -6,6 +6,8 @@ import { ArrowLeft, ArrowUpRight } from "lucide-react";
 import { ProjectVisual } from "@/components/portfolio/project-visual";
 import { findPublicProject, listPublicProjects } from "@/lib/portfolio/public-content";
 
+export const dynamicParams = false;
+
 export function generateStaticParams() {
   return listPublicProjects().map((project) => ({ slug: project.slug }));
 }
