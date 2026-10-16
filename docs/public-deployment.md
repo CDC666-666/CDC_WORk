@@ -2,6 +2,8 @@
 
 Status: preparation on 2026-10-16, `codex/portfolio-v1` based on `codex/launch-prep`. The server still runs the prior `795f7cd` image until a committed release is built and switched. Public DNS, HTTPS, and production GitHub OAuth must be verified before calling this live.
 
+CI correction: the first portfolio PR Compose run used a fresh container database named `cdc_workspace`, while the analytics database test intentionally rejects any database other than `portfolio_preview`. Both CI jobs now create an isolated database named `portfolio_preview`; the test no longer accepts a generic `CI` bypass. The local isolated database run with `.env` loaded passed all 18 database checks. This changes CI fixtures only, never a production database name.
+
 ## Boundaries
 
 - `https://cdc666.cn/` redirects to `/portfolio`; only curated portfolio routes, their public aggregate API, and required Next static assets pass through Caddy. Unknown and private paths return 404.

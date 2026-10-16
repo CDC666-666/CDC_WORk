@@ -20,15 +20,15 @@ jobs:
       postgres:
         image: postgres:16.14
         env:
-          POSTGRES_DB: cdc_workspace
+          POSTGRES_DB: portfolio_preview
           POSTGRES_HOST_AUTH_METHOD: trust
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U postgres -d cdc_workspace"
+          --health-cmd "pg_isready -U postgres -d portfolio_preview"
           --health-interval 5s --health-timeout 3s --health-retries 10
     env:
-      DATABASE_URL: postgresql://postgres@localhost:5432/cdc_workspace?schema=public
+      DATABASE_URL: postgresql://postgres@localhost:5432/portfolio_preview?schema=public
       NEXTAUTH_URL: http://localhost:3100
       ALLOWED_GITHUB_USER_ID: "248133835"
       TEST_BASE_URL: http://localhost:3100
@@ -84,8 +84,8 @@ jobs:
           {
             printf 'POSTGRES_USER=cdc\n'
             printf 'POSTGRES_PASSWORD=%s\n' "$password"
-            printf 'POSTGRES_DB=cdc_workspace\n'
-            printf 'DATABASE_URL=postgresql://cdc:%s@localhost:5432/cdc_workspace?schema=public\n' "$password"
+            printf 'POSTGRES_DB=portfolio_preview\n'
+            printf 'DATABASE_URL=postgresql://cdc:%s@localhost:5432/portfolio_preview?schema=public\n' "$password"
             printf 'NEXTAUTH_URL=http://localhost:3000\n'
             printf 'NEXTAUTH_SECRET=%s\n' "$secret"
             printf 'GITHUB_CLIENT_ID=\nGITHUB_CLIENT_SECRET=\n'

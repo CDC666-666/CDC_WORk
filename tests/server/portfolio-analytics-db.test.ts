@@ -6,7 +6,7 @@ import { prisma } from "@/lib/server/prisma";
 
 test("anonymous public analytics persist, deduplicate by event and aggregate without leaking visitor IDs", async () => {
   const databaseUrl = process.env.DATABASE_URL;
-  if (!databaseUrl || (!process.env.CI && new URL(databaseUrl).pathname !== "/portfolio_preview")) throw new Error("portfolio analytics DB test requires the isolated portfolio_preview database");
+  if (!databaseUrl || new URL(databaseUrl).pathname !== "/portfolio_preview") throw new Error("portfolio analytics DB test requires the isolated portfolio_preview database");
   process.env.PORTFOLIO_ANALYTICS_SECRET = "portfolio-test-only-secret-32-bytes-minimum";
   const { recordPortfolioVisit, readPortfolioAnalytics, visitorDigest } = await import("@/lib/portfolio/analytics-server");
   const cookie = randomUUID().replaceAll("-", "");
