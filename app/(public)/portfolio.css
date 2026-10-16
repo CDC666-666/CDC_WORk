@@ -13,3 +13,151 @@
 @media(max-width:760px){.portfolio-stats-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.portfolio-stats-primary,.portfolio-stats-distributions{grid-template-columns:1fr}.portfolio-site-facts{grid-template-columns:1fr}.portfolio-stats-summary-data{flex-wrap:wrap}.portfolio-stats-github .portfolio-contribution-heading{display:block}}
 @media(max-width:480px){.portfolio-stats-kpis article,.portfolio-stat-panel{padding:17px}.portfolio-stats-kpis strong{font-size:29px}.portfolio-stats-kpis small{font-size:9px}.portfolio-stat-heading{align-items:start;flex-direction:column}.portfolio-chart-tooltip{max-width:100%;white-space:normal}.portfolio-stats-toolbar{align-items:start}}
 .portfolio-contribution-heading{display:flex;align-items:start;justify-content:space-between;gap:18px}.portfolio-contribution-heading h2{margin:10px 0 15px;font-size:24px}.portfolio-contribution-summary,.portfolio-contribution-note,.portfolio-contribution-fallback{color:#a7bdca;font-size:11px;line-height:1.8}.portfolio-contribution-summary strong{color:#e6f8fb}.portfolio-calendar-scroll{max-width:100%;overflow-x:auto;padding:10px 0 15px}.portfolio-calendar{display:flex;gap:3px;width:max-content}.portfolio-calendar-week{display:grid;grid-template-rows:repeat(7,10px);gap:3px}.portfolio-calendar-day{display:block;width:10px;height:10px;border-radius:2px;background:#152532}.portfolio-calendar-day.level-first_quartile{background:#245c72}.portfolio-calendar-day.level-second_quartile{background:#3084a0}.portfolio-calendar-day.level-third_quartile{background:#4ab8d1}.portfolio-calendar-day.level-fourth_quartile{background:#8ae9f7}
+
+/* The three real projects are the first screen's visual centre. */
+.portfolio-hero{min-height:900px;padding-top:28px}
+.portfolio-showcase.portfolio-project-orbit{height:476px;margin-top:24px;overflow:hidden;perspective:1100px;animation:portfolio-showcase-in 1s .3s cubic-bezier(.16,1,.3,1) both}
+.portfolio-project-orbit-stage{position:relative;height:430px;max-width:1060px;margin:auto;transform-style:preserve-3d}
+.portfolio-orbit-card{position:absolute;left:50%;top:12px;display:block;width:360px;height:402px;overflow:hidden;border:1px solid rgba(133,211,235,.35);border-radius:20px;background:#0d1b29;text-align:left;box-shadow:0 35px 80px rgba(0,0,0,.62),inset 0 1px rgba(255,255,255,.08);transition:transform .8s cubic-bezier(.2,.75,.2,1),opacity .8s,filter .8s,box-shadow .25s;will-change:transform}
+.portfolio-orbit-card[data-position=center]{z-index:3;transform:translateX(-50%) translateZ(75px);opacity:1}
+.portfolio-orbit-card[data-position=left]{z-index:1;transform:translateX(-50%) translateX(-320px) rotateY(24deg) scale(.83);opacity:.67;filter:saturate(.75)}
+.portfolio-orbit-card[data-position=right]{z-index:1;transform:translateX(-50%) translateX(320px) rotateY(-24deg) scale(.83);opacity:.67;filter:saturate(.75)}
+.portfolio-orbit-card:hover,.portfolio-orbit-card:focus-visible{border-color:#91e9f6;box-shadow:0 35px 90px rgba(0,0,0,.7),0 0 24px rgba(44,173,208,.22)}
+.portfolio-orbit-card:focus-visible{outline:2px solid #a7f1ff;outline-offset:3px}
+.portfolio-orbit-card .project-visual{height:216px;aspect-ratio:auto}
+.portfolio-orbit-card .project-visual svg{width:100%;height:100%}
+.portfolio-orbit-card-copy{padding:19px 22px 20px;background:linear-gradient(160deg,#102435,#091520)}
+.portfolio-orbit-card-copy>span{color:#78dce9;font-size:10px;font-weight:800;letter-spacing:.17em}
+.portfolio-orbit-card-copy h2{margin:9px 0 6px;color:#f0fbff;font-size:19px;line-height:1.35}
+.portfolio-orbit-card-copy p{display:-webkit-box;min-height:41px;margin:0;overflow:hidden;color:#a8c1d0;font-size:11px;line-height:1.8;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.portfolio-orbit-card-copy>div{display:flex;justify-content:space-between;align-items:center;margin-top:11px;color:#95e8f5}
+.portfolio-orbit-card-copy small{font-size:10px;color:#b1cbd8}
+.portfolio-orbit-caption{display:flex;justify-content:space-between;gap:20px;max-width:850px;margin:auto;color:#7d9cad;font-size:10px;letter-spacing:.07em}
+.portfolio-orbit-caption span:first-child{color:#80dce9;font-weight:700;letter-spacing:.18em}
+
+/* Reference-inspired visual hierarchy: counters, area trend, rings and activity grid. */
+.portfolio-stats-page .portfolio-page-heading{padding:32px 0 36px}
+.portfolio-stats-kpis article{position:relative;min-height:155px;overflow:hidden;background:radial-gradient(circle at 95% 15%,rgba(67,199,226,.18),transparent 45%),linear-gradient(150deg,#102b3c,#081723 80%)}
+.portfolio-stats-kpis article::after{content:"";position:absolute;right:-20px;bottom:-45px;width:110px;height:110px;border:1px solid rgba(120,211,237,.1);border-radius:50%;box-shadow:0 0 0 23px rgba(120,211,237,.025),0 0 0 46px rgba(120,211,237,.018)}
+.portfolio-stats-kpis article:nth-child(3),.portfolio-stats-kpis article:nth-child(4){background:radial-gradient(circle at 95% 15%,rgba(166,155,229,.12),transparent 45%),linear-gradient(150deg,#142738,#081723 80%)}
+.portfolio-stats-kpis strong{position:relative;z-index:1;font-size:clamp(31px,3.6vw,48px)}
+.portfolio-stats-layout{display:grid;grid-template-columns:minmax(0,1.75fr) minmax(320px,.85fr);align-items:start;gap:15px;margin-top:15px}
+.portfolio-stats-main,.portfolio-stats-aside,.portfolio-stats-distributions{display:grid;gap:15px;min-width:0}
+.portfolio-stats-distributions{grid-template-columns:1fr;margin:0}
+.portfolio-trend-panel{min-height:390px}
+.portfolio-trend-panel .portfolio-trend-chart{margin-top:23px}
+.portfolio-trend-panel .portfolio-trend-chart svg{height:240px}
+.portfolio-stats-aside .portfolio-stat-panel{padding:20px}
+.portfolio-distribution-panel h3{margin-bottom:13px}
+.portfolio-distribution-visual{display:grid;grid-template-columns:104px minmax(0,1fr);align-items:center;gap:15px}
+.portfolio-donut{display:grid;place-items:center;width:104px;height:104px;border-radius:50%;box-shadow:0 0 24px rgba(77,202,232,.12)}
+.portfolio-donut>div{display:flex;flex-direction:column;align-items:center;justify-content:center;width:71px;height:71px;border-radius:50%;background:#0d1d2a}
+.portfolio-donut strong{font-size:17px;line-height:1.1;color:#f3fdff;font-variant-numeric:tabular-nums}
+.portfolio-donut small{margin-top:3px;color:#85a9bd;font-size:8px}
+.portfolio-distribution-legend{display:grid;gap:7px;min-width:0;margin:0;padding:0;list-style:none}
+.portfolio-distribution-legend li{display:grid;grid-template-columns:7px minmax(0,1fr) auto;align-items:center;gap:7px;color:#a8c1d0;font-size:10px}
+.portfolio-distribution-legend li span:nth-child(2){overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.portfolio-distribution-legend strong{color:#e5f9fc;font-size:10px}
+.portfolio-legend-swatch{width:7px;height:7px;border-radius:50%}
+.portfolio-heat-panel{margin:0;min-height:275px}
+.portfolio-popular-list li{display:grid;grid-template-columns:25px minmax(0,1fr);align-items:center;gap:11px;padding:10px 0}
+.portfolio-popular-rank{color:#70d6e9;font-size:11px;font-weight:800}
+.portfolio-popular-list li>div{min-width:0}
+.portfolio-popular-list li>div>div{display:flex;justify-content:space-between;gap:10px}
+.portfolio-popular-bar{display:block;height:3px;margin-top:9px;overflow:hidden;border-radius:4px;background:rgba(134,189,212,.12)}
+.portfolio-popular-bar i{display:block;height:100%;border-radius:4px;background:linear-gradient(90deg,#307d9b,#88e7f4)}
+
+@media(max-width:900px){
+  .portfolio-stats-layout{grid-template-columns:1fr}
+  .portfolio-stats-distributions{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .portfolio-distribution-visual{display:block}
+  .portfolio-donut{margin:0 auto 16px}
+}
+@media(max-width:760px){
+  .portfolio-hero{min-height:815px;padding-top:44px}
+  .portfolio-showcase.portfolio-project-orbit{height:410px;margin-top:25px}
+  .portfolio-project-orbit-stage{height:370px}
+  .portfolio-orbit-card{top:8px;width:300px;height:348px}
+  .portfolio-orbit-card[data-position=left]{transform:translateX(-50%) translateX(-235px) rotateY(22deg) scale(.8)}
+  .portfolio-orbit-card[data-position=right]{transform:translateX(-50%) translateX(235px) rotateY(-22deg) scale(.8)}
+  .portfolio-orbit-card .project-visual{height:177px}
+  .portfolio-orbit-card-copy{padding:13px 16px}
+  .portfolio-orbit-card-copy h2{font-size:16px}
+  .portfolio-orbit-caption{padding:0 10px}
+}
+@media(max-width:600px){
+  .portfolio-stats-distributions{grid-template-columns:1fr}
+  .portfolio-distribution-visual{display:grid;grid-template-columns:104px minmax(0,1fr)}
+  .portfolio-donut{margin:0}
+}
+@media(max-width:480px){
+  .portfolio-hero{min-height:770px;padding-top:48px}
+  .portfolio-showcase.portfolio-project-orbit{width:calc(100% + 36px);height:388px;margin-left:-18px;margin-top:14px}
+  .portfolio-project-orbit-stage{height:350px}
+  .portfolio-orbit-card{top:9px;width:276px;height:327px}
+  .portfolio-orbit-card[data-position=left]{transform:translateX(-50%) translateX(-215px) rotateY(23deg) scale(.78)}
+  .portfolio-orbit-card[data-position=right]{transform:translateX(-50%) translateX(215px) rotateY(-23deg) scale(.78)}
+  .portfolio-orbit-card .project-visual{height:155px}
+  .portfolio-orbit-card-copy{padding:12px 15px}
+  .portfolio-orbit-card-copy h2{font-size:15px}
+  .portfolio-orbit-card-copy p{font-size:10px}
+  .portfolio-orbit-caption{font-size:9px;letter-spacing:0}
+  .portfolio-orbit-caption span:last-child{max-width:180px;text-align:right}
+  .portfolio-stats-layout{gap:12px}
+  .portfolio-stats-main,.portfolio-stats-aside,.portfolio-stats-distributions{gap:12px}
+  .portfolio-stats-kpis article{min-height:135px}
+}
+
+/* Continuous orbit and future approved project video. */
+.portfolio-orbit-card{height:380px;transition:border-color .2s,box-shadow .2s}
+.portfolio-orbit-media{height:258px;overflow:hidden;background:#06121d}
+.portfolio-orbit-media .project-visual{width:100%;height:100%;aspect-ratio:auto}
+.portfolio-orbit-media video{display:block;width:100%;height:100%;object-fit:contain;background:#02070b}
+.portfolio-orbit-card-copy{height:122px;padding:13px 20px 16px}
+.portfolio-orbit-card-copy h2{margin:7px 0 5px;font-size:18px}
+.portfolio-orbit-card-copy p{min-height:0;font-size:11px;line-height:1.6}
+.portfolio-orbit-card-copy h2 a:hover{color:#85e6f3}
+@media(max-width:760px){
+  .portfolio-orbit-card{height:332px}
+  .portfolio-orbit-media{height:215px}
+  .portfolio-orbit-card-copy{height:117px;padding:12px 16px}
+  .portfolio-orbit-card-copy h2{font-size:16px}
+}
+@media(max-width:480px){
+  .portfolio-orbit-card{height:315px}
+  .portfolio-orbit-media{height:205px}
+  .portfolio-orbit-card-copy{height:110px;padding:10px 14px}
+  .portfolio-orbit-card-copy h2{font-size:15px}
+  .portfolio-orbit-card-copy p{font-size:10px}
+}
+
+/* First-version perspective ring, with the new video-ready project cards. */
+.portfolio-showcase.portfolio-project-orbit{height:438px;perspective:670px;perspective-origin:50% 63%}
+.portfolio-project-orbit-stage{position:absolute;left:50%;top:68px;width:0;height:0;max-width:none;transform-style:preserve-3d}
+.portfolio-orbit-card{left:-118px;top:-8px;width:236px;height:322px;border-radius:15px;backface-visibility:hidden;transition:border-color .2s,box-shadow .2s;will-change:transform,filter}
+.portfolio-orbit-media{height:215px}
+.portfolio-orbit-card-copy{height:107px;padding:10px 13px}
+.portfolio-orbit-card-copy>span{font-size:8px}
+.portfolio-orbit-card-copy h2{margin:5px 0 3px;font-size:14px}
+.portfolio-orbit-card-copy p{font-size:10px;line-height:1.45}
+.portfolio-orbit-caption{position:absolute;left:50%;bottom:9px;transform:translateX(-50%);width:min(100% - 20px,850px)}
+@media(max-width:760px){
+  .portfolio-showcase.portfolio-project-orbit{height:365px}
+  .portfolio-project-orbit-stage{top:51px;height:0}
+  .portfolio-orbit-card{left:-96px;top:-8px;width:192px;height:260px}
+  .portfolio-orbit-media{height:171px}
+  .portfolio-orbit-card-copy{height:89px;padding:8px 10px}
+  .portfolio-orbit-card-copy h2{margin:4px 0 2px;font-size:12px}
+  .portfolio-orbit-card-copy p{font-size:9px;line-height:1.4}
+}
+@media(max-width:480px){
+  .portfolio-showcase.portfolio-project-orbit{height:337px}
+  .portfolio-project-orbit-stage{top:43px;height:0}
+  .portfolio-orbit-card{left:-84px;top:-8px;width:168px;height:233px}
+  .portfolio-orbit-media{height:150px}
+  .portfolio-orbit-card-copy{height:83px;padding:7px 8px}
+  .portfolio-orbit-card-copy h2{font-size:11px}
+  .portfolio-orbit-card-copy p{font-size:8px}
+  .portfolio-orbit-caption{font-size:8px}
+}
+.portfolio-home-legal{position:relative;z-index:1;padding:12px 20px 22px;text-align:center;color:#7892a1;font-size:11px}.portfolio-home-legal a,.portfolio-footer-stats a{color:#9adfea}.portfolio-home-legal a:hover,.portfolio-footer-stats a:hover{text-decoration:underline}

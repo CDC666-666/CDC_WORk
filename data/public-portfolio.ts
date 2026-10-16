@@ -8,7 +8,7 @@ export const publicPortfolio = {
   name: "Caider / CDC666",
   githubUrl: "https://github.com/CDC666-666",
   updatedAt: "2026-10-12",
-  launchedAt: null as string | null,
+  heroIntroduction: "电气工程学习者，关注嵌入式、电机控制与机器人实践。",
   introduction: "电气工程学习者，关注嵌入式、电机控制与机器人实践。通过项目把控制链路、软件实现和调试过程逐步连接起来。",
 } as const;
 
@@ -32,6 +32,8 @@ export const publicProjects: readonly PublicProject[] = [
     outcome: "已形成可检索的控制链路与历史问题整理；当前车上的固件和 Ubuntu 运行版本仍需现场核实。",
     next: "采集同一时间轴的模式、参考值和反馈值，核对实车运行版本。",
     visual: "robot",
+    showcaseTitle: "RoboMaster 步兵自瞄项目",
+    showcaseSummary: "围绕视觉识别、云台控制与模式切换的联调实践。",
   },
   {
     slug: "three-axis-arm",
@@ -48,6 +50,8 @@ export const publicProjects: readonly PublicProject[] = [
     outcome: "目前仅确认项目名称与技术方向；尚无可公开核对的性能或实验结果。",
     next: "补充硬件配置、本人职责、方案、测试记录和可公开的图像资料。",
     visual: "arm",
+    showcaseTitle: "三轴机械臂与达妙电机",
+    showcaseSummary: "三轴结构与电机控制实践；方案和结果仍在整理。",
   },
   {
     slug: "personal-workspace",
@@ -69,6 +73,8 @@ export const publicProjects: readonly PublicProject[] = [
     next: "继续完善备份、内容发布边界与后续上线条件。",
     repositoryUrl: "https://github.com/CDC666-666/CDC_WORk",
     visual: "workspace",
+    showcaseTitle: "个人工作台",
+    showcaseSummary: "把学习、项目与工程经验整理进私人工作区。",
   },
 ];
 export const publicCapabilities: readonly PublicCapability[] = [

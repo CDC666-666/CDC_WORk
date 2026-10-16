@@ -8,6 +8,8 @@ RUN if [ -n "$DEBIAN_MIRROR" ]; then \
 
 FROM base AS build
 WORKDIR /app
+ARG NEXT_PUBLIC_PRIVATE_WORKSPACE_URL=https://work.cdc666.cn/login
+ENV NEXT_PUBLIC_PRIVATE_WORKSPACE_URL=$NEXT_PUBLIC_PRIVATE_WORKSPACE_URL
 COPY package*.json ./
 RUN npm ci
 COPY . .

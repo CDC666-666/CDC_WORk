@@ -22,6 +22,11 @@ export interface PublicProject {
   next: string;
   repositoryUrl?: string;
   visual: "robot" | "arm" | "workspace";
+  showcaseTitle?: string;
+  showcaseSummary?: string;
+  /** Approved public MP4 path and optional poster. Omit until media is available. */
+  showcaseVideoSrc?: string;
+  showcaseVideoPoster?: string;
 }
 
 export interface PublicCapability {

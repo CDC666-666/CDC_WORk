@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
-import { publicPortfolio } from "@/data/public-portfolio";
+import { useSiteMetadata } from "@/components/site-legal";
 import type { PortfolioAnalyticsResponse } from "@/types/portfolio-analytics";
 
 function useSummary() {
@@ -19,17 +19,18 @@ function useSummary() {
 }
 
 export function Uptime({ inline = false }: { inline?: boolean }) {
+  const launchedAt = useSiteMetadata()?.launchedAt;
   const [now, setNow] = useState<number | null>(null);
   useEffect(() => {
-    if (!publicPortfolio.launchedAt) return;
+    if (!launchedAt) return;
     function update() { if (!document.hidden) setNow(Date.now()); }
     update();
     const timer = window.setInterval(update, 1000);
     document.addEventListener("visibilitychange", update);
     return () => { window.clearInterval(timer); document.removeEventListener("visibilitychange", update); };
-  }, []);
-  if (!publicPortfolio.launchedAt) return <>尚未正式上线</>;
-  const start = Date.parse(publicPortfolio.launchedAt);
+  }, [launchedAt]);
+  if (!launchedAt) return <>尚未正式上线</>;
+  const start = Date.parse(launchedAt);
   if (!Number.isFinite(start) || now === null || now < start) return <>尚未正式上线</>;
   const seconds = Math.floor((now - start) / 1000);
   const days = Math.floor(seconds / 86400);
