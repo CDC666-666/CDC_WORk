@@ -3,7 +3,7 @@
 cdc666.cn {
     redir / /portfolio 308
 
-    @public path /portfolio /portfolio/* /api/public/portfolio-visit /api/public/portfolio-stats /api/public/site-metadata /_next/* /favicon.ico
+    @public path /portfolio /portfolio/* /media/portfolio/* /api/public/portfolio-visit /api/public/portfolio-stats /api/public/site-metadata /_next/* /favicon.ico
     handle @public {
         reverse_proxy 127.0.0.1:3000
     }
@@ -13,7 +13,7 @@ cdc666.cn {
 }
 
 work.cdc666.cn {
-    @publicPortfolio path /portfolio /portfolio/* /api/public/portfolio-visit /api/public/portfolio-stats
+    @publicPortfolio path /portfolio /portfolio/* /media/portfolio/* /api/public/portfolio-visit /api/public/portfolio-stats
     respond @publicPortfolio "Not Found" 404
     reverse_proxy 127.0.0.1:3000
 }

@@ -12,11 +12,11 @@ const cardCount = 21;
 const radius = 670;
 const step = 360 / cardCount;
 
-function ShowcaseMedia({ project, onPlayingChange }: { project: PublicProject; onPlayingChange: (playing: boolean) => void }) {
+function ShowcaseMedia({ project }: { project: PublicProject }) {
   const [failed, setFailed] = useState(false);
   if (!project.showcaseVideoSrc || failed) return <ProjectVisual kind={project.visual} />;
-  return <video controls playsInline preload="none" poster={project.showcaseVideoPoster} aria-label={`${project.showcaseTitle ?? project.title}的视频`}
-    onPlay={() => onPlayingChange(true)} onPause={() => onPlayingChange(false)} onEnded={() => onPlayingChange(false)} onError={() => { onPlayingChange(false); setFailed(true); }}>
+  return <video muted loop playsInline preload="none" poster={project.showcaseVideoPoster} aria-label={`${project.showcaseTitle ?? project.title}的循环视频`}
+    onError={() => setFailed(true)}>
     <source src={project.showcaseVideoSrc} type="video/mp4" />
     浏览器不支持此视频。
   </video>;
@@ -24,7 +24,6 @@ function ShowcaseMedia({ project, onPlayingChange }: { project: PublicProject; o
 
 export function HeroShowcase({ projects }: { projects: readonly PublicProject[] }) {
   const [paused, setPaused] = useState(false);
-  const [playing, setPlaying] = useState(false);
   const phase = useRef(0);
   const showcase = useRef<HTMLDivElement>(null);
   const ring = useRef<HTMLDivElement>(null);
@@ -37,12 +36,14 @@ export function HeroShowcase({ projects }: { projects: readonly PublicProject[] 
     let visible = true;
     let frame = 0;
     let last = 0;
-    const enabled = () => !paused && !playing && visible && !document.hidden && !motion.matches;
+    const activeVideos = new Set<HTMLVideoElement>();
+    const enabled = () => !paused && visible && !document.hidden && !motion.matches;
     const place = () => {
-      cards.forEach((card, index) => {
+      for (const [index, card] of cards.entries()) {
         const angle = ((index * step + phase.current + 540) % 360) - 180;
         const radians = angle * Math.PI / 180;
-        const shown = Math.abs(angle) <= 52;
+        const distance = Math.abs(angle);
+        const shown = distance <= 52;
         card.style.visibility = shown ? "visible" : "hidden";
         card.style.transform = `translate3d(${radius * Math.sin(radians)}px, 0, ${radius * (1 - Math.cos(radians))}px) rotateY(${-angle}deg)`;
         card.style.filter = `brightness(${Math.max(.55, 1 - Math.abs(angle) / 115)})`;
@@ -50,7 +51,17 @@ export function HeroShowcase({ projects }: { projects: readonly PublicProject[] 
         if (card.inert === shown) card.inert = !shown;
         const ariaHidden = shown ? "false" : "true";
         if (card.getAttribute("aria-hidden") !== ariaHidden) card.setAttribute("aria-hidden", ariaHidden);
-      });
+        const video = card.querySelector("video");
+        if (video) {
+          const shouldPlay = shown && visible && !document.hidden && !motion.matches;
+          if (shouldPlay && !activeVideos.has(video)) {
+            activeVideos.add(video);
+            void video.play().catch(() => {});
+          } else if (!shouldPlay && activeVideos.delete(video)) {
+            video.pause();
+          }
+        }
+      }
     };
     const tick = (now: number) => {
       frame = 0;
@@ -71,19 +82,20 @@ export function HeroShowcase({ projects }: { projects: readonly PublicProject[] 
     motion.addEventListener("change", sync);
     sync();
     return () => {
+      for (const video of activeVideos) video.pause();
       cancelAnimationFrame(frame);
       observer.disconnect();
       document.removeEventListener("visibilitychange", sync);
       motion.removeEventListener("change", sync);
     };
-  }, [paused, playing, projects.length]);
+  }, [paused, projects.length]);
 
   return <div className="portfolio-showcase portfolio-project-orbit" ref={showcase} onFocusCapture={() => setPaused(true)} onBlurCapture={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setPaused(false); }} aria-label="三个公开项目沿第一版透视卡片环连续轮播">
     <div className="portfolio-project-orbit-stage" ref={ring}>
       {Array.from({ length: cardCount }, (_, index) => {
         const project = projects[index % projects.length];
         if (!project) return null;
-        const content = <><div className="portfolio-orbit-media"><ShowcaseMedia project={project} onPlayingChange={setPlaying} /></div><div className="portfolio-orbit-card-copy"><span>{project.number} / {project.direction}</span><h2>{project.showcaseVideoSrc ? <Link href={`/portfolio/projects/${project.slug}`}>{project.showcaseTitle ?? project.title}</Link> : project.showcaseTitle ?? project.title}</h2><p>{project.showcaseSummary ?? project.summary}</p></div></>;
+        const content = <><div className="portfolio-orbit-media"><ShowcaseMedia project={project} /></div><div className="portfolio-orbit-card-copy"><span>{project.number} / {project.direction}</span><h2>{project.showcaseVideoSrc ? <Link href={`/portfolio/projects/${project.slug}`}>{project.showcaseTitle ?? project.title}</Link> : project.showcaseTitle ?? project.title}</h2><p>{project.showcaseSummary ?? project.summary}</p></div></>;
         return project.showcaseVideoSrc
           ? <article className="portfolio-orbit-card" data-orbit-card key={`${project.slug}-${index}`}>{content}</article>
           : <Link className="portfolio-orbit-card" data-orbit-card href={`/portfolio/projects/${project.slug}`} key={`${project.slug}-${index}`} aria-label={`查看${project.showcaseTitle ?? project.title}详情`}>{content}</Link>;

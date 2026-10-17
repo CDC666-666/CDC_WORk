@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, ArrowUpRight } from "lucide-react";
 
 import { ProjectVisual } from "@/components/portfolio/project-visual";
+import { LoopVideo } from "@/components/portfolio/loop-video";
 import { findPublicProject, listPublicProjects } from "@/lib/portfolio/public-content";
 
 export const dynamicParams = false;
@@ -26,7 +27,13 @@ export default async function PortfolioProjectDetail({ params }: { params: Promi
     <div className="portfolio-breadcrumb"><Link href="/portfolio">首页</Link><span>/</span><Link href="/portfolio/projects">项目</Link><span>/</span><span>{project.title}</span></div>
     <Link className="portfolio-back" href="/portfolio/projects"><ArrowLeft size={17} aria-hidden="true" /> 返回项目列表</Link>
     <header className="portfolio-detail-heading"><div><p className="portfolio-eyebrow">PROJECT / {project.number} · {project.direction}</p><h1>{project.title}</h1><p>{project.summary}</p><div className="portfolio-tags">{project.technologies.map((tag) => <span key={tag}>{tag}</span>)}</div></div><span className="portfolio-status">{project.status}</span></header>
-    <div className="portfolio-detail-visual"><ProjectVisual kind={project.visual} /></div>
+    <div className="portfolio-detail-visual">{project.showcaseVideoSrc
+      ? <LoopVideo src={project.showcaseVideoSrc} poster={project.showcaseVideoPoster} label={`${project.title}现场视频`} />
+      : <ProjectVisual kind={project.visual} />}</div>
+    {project.supportingMedia?.map((media) => <section className="portfolio-supporting-media" key={media.src}>
+      <div><p className="portfolio-eyebrow">PROJECT FOOTAGE</p><h2>{media.title}</h2><p>{media.description}</p></div>
+      <LoopVideo src={media.src} poster={media.poster} label={media.title} />
+    </section>)}
     <div className="portfolio-detail-grid"><aside><p className="portfolio-eyebrow">PROJECT NOTES</p><div><span>项目状态</span><strong>{project.status}</strong></div><div><span>项目时间</span><strong>{project.startDate ? `${project.startDate} — ${project.endDate ?? "进行中"}` : "起止时间待补"}</strong>{project.sourceDate && <small>资料最近核对：{project.sourceDate}</small>}</div><div><span>技术方向</span><strong>{project.direction}</strong></div><div><span>我的职责</span><strong>{project.role}</strong></div>{project.repositoryUrl ? <a href={project.repositoryUrl} target="_blank" rel="noopener noreferrer">查看 GitHub 资料 <span className="sr-only">（新窗口打开）</span><ArrowUpRight size={16} aria-hidden="true" /></a> : <p className="portfolio-repo-pending">尚无核对过的公开仓库链接</p>}</aside>
       <div className="portfolio-detail-sections">
         <section><span>01 / GOAL</span><h2>项目目标</h2><p>{project.goal}</p></section>
