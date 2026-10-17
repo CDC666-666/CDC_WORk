@@ -1,0 +1,12 @@
+[Unit]
+Description=CDC Work PostgreSQL custom archive backup
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+UMask=0077
+ExecStart=/opt/cdc-work/ops/backup-database.sh
+TimeoutStartSec=30min

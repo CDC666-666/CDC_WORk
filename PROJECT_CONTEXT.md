@@ -2,6 +2,16 @@
 
 **日常入口（2026-10-09）：** 推荐在 `D:/Workplace/CDC_WORK_MAIN` 继续主分支工作。`D:/Workplace/CDC_WORK_DB_BACKUP@codex/personal-db-backup` 是从 `origin/main@f4c173a` 建立的本轮备份与恢复历史演练目录；本文件保留原连续开发分支的历史章节，演练事实与范围见文末对应小节。历史段落中的“本目录”仅适用于当时的 worktree。
 
+**上线准备入口（2026-10-11）：** 本 worktree 为 `D:/Workplace/CDC_WORK_LAUNCH_PREP@codex/launch-prep`，基于 `origin/main@2eb70879cc47e984839f59cf694aa3605e597908`。日常主分支入口仍为 `CDC_WORK_MAIN`。下述候选镜像首次验收时由尚未提交的依赖修复构建，不能称为当时的 main 镜像；后续提交与重新部署须按实际 Git SHA 和镜像摘要另行记录。详见 [备份操作与演练](docs/server-backup-operations.md)、[依赖审计](docs/dependency-audit-20261011.md)及[隧道与域名方案](docs/tunnel-and-future-domain.md)。下文的历史分支状态保持当时语境。
+
+**本轮实际验收（2026-10-11）：** 服务器 systemd 备份计时器每天 03:15（Asia/Shanghai）运行，保留 30 天且至少最近两份成功归档。`pg_dump -Fc -b` 的完整解码及 SHA-256 校验、失败日志与旧归档保留已实测；首份归档在独立库单事务恢复，37 张表的数量、主键、整行摘要、六条迁移、GitHub Account/User/Workspace 归属及唯一案例的版本、内容摘要、审核/证据状态均匹配。数据库内整行摘要涵盖认证字段，令牌明文未返回脚本或输出。Prisma Client 能读取恢复库；隔离恢复库和合成测试库已删除，个人源库仍在。同机备份不是异地备份，独立存储目标与访问方式仍待提供。
+
+**候选运行与访问控制（2026-10-11）：** 候选 Web 镜像摘要为 `sha256:31320a567035ddf48525068cad5e70441149ff6cc4b26bf605c7e02a6e3a54a0`，Web 与数据库容器健康，仅监听服务器回环地址，Caddy 未发布域名。依赖审计从 19 个受影响包条目（15 高、4 中）降为完整开发依赖图 7 高、运行时生产依赖图 0；余下为 Tailwind 3/ESLint 开发链，需单独升级。隔离构建的 lint、typecheck、47 条常规测试、17 条数据库测试、六个迁移和 build 通过。用户经 SSH 隧道在独立 Chrome 窗口亲自登录；真实会话私人 API 200，原案例可读；仅对本轮一条临时经验完成新增、编辑、刷新、搜索和删除。退出后 API 401，经验页返回登录页。清理后的只读清单显示原案例 ID、版本 1、正文摘要、待审核/历史现场反馈、来源及更新时间与备份前基线一致；本轮会话表因登录发生变化，不能称整库字节级不变。正式域名/ICP备案、生产专用 OAuth、旧浏览器数据迁移、异地备份与公网验收仍待完成。
+
+**提交版部署（2026-10-11，来源：PR #12 CI、服务器 Docker/Prisma、只读数据库清单）：** 首次 CI 发现新增脚本的 CommonJS lint 与运行镜像缺少 Compose 验证所需的 `tsx`，经修复后的代码提交 `795f7cdab1c539a4c633cf915c73dd0f9f34d56c` 的 quality、compose 均通过。服务器从该提交的独立 release worktree 及仓库 Dockerfile 构建并部署 Web 镜像 `sha256:828110ce4ce7837f5465fb22ba076328f8cf5a614350482c52f9c105d5a46429`，OCI revision 标签指向上述完整 SHA；旧候选镜像和先前 Compose override 留作回滚。服务器干净的 `/opt/cdc-work/app` 仍为 `main@2eb7087`，不能把备份清单中的 checkout `applicationCommit` 当成实际 Web 构建提交。Web 健康，生产依赖审计 0、迁移已应用、匿名私有 API 401；部署前后 37 表、迁移、归属和真实案例的只读摘要完全一致。提交版备份任务再次成功、计时器有效，最新归档 SHA-256 与镜像摘要见[备份操作说明](docs/server-backup-operations.md)。真实 GitHub 登录后的页面复验须按本轮浏览器结果另记，不由健康检查推断通过。用户决定暂缓 ICP，继续只用 SSH 隧道；域名/HTTPS/生产 OAuth 仅有[未启用的配置方案](docs/tunnel-and-future-domain.md)。
+
+**提交版真实会话与页面复验（2026-10-11，`codex/launch-prep@1c3a15f` 文档 HEAD，运行 Web 代码 `795f7cd`；来源：同一 Chrome 窗口的私人 API 与页面操作、服务器只读数据库清单）：** 用户亲自点击 GitHub 登录后直接进入工作台，没有再次输入账号密码。既有 GitHub 浏览器会话和 OAuth 授权是可能解释，单凭跳转现象不能证明身份归属。该窗口的私人 Workspace API 实测 200；数据库只读查询显示有效会话均关联准入数字 ID `248133835` 的 User、GitHub Account 与 Workspace，其他数字 ID 的有效会话计数为 0。原有唯一自瞄经验可读，详情显示版本 1、待审核/历史现场反馈。仅新建一条标明合成验收的临时经验，完成编辑、刷新和标题搜索后按该记录 ID 删除；刷新后列表恢复为一条。退出后私人 API 为 401，访问经验页跳转登录页。服务器只读复核仍为 37 张表、6 条迁移和一条工程经验；原案例的 ID、版本、正文摘要、来源、状态与更新时间以及 Knowledge 行摘要均与部署前基线一致。浏览器登录会改变 Session 表，不能据此声称全库未变。本次复验使用 1280px 浏览器窗口；390px 布局通过的是前一候选镜像的验收，提交版未重新做窄屏复验。此结论只覆盖 localhost SSH 隧道，不是公网域名或生产专用 OAuth 验收。
+
 **文档归属（2026-10-08）：** 本背景与本分支的 `AGENTS.md` 由 `CDC_WORK` 仓库的 `codex/engineering-experience` 分支管理。`6b3e20d` 是工程经验功能开发前的代码基线；本轮验收前本地 HEAD 为 `7ca934b`。验收记录只适用于本机功能分支源码和隔离测试库，不构成生产部署或实车验证。
 
 ## 位置、版本与职责

@@ -1,0 +1,10 @@
+[Unit]
+Description=Daily CDC Work PostgreSQL backup at 03:15 local server time
+
+[Timer]
+OnCalendar=*-*-* 03:15:00
+Persistent=true
+Unit=cdc-work-db-backup.service
+
+[Install]
+WantedBy=timers.target
