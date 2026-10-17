@@ -1,5 +1,9 @@
 # Public domain deployment
 
+## Follow-up on 2026-10-17
+
+PR #13 at `codex/portfolio-v1@429c88be39a84a1dab32e846f1cf9ef6b0d1edb9` passed both `quality` and `compose` and was marked ready for review; it remains based on `codex/launch-prep` while dependency PR #12 is still Draft. Neither PR has been merged. The deployed healthy image and its code revision remain unchanged. Caddy and the daily backup timer are active. The 03:15 Asia/Shanghai job created `/var/backups/cdc-work/automatic/cdc_workspace_20261016T191512Z_1147921.dump` (99,398 bytes; SHA-256 `907f4b517c36a70b523109d013d3e5f0173c60647822b4f1b84494727107a3dc`); PostgreSQL archive listing and full decode succeeded. Its latest validated copy is at `D:/Workplace/.private-db-backups/cdc_workspace_20261016T191512Z_1147921.dump`, access-restricted and ignored by Git, with the same size and SHA-256. This manual copy is outside the server but is not an automated independent backup scheme or a restore rehearsal of this particular archive.
+
 Status on 2026-10-16: the public domains are live on reviewed `codex/portfolio-v1@a2e765c76114bd25bf3ce745971d5f5c056f52f9` image `sha256:bce2fd5af68229a94cb72d448ff942f98c9581fccec80ea4dd317ed30cd433f3`. The separate clean server checkout `/opt/cdc-work/app` remains `main@2eb70879cc47e984839f59cf694aa3605e597908`; it is not the deployed Web revision. Draft [PR #13](https://github.com/CDC666-666/CDC_WORk/pull/13) has passing quality and compose CI at a2e765c. An external Chrome check against this final image confirmed that an unknown project slug returns HTTP 404.
 
 ## Final-image follow-up, 2026-10-16
