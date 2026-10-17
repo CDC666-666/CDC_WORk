@@ -86,13 +86,9 @@ def main() -> None:
         raise ValueError("Expected one newly created drill database name")
     source = inventory(SOURCE)
     restored = inventory(sys.argv[1])
+    if not source["tables"] or not source["migrations"]:
+        raise ValueError("Source database inventory is incomplete")
     assert source == restored, "Source and drill database inventories differ"
-    assert len(source["tables"]) == 37
-    assert len(source["migrations"]) == 6
-    assert len(source["experiences"]) == 1
-    assert source["experiences"][0]["version"] == 1
-    assert source["experiences"][0]["reviewStatus"] == "待审核"
-    assert source["experiences"][0]["evidenceStatus"] == "历史现场反馈"
     print(json.dumps({"result": "MATCH", "businessTables": len(source["tables"]),
                       "migrationRecords": len(source["migrations"]),
                       "experienceRecords": len(source["experiences"]),

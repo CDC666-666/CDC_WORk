@@ -1,0 +1,24 @@
+# Activate only after both A records resolve to this server and the production
+# GitHub OAuth App is configured. Caddy manages HTTPS and HTTP redirects.
+cdc666.cn {
+    redir / /portfolio 308
+
+    @public path /portfolio /portfolio/* /api/public/portfolio-visit /api/public/portfolio-stats /api/public/site-metadata /_next/* /favicon.ico
+    handle @public {
+        reverse_proxy 127.0.0.1:3000
+    }
+    handle {
+        respond "Not Found" 404
+    }
+}
+
+work.cdc666.cn {
+    @publicPortfolio path /portfolio /portfolio/* /api/public/portfolio-visit /api/public/portfolio-stats
+    respond @publicPortfolio "Not Found" 404
+    reverse_proxy 127.0.0.1:3000
+}
+
+# A bare-IP request must never fall through to the private Workspace.
+http://114.215.174.39 {
+    respond "Not Found" 404
+}

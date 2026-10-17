@@ -696,3 +696,26 @@ model MigrationPending {
   @@unique([batchId, collection, sourceId, sourceOrdinal])
   @@index([workspaceId, collection])
 }
+
+/// Anonymous, first-party portfolio visitor. id is an HMAC of a random cookie;
+/// no IP, raw user agent, referrer URL, account or browser fingerprint is stored.
+model PortfolioVisitor {
+  id        String              @id
+  firstSeen DateTime            @default(now())
+  views     PortfolioPageView[]
+}
+
+model PortfolioPageView {
+  eventId    String           @id
+  visitorId  String
+  visitor    PortfolioVisitor @relation(fields: [visitorId], references: [id], onDelete: Cascade)
+  path       String
+  device     String
+  browser    String
+  source     String
+  occurredAt DateTime         @default(now())
+
+  @@index([occurredAt])
+  @@index([visitorId, occurredAt])
+  @@index([path, occurredAt])
+}

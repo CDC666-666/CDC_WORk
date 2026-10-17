@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Topbar } from "@/components/layout/topbar";
+import { SiteLegal } from "@/components/site-legal";
 import { cn } from "@/lib/utils";
 
 interface AppShellProps {
@@ -36,6 +37,7 @@ export function AppShell({ children }: AppShellProps) {
             {children}
           </div>
         </main>
+        <SiteLegal className="px-4 py-3 text-center text-xs text-slate-500 [&_a]:underline" />
       </div>
     </div>
   );

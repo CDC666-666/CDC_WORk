@@ -2,6 +2,7 @@
 /node_modules
 /.local-test-tools
 /.local-test-db
+/.local-preview
 /.playwright-browsers
 /.npm-cache
 /.pnp
