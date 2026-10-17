@@ -27,6 +27,8 @@ export interface PublicProject {
   /** Approved public MP4 path and optional poster. Omit until media is available. */
   showcaseVideoSrc?: string;
   showcaseVideoPoster?: string;
+  /** Additional footage belongs to this project and is not another project or a validation claim. */
+  supportingMedia?: readonly { title: string; description: string; src: string; poster: string }[];
 }
 
 export interface PublicCapability {

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 
 import { ProjectVisual } from "@/components/portfolio/project-visual";
 import type { PublicProject } from "@/types/public-portfolio";
@@ -6,7 +7,9 @@ import type { PublicProject } from "@/types/public-portfolio";
 export function ProjectCard({ project }: { project: PublicProject }) {
   return <article className="portfolio-project-card">
     <Link className="portfolio-project-art" href={`/portfolio/projects/${project.slug}`} aria-label={`查看${project.title}详情`}>
-      <ProjectVisual kind={project.visual} />
+      {project.showcaseVideoPoster
+        ? <Image className="portfolio-project-poster" src={project.showcaseVideoPoster} alt={`${project.title}现场视频封面`} width={1280} height={720} />
+        : <ProjectVisual kind={project.visual} />}
     </Link>
     <div className="portfolio-project-body">
       <div className="portfolio-project-meta"><span>PROJECT / {project.number}</span><span className="portfolio-status">{project.status}</span></div>
