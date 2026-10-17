@@ -1,5 +1,9 @@
 # Public domain deployment
 
+## Portfolio media route, 2026-10-17
+
+The first user-supplied project videos use `/media/portfolio/*`. The apex Caddy allowlist must include exactly this public asset path or production returns 404 even when the Web image contains the files. The private `work.cdc666.cn` host blocks the same path. Validate the active Caddyfile before reload, then check a video and its poster from the external HTTPS domain; do not allow a generic `/media/*` or private upload route.
+
 ## Main integration, 2026-10-17
 
 PR #12 merged as `65069a9aa7a566e7a6789b31854189251f1d6f41` and PR #13 as `9905746f31c6f3b6cbb417ca0c470db15da9a007`. The clean local main worktree is `D:/Workplace/CDC_WORK_MAIN_CURRENT`; the older `CDC_WORK_MAIN` has an unrelated uncommitted historical context edit and is preserved. Comparing main with deployed image revision `a2e765c76114bd25bf3ce745971d5f5c056f52f9` yields documentation plus the restore comparator only, with no Web runtime file changes. Keep the validated image `sha256:bce2fd5af68229a94cb72d448ff942f98c9581fccec80ea4dd317ed30cd433f3`; no image rebuild, database migration, Caddy change or service restart is needed for these merges. The latest archive was both fully decoded and separately restored into a new isolated database, where 39 table inventories, seven migrations, owner relation and two engineering experiences matched; the drill database was removed. An active public site can receive visits or sessions after a backup snapshot, so a future live-source versus archived-restore comparison may need a coordinated quiet period or a matching source baseline; do not label a live-data timing difference as corruption without investigation.
