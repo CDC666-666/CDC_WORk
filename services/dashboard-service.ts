@@ -1,4 +1,4 @@
-import { isDateInCurrentWeek, toLocalDateKey } from "@/lib/date";
+import { toLocalDateKey } from "@/lib/date";
 import { mockContentItems } from "@/data/mock-content";
 import { demoDataRepository } from "@/repositories/demo-data-repository";
 import type { DashboardData } from "@/types/dashboard";
@@ -50,12 +50,6 @@ export function buildDashboardMetrics(
   contentStates: ServerWorkspaceSnapshot["contentStates"] = {},
 ): DashboardData["metrics"] {
   const today = toLocalDateKey();
-  const todayTasks = workspace.tasks.filter((task) => task.scheduledDate === today);
-  const completedToday = todayTasks.filter((task) => task.status === "已完成").length;
-  const highPriority = todayTasks.filter((task) => task.priority === "高" && task.status !== "已完成").length;
-  const weeklyMinutes = workspace.studySessions
-    .filter((session) => isDateInCurrentWeek(session.date))
-    .reduce((total, session) => total + session.durationMinutes, 0);
   const unread = workspace.readingItems.filter((item) => item.status !== "已完成").length;
   const readingNow = workspace.readingItems.filter((item) => item.status === "阅读中").length;
   const month = today.slice(0, 7);
@@ -63,21 +57,7 @@ export function buildDashboardMetrics(
   const income = monthlyFinance.filter((item) => item.type === "收入").reduce((sum, item) => sum + item.amount, 0);
   const expense = monthlyFinance.filter((item) => item.type === "支出").reduce((sum, item) => sum + item.amount, 0);
 
-  return baseMetrics.map((metric) => {
-    if (metric.id === "today-tasks") {
-      return {
-        ...metric,
-        value: String(todayTasks.length - completedToday),
-        helper: `${completedToday} 项已完成 · ${highPriority} 项高优先级`,
-      };
-    }
-    if (metric.id === "study-hours") {
-      return {
-        ...metric,
-        value: (weeklyMinutes / 60).toFixed(1),
-        helper: `${workspace.studySessions.filter((session) => isDateInCurrentWeek(session.date)).length} 次学习记录`,
-      };
-    }
+  return baseMetrics.filter((metric) => metric.id !== "today-tasks" && metric.id !== "study-hours").map((metric) => {
     if (metric.id === "reading") {
       return { ...metric, value: String(unread), helper: `${readingNow} 本正在阅读` };
     }

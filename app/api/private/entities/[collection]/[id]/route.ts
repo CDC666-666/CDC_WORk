@@ -28,9 +28,10 @@ export async function PATCH(request: NextRequest, { params }: {
     const { workspaceId } = await requirePrivateApi();
     assertSameOrigin(request);
     const { collection: name, id } = await params;
-    const body = await readJsonObject(request);
+    const collection = parseEntityCollection(name);
+    const body = await readJsonObject(request, collection === "knowledge" ? 512_000 : 64_000);
     return privateJson(await serverWorkspaceEntityService.update(workspaceId,
-      parseEntityCollection(name), id, versionOf(body.version), body.item));
+      collection, id, versionOf(body.version), body.item));
   } catch (cause: unknown) { return apiFailure(cause); }
 }
 

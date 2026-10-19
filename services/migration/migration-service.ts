@@ -144,7 +144,7 @@ async function plan(
 }
 
 export async function previewMigration(workspaceId: string, raw: RawBrowserSnapshot, includeIds: string[] = []): Promise<MigrationPreview> {
-  return prisma.$transaction(async (tx) => (await plan(tx, workspaceId, raw, includeIds)).preview);
+  return prisma.$transaction(async (tx) => (await plan(tx, workspaceId, raw, includeIds)).preview, { timeout: 60_000 });
 }
 
 export async function executeMigration(
@@ -156,13 +156,13 @@ export async function executeMigration(
   const unique = { workspaceId_sourceFingerprint_planFingerprint: { workspaceId, sourceFingerprint, planFingerprint } };
   const existing = await prisma.migrationBatch.findUnique({ where: unique });
   if (existing?.status === "COMPLETED" || existing?.status === "PARTIAL") {
-    const rerun = await prisma.$transaction(async (tx) => plan(tx, workspaceId, raw, includeIds));
+    const rerun = await prisma.$transaction(async (tx) => plan(tx, workspaceId, raw, includeIds), { timeout: 60_000 });
     if (Object.values(rerun.preview.counts).some((count) => count.conflict)) {
       throw new ApiError(409, "已执行批次的服务器记录发生变化；请查看新预览中的冲突。");
     }
     return readMigrationResult(workspaceId, existing.id);
   }
-  const planned = await prisma.$transaction(async (tx) => plan(tx, workspaceId, raw, includeIds));
+  const planned = await prisma.$transaction(async (tx) => plan(tx, workspaceId, raw, includeIds), { timeout: 60_000 });
   if (!planned.preview.canExecute) throw new ApiError(422, "原始快照存在无法安全处理的问题，不能执行。 ");
   if (planned.preview.previewDigest !== expectedDigest) throw new ApiError(409, "来源或服务器状态已变化，请重新预览。 ");
   if (existing?.status === "RUNNING" && Date.now() - existing.createdAt.getTime() < 120_000) {
@@ -233,7 +233,7 @@ export async function readMigrationResult(workspaceId: string, batchId: string):
   if (!batch || !batch.result) throw new ApiError(404, "迁移批次不存在或尚未完成核对。 ");
   const result = batch.result as unknown as MigrationResult;
   const actual = await prisma.$transaction(async (tx) => Promise.all(MIGRATION_COLLECTIONS.map(async (collection) =>
-    [collection, await countRowsFromBatch(tx, workspaceId, batchId, collection)] as const)));
+    [collection, await countRowsFromBatch(tx, workspaceId, batchId, collection)] as const)), { timeout: 60_000 });
   for (const [collection, count] of actual) {
     if (result.counts[collection].written !== count) throw new ApiError(409, `${collection} 数据库数量与批次结果不一致。`);
   }

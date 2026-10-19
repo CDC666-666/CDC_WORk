@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { Edit3, Plus, Trash2 } from "lucide-react";
 import { ActionToast, type ToastNotice } from "@/components/layout/action-toast";
@@ -29,6 +30,7 @@ const examReviewLabels: Record<ExamReviewStatus, string> = { NOT_STARTED: "未�
 const textareaClass = "min-h-24 w-full rounded-sm border border-input bg-background/70 px-3 py-2 text-sm outline-none focus-visible:border-primary/60";
 
 export function AcademicCourseDetail({ courseId }: { courseId: string }) {
+  const pathname = usePathname(); const router = useRouter(); const searchParams = useSearchParams();
   const academic = useAcademic();
   const [editor, setEditor] = useState<Editor | null>(null);
   const [deleting, setDeleting] = useState<RecordRow | null>(null);
@@ -51,6 +53,7 @@ export function AcademicCourseDetail({ courseId }: { courseId: string }) {
     exams: academic.state.exams.filter((item) => item.courseId === courseId).map((item) => ({
       kind: "exams", id: item.id, title: `${examTypeLabels[item.type]}考试`, detail: `复习状态：${examReviewLabels[item.reviewStatus]}`, meta: item.date })),
   };
+  const selected = rows.flatMap((kind) => entries[kind]).find((item) => item.id === searchParams.get("record"));
 
   const openEditor = (kind: RecordKind, id?: string) => {
     const base: Editor = { kind, id, title: "", content: "", date: today, summary: "", notes: "",
@@ -120,6 +123,10 @@ export function AcademicCourseDetail({ courseId }: { courseId: string }) {
     <div className="grid gap-5 xl:grid-cols-2">{rows.map((kind) => <section key={kind} className="min-w-0 rounded-lg border border-border bg-white shadow-sm"><header className="flex items-center justify-between gap-3 border-b p-4"><div><h2 className="font-semibold">{labels[kind]}</h2><p className="mt-1 text-xs text-slate-500">{entries[kind].length} 条记录</p></div><Button size="sm" onClick={() => openEditor(kind)}><Plus />添加</Button></header>
       {entries[kind].length ? <div className="divide-y">{entries[kind].map((item) => <article key={item.id} className="p-4"><div className="flex flex-wrap items-start justify-between gap-2"><div className="min-w-0"><h3 className="break-words text-sm font-medium">{item.title}</h3><p className="mt-1 text-xs text-slate-500">{item.meta} {item.overdue && <span className="font-semibold text-rose-700">· 逾期</span>}</p></div><div className="flex gap-1"><Button size="sm" variant="ghost" onClick={() => openEditor(kind, item.id)} aria-label={`编辑${item.title}`}><Edit3 /></Button><Button size="sm" variant="ghost" onClick={() => setDeleting(item)} aria-label={`删除${item.title}`}><Trash2 /></Button></div></div>{item.detail && <p className="mt-2 whitespace-pre-wrap break-words text-xs leading-5 text-slate-600">{item.detail}</p>}</article>)}</div> : <p className="p-5 text-sm text-slate-500">暂无{labels[kind]}，点击添加开始记录。</p>}
     </section>)}</div>
+    <Dialog open={Boolean(selected)} title={selected?.title ?? "课程记录"} onClose={() => router.replace(pathname, { scroll: false })}
+      footer={<><Button variant="outline" onClick={() => router.replace(pathname, { scroll: false })}>关闭</Button>{selected && <Button onClick={() => { openEditor(selected.kind, selected.id); router.replace(pathname, { scroll: false }); }}>编辑记录</Button>}</>}>
+      {selected && <div className="space-y-3 whitespace-pre-wrap break-words text-sm"><p className="text-xs text-slate-500">{labels[selected.kind]} · {selected.meta}</p><p>{selected.detail || "无补充内容"}</p></div>}
+    </Dialog>
     <Dialog open={Boolean(editor)} title={`${editor?.id ? "编辑" : "添加"}${editor ? labels[editor.kind] : "记录"}`} onClose={() => setEditor(null)} footer={<><Button variant="outline" onClick={() => setEditor(null)}>取消</Button><Button type="submit" form="academic-entry-form" disabled={academic.isSaving}>保存</Button></>}><form id="academic-entry-form" onSubmit={save} className="grid gap-3">
       {(editor?.kind === "chapters" || editor?.kind === "assignments") && <label className="text-xs">标题<Input aria-label="记录标题" value={editor.title} onChange={(event) => change("title", event.target.value)} required /></label>}
       {editor?.kind === "chapters" && <><label className="text-xs">学习日期<Input aria-label="章节学习日期" type="date" value={editor.date} onChange={(event) => change("date", event.target.value)} /></label><label className="text-xs">章节笔记<textarea aria-label="章节笔记内容" className={textareaClass} value={editor.content} onChange={(event) => change("content", event.target.value)} /></label></>}

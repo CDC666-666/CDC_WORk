@@ -1,3 +1,3 @@
 # 独立迁移布局
 
-`/migration` 只继承无数据副作用的根布局，并在服务端调用 `getPrivateWorkspace` 校验身份。它不挂载 WorkspaceDataProvider、AcademicProvider、ReflectionsProvider 或 AppShell。未登录时跳转到带 `callbackUrl=/migration` 的登录页；中间件对无 Cookie 的请求也保留这个回跳地址。迁移页由用户点击后才读取六个原始键。
+`/migration` 保留认证后的兼容路由，直接跳转 `/settings`。不再挂载旧浏览器迁移工具，也不读取 localStorage。历史迁移 API 与脚本仍留在代码中供旧数据审计，不进入日常界面。

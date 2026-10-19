@@ -1,6 +1,7 @@
 import { createKnowledgeItem } from "@/services/knowledge-service";
 import type { EngineeringExperience, ExperienceEvidenceStatus, ExperienceReviewStatus,
   KnowledgeItem, KnowledgeItemDraft } from "@/types/knowledge";
+import type { QqDraft } from "@/components/knowledge/qq-experience-editor";
 
 export interface ExperienceDraft {
   title: string;
@@ -81,6 +82,35 @@ export function createExperienceKnowledge(draft: ExperienceDraft, current?: Know
   return createKnowledgeItem(base, now);
 }
 
+export function createQqExperienceKnowledge(draft: QqDraft, current?: KnowledgeItem,
+  now = new Date()): KnowledgeItem {
+  const title = draft.title.trim();
+  const body = draft.body.trim();
+  if (!title || !body) throw new Error("请填写标题和正文。");
+  const experience: EngineeringExperience = {
+    phenomenon: body, sourceProject: draft.sourceGroup.trim() || "QQ 技术群",
+    environment: "QQ 技术群讨论，由 AI 整理", sourceVersion: draft.discussionDate || "原讨论日期未提供",
+    investigation: draft.excerpt.trim() || "原文未摘录", failedAttempts: "未记录",
+    cause: "AI 整理内容；结论需按验证状态判断", resolution: body,
+    verificationResult: draft.verification, evidenceSources: [draft.sourceGroup.trim() || "QQ 技术群整理资料"],
+    applicability: draft.applicability.trim() || "待本人核对", limitations: "未经本人实测的内容不得视为已验证",
+    openQuestions: draft.supplement.trim() || "待核对", reviewStatus: "待审核",
+    evidenceStatus: draft.verification === "已实测" ? "实测验证" : "待核实",
+    qq: { sourceGroup: draft.sourceGroup.trim(), discussionDate: draft.discussionDate || undefined,
+      excerpt: draft.excerpt.trim(), screenshot: draft.screenshot || undefined,
+      verification: draft.verification, supplement: draft.supplement.trim() },
+  };
+  const base: KnowledgeItemDraft = {
+    title, content: body, summary: body.slice(0, 180), itemType: "工程经验", category: "QQ 技术群经验",
+    sourceType: "manual", sourceUrl: "", projectId: draft.projectId,
+    tags: [...new Set(draft.tags.split(/[,，]/).map((tag) => tag.trim()).filter(Boolean))],
+    status: "已整理", importance: 3, experience,
+  };
+  const issues = experienceValidationIssues(base as unknown as Record<string, unknown>);
+  if (issues.length) throw new Error(issues.join("；"));
+  return current ? { ...current, ...base, updatedAt: now.toISOString() } : createKnowledgeItem(base, now);
+}
+
 export function withExperienceReviewStatus(item: KnowledgeItem, status: ExperienceReviewStatus,
   now = new Date()): KnowledgeItem {
   if (!isEngineeringExperience(item)) throw new Error("记录不是工程经验");
@@ -92,7 +122,7 @@ export function filterExperiences(items: KnowledgeItem[], filters: ExperienceFil
   const tag = filters.tag.trim().toLocaleLowerCase();
   return items.filter(isEngineeringExperience).filter((item) => {
     const detail = item.experience;
-    if (filters.project && detail.sourceProject !== filters.project) return false;
+    if (filters.project && detail.sourceProject !== filters.project && item.projectId !== filters.project) return false;
     if (filters.evidenceStatus !== "全部" && detail.evidenceStatus !== filters.evidenceStatus) return false;
     if (tag && !item.tags.some((value) => value.toLocaleLowerCase().includes(tag))) return false;
     if (!query) return true;

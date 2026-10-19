@@ -1,4 +1,3 @@
-import { toLocalDateKey } from "@/lib/date";
 import type { Review, ReviewType } from "@/types/review";
 
 export interface ReflectionFilter {
@@ -11,27 +10,33 @@ export interface ReflectionFilter {
 function localDate(value: string): Date {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) throw new Error("请选择有效的本地日期。");
   const [year, month, day] = value.split("-").map(Number);
-  const date = new Date(year, month - 1, day);
-  if (toLocalDateKey(date) !== value) throw new Error("请选择有效的本地日期。");
+  const date = new Date(Date.UTC(year, month - 1, day));
+  if (date.toISOString().slice(0, 10) !== value) throw new Error("请选择有效的本地日期。");
   return date;
 }
 
-/** Date-only values stay in local calendar time; no UTC conversion is involved. */
+/** Calendar arithmetic uses UTC methods on date-only values, independent of the host timezone. */
 export function reflectionPeriod(type: ReviewType, value: string): { start: string; end: string } {
   const date = localDate(value);
   if (type === "WEEKLY") {
-    date.setDate(date.getDate() - ((date.getDay() + 6) % 7));
-    const start = toLocalDateKey(date);
-    date.setDate(date.getDate() + 6);
-    return { start, end: toLocalDateKey(date) };
+    date.setUTCDate(date.getUTCDate() - ((date.getUTCDay() + 6) % 7));
+    const start = date.toISOString().slice(0, 10);
+    date.setUTCDate(date.getUTCDate() + 6);
+    return { start, end: date.toISOString().slice(0, 10) };
   }
   if (type === "MONTHLY") {
-    date.setDate(1);
-    const start = toLocalDateKey(date);
-    date.setMonth(date.getMonth() + 1, 0);
-    return { start, end: toLocalDateKey(date) };
+    date.setUTCDate(1);
+    const start = date.toISOString().slice(0, 10);
+    date.setUTCMonth(date.getUTCMonth() + 1, 0);
+    return { start, end: date.toISOString().slice(0, 10) };
   }
   return { start: value, end: value };
+}
+
+/** Legacy columns are composed only for display/editing; no record is rewritten on read. */
+export function reflectionBody(item: Pick<Review, "achievement" | "problem" | "plan">): string {
+  return [item.achievement, item.problem && `问题\n${item.problem}`, item.plan && `计划\n${item.plan}`]
+    .filter(Boolean).join("\n\n");
 }
 
 export function canonicalReflectionDate(type: ReviewType, value: string): string {

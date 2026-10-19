@@ -10,7 +10,7 @@ export function EngineeringPulse({ data }: { data: WorkspaceData }) {
   const logs = [...data.workLogs].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 3);
   const knowledge = [...data.knowledgeItems].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).slice(0, 3);
   const groups = [
-    { title: "最近工程日志", href: "/logs", icon: BookOpenCheck, items: logs.map((item) => ({ id: item.id, title: item.title, meta: `${item.date} · ${item.resultStatus}` })) },
+    { title: "研发过程记录", href: "/experiences", icon: BookOpenCheck, items: logs.map((item) => ({ id: item.id, title: item.title, meta: `${item.date} · ${item.resultStatus}` })) },
     { title: "待闭环问题", href: "/reviews", icon: Bug, items: openIssues.map((item) => ({ id: item.id, title: item.title, meta: `${item.severity} · ${item.status}` })) },
     { title: "最近知识", href: "/knowledge", icon: Library, items: knowledge.map((item) => ({ id: item.id, title: item.title, meta: `${item.itemType} · ${item.status}` })) },
   ];

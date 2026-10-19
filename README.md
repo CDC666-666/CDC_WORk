@@ -1,6 +1,6 @@
 # CDC AI Workspace
 
-> **2026-10-09 状态：** PR #10 已通过 merge commit 43fde8b 合入 main；总结复盘、认证与 PostgreSQL、旧数据迁移、日常服务器数据源、工程经验及多项目只读快照均在源码中，尚未生产部署。先前“main 整合候选”属于合并前的历史阶段。下文 Sprint 3/5.1 章节也保留开发历史；当前边界见 [项目背景](PROJECT_CONTEXT.md)、[迁移覆盖](docs/migration-coverage.md)和[多项目快照说明](docs/engineering-experience-multi-snapshot.md)。
+> **当前开发分支状态（2026-10-19）：** 私人日常数据使用 GitHub 登录保护的 PostgreSQL 工作区。设置页管理服务器持久化的个人资料和工作台标识；总结按所属日期进入日历；工程日志统一从工程经验查看；全局搜索经私有 API 查询。下面的 Sprint 章节保留开发历史，不能作为当前运行状态或部署证明。当前核对见[项目背景](PROJECT_CONTEXT.md)。
 
 面向大学生和工程学习者的个人 AI 工作台，统一管理课程学习、任务、阅读、技术内容、工程项目、测试复盘、知识沉淀、技能成长、报告素材、日历与个人收支。
 
@@ -11,7 +11,7 @@
 - Next.js 15 App Router、React 19、TypeScript
 - Tailwind CSS、shadcn/ui 风格组件、Lucide Icons
 - React Context + useReducer
-- 日常模块使用受认证保护的 PostgreSQL/Prisma 服务器工作区；旧浏览器数据由显式迁移工具预览和确认
+- 日常模块使用受认证保护的 PostgreSQL/Prisma 服务器工作区；旧浏览器迁移工具已退出日常界面
 - GitHub OAuth 单账号准入；私人页面和 API 在服务端校验数据库会话
 - ESLint、TypeScript typecheck、GitHub Actions CI
 
@@ -43,27 +43,27 @@
 ## 完整页面
 
 - `/` 工作台
-- `/today` 今日任务
 - `/learning` 学习中心
 - `/reading` 阅读计划
 - `/content` 视频与技术内容
 - `/projects` 我的项目
 - `/projects/[projectId]` 项目详情
 - `/robomaster` RoboMaster 项目视图
-- `/logs` 工程日志
 - `/reviews` 测试与复盘
 - `/knowledge` 知识库
-- `/experiences` 工程经验（复用私人知识记录，显示证据与适用边界）
+- `/experiences` 工程经验（含原工程日志与 QQ 技术群经验）
 - `/skills` 技能树
 - `/reports` 报告中心
 - `/resume` 简历素材
 - `/calendar` 日历计划
 - `/finance` 理财记录
-- `/settings` 本地数据管理
+- `/settings` 个人资料与工作台标识
 
-`/assistant` 和 `/automation` 继续显示明确的功能建设中页面，不返回 404。
+`/today` 跳转首页，`/logs` 兼容跳转工程经验，`/migration` 跳转设置页。`/assistant` 和 `/automation` 继续显示明确的功能建设中页面，不返回 404。
 
-## 本地数据与迁移
+## 历史开发记录：本地数据与迁移
+
+以下 Sprint 4/5.1 描述是旧阶段记录。当前页面不从旧浏览器存储加载日常业务数据；加载服务器数据失败时显示错误和重试入口，不以演示数据覆盖服务器记录。设置页不提供旧 JSON 导入、导出或演示数据恢复。服务器备份能力保留。
 
 Sprint 4.1 的日常工作台持久化路径为 `Component → Hook → Service → Repository → LocalStorage Adapter`。Repository 方法采用 Promise 接口，客户端组件不直接调用 localStorage。Sprint 5.1 另外增加独立的 PostgreSQL/Prisma 总结 API 和 GitHub 登录代码；现有浏览器数据尚未迁移，也不能跨设备同步。Repository 的具体契约与存储键见 [`repositories/README.md`](repositories/README.md)。
 
@@ -79,9 +79,9 @@ Sprint 4.3 将 `WorkspaceDomainState` v4 作为本地持久化源；现有页面
 - 数据损坏时回退演示数据并显示恢复提示，不让页面崩溃
 - localStorage 只在客户端 repository/provider 层访问，避免 hydration mismatch
 
-设置页支持导出完整 schema v4 JSON、导入 v2/v3/v4 备份时先验证并预览数量、二次确认覆盖，以及恢复演示数据。文件名格式为 `cdc-workspace-backup-YYYY-MM-DD.json`。
+旧浏览器 JSON 工具及其文件名约定仅属于历史阶段，当前设置页不再开放这些操作。
 
-## Sprint 5.1 服务器闭环
+## 历史开发记录：Sprint 5.1 服务器闭环
 
 `/login` 通过 GitHub OAuth 登录，且只接受服务端 `ALLOWED_GITHUB_USER_ID` 指定的数字 ID。现有私人页面统一置于受保护的路由组；每个 `/api/private/*` 处理函数再次校验数据库会话与 Workspace。没有 OAuth 配置时不会开放私人访问，也没有开发环境认证绕过。
 
@@ -134,7 +134,7 @@ npm.cmd run start
 
 ## 演示与安全说明
 
-- 日常工作台数据仍保存在浏览器本地；服务端已提供受 GitHub 登录保护的总结 API，但尚未切换页面数据源或实现跨设备同步
+- 日常工作台使用服务器数据源，私人 API 受 GitHub 登录和工作区归属校验
 - 当前没有真实 AI API；报告和简历素材使用确定性本地规则生成
 - 视频与技术内容为明确标识的演示数据，没有真实平台搜索、字幕下载或爬虫
 - 不抓取需要登录、验证码或绕过反爬机制的平台
@@ -149,7 +149,7 @@ npm.cmd run start
 
 ## 当前限制与 Sprint 4
 
-- 全局搜索为本地内存检索，没有全文索引和结果定位高亮
+- 全局搜索使用服务器私有 API，按标题、标签和正文等匹配并直达记录；不使用外部搜索服务
 - 日历当前不支持拖拽、重复规则和系统提醒
 - 报告与简历素材不是 AI 生成，仍需人工校对
 - 附件仅记录名称，没有二进制文件存储

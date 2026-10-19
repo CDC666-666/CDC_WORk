@@ -1,7 +1,5 @@
 import {
   BookOpen,
-  CheckSquare2,
-  Clock3,
   FolderKanban,
   PlaySquare,
   WalletCards,
@@ -15,8 +13,6 @@ interface WeeklyMetricsProps {
 }
 
 const metricIcons: Record<string, LucideIcon> = {
-  "today-tasks": CheckSquare2,
-  "study-hours": Clock3,
   reading: BookOpen,
   content: PlaySquare,
   projects: FolderKanban,
@@ -33,9 +29,9 @@ const toneClasses: Record<DashboardMetric["tone"], string> = {
 
 export function WeeklyMetrics({ metrics }: WeeklyMetricsProps) {
   return (
-    <section aria-label="今日概览" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6">
+    <section aria-label="今日概览" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
       {metrics.map((metric) => {
-        const Icon = metricIcons[metric.id] ?? CheckSquare2;
+        const Icon = metricIcons[metric.id] ?? BookOpen;
         return (
           <article key={metric.id} className="rounded-lg border border-border bg-white p-4 shadow-sm">
             <div className="flex items-start justify-between gap-3">

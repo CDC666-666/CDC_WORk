@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { BookPlus, CheckCircle2, Edit3, Grid2X2, List, Plus, Trash2 } from "lucide-react";
 
 import { ActionToast, type ToastNotice } from "@/components/layout/action-toast";
@@ -22,14 +23,20 @@ type ReadingSort = "deadline" | "progress" | "updated";
 type ViewMode = "shelf" | "list";
 
 export function ReadingCenter() {
+  const searchParams = useSearchParams();
+  const openedRecord = useRef<string | null>(null);
   const workspace = useWorkspaceData();
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<ReadingStatus | "全部">("全部");
   const [category, setCategory] = useState<ReadingCategory | "全部">("全部");
   const [sort, setSort] = useState<ReadingSort>("deadline");
   const [view, setView] = useState<ViewMode>("shelf");
-  const [editing, setEditing] = useState<ReadingItem | null>(null);
-  const [formOpen, setFormOpen] = useState(false);
+  const [editing, setEditing] = useState<ReadingItem | null>(() => workspace.data.readingItems.find((item) => item.id === searchParams.get("record")) ?? null);
+  const [formOpen, setFormOpen] = useState(() => Boolean(searchParams.get("record")));
+  useEffect(() => { const id = searchParams.get("record"); const item = workspace.data.readingItems.find((entry) => entry.id === id);
+    if (id && id !== openedRecord.current && item) { openedRecord.current = id; setEditing(item); setFormOpen(true); }
+    if (!id) openedRecord.current = null;
+  }, [searchParams, workspace.data.readingItems]);
   const [deleting, setDeleting] = useState<ReadingItem | null>(null);
   const [notice, setNotice] = useState<ToastNotice | null>(null);
   const show = (title: string, description: string) => setNotice({ id: Date.now(), title, description });

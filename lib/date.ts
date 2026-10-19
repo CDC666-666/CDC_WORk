@@ -1,5 +1,11 @@
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
+export function toBeijingDateKey(value: Date = new Date()): string {
+  const parts = new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Shanghai", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(value);
+  const part = (type: string) => parts.find((item) => item.type === type)?.value ?? "";
+  return `${part("year")}-${part("month")}-${part("day")}`;
+}
+
 export function toLocalDateKey(value: Date = new Date()): string {
   const year = value.getFullYear();
   const month = String(value.getMonth() + 1).padStart(2, "0");
