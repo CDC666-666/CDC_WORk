@@ -20,9 +20,9 @@ export function apiFailure(cause: unknown): NextResponse {
   return privateJson({ error: "服务器操作失败，请稍后重试。" }, 500);
 }
 
-export async function readJsonObject(request: Request): Promise<Record<string, unknown>> {
+export async function readJsonObject(request: Request, maxLength = 64_000): Promise<Record<string, unknown>> {
   const raw = await request.text();
-  if (raw.length > 64_000) throw new ApiError(413, "请求内容过大。");
+  if (raw.length > maxLength) throw new ApiError(413, "请求内容过大。");
   let value: unknown;
   try { value = JSON.parse(raw); } catch { throw new ApiError(400, "请求 JSON 无效。"); }
   if (!value || typeof value !== "object" || Array.isArray(value)) throw new ApiError(400, "请求内容必须是对象。");

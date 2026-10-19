@@ -5,6 +5,8 @@ import { createInitialWorkspaceData } from "@/data/initial-workspace-data";
 import { normalizeWorkspaceData } from "@/lib/storage/workspace-normalization";
 import { parseWorkspaceBackup } from "@/services/workspace-data-service";
 import { selectDerivedCalendarEvents } from "@/services/workspace-selectors";
+import { reflectionBody } from "@/services/reflection-period";
+import { toBeijingDateKey } from "@/lib/date";
 import { workspaceReducer } from "@/services/workspace-service";
 import type { CalendarEvent } from "@/types/calendar";
 import type { WorkspaceData } from "@/types/workspace";
@@ -30,6 +32,24 @@ function manualEvent(): CalendarEvent {
     updatedAt: fixedNow.toISOString(),
   };
 }
+
+test("legacy reflection body stays complete and backfilled dates use the covered Beijing day", () => {
+  const data = createData();
+  const daily = { id: "daily-backfill", type: "DAILY" as const, date: "2026-10-15", summary: "补写总结",
+    achievement: "收获原文", problem: "问题原文", plan: "计划原文" };
+  const weekly = { ...daily, id: "weekly", type: "WEEKLY" as const, date: "2026-10-13" };
+  const monthly = { ...daily, id: "monthly", type: "MONTHLY" as const, date: "2026-10-18" };
+  assert.equal(reflectionBody(daily), "收获原文\n\n问题\n问题原文\n\n计划\n计划原文");
+  const events = selectDerivedCalendarEvents(data, [daily, weekly, monthly]);
+  const day = (id: string) => toBeijingDateKey(new Date(events.find((item) => item.sourceId === id)!.startAt));
+  assert.equal(day("daily-backfill"), "2026-10-15");
+  assert.equal(day("weekly"), "2026-10-18");
+  assert.equal(day("monthly"), "2026-10-31");
+  assert.equal(events.filter((item) => item.sourceType === "reflection").length, 3);
+  assert.equal(selectDerivedCalendarEvents(data, [weekly]).some((item) => item.sourceId === "daily-backfill"), false);
+  assert.equal(selectDerivedCalendarEvents(data, [{ ...weekly, summary: "编辑后标题" }]).find((item) => item.sourceId === "weekly")?.title,
+    "每周总结：编辑后标题");
+});
 
 test("删除里程碑后 reducer 中不再存在该里程碑", () => {
   const data = createData();

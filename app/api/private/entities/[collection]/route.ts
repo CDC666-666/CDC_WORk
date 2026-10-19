@@ -11,7 +11,7 @@ export async function POST(request: NextRequest, { params }: {
     const { workspaceId } = await requirePrivateApi();
     assertSameOrigin(request);
     const collection = parseEntityCollection((await params).collection);
-    const body = await readJsonObject(request);
+    const body = await readJsonObject(request, collection === "knowledge" ? 512_000 : 64_000);
     const result = await serverWorkspaceEntityService.create(workspaceId, collection, body.item);
     return privateJson(result, 201);
   } catch (cause: unknown) { return apiFailure(cause); }

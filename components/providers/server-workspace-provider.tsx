@@ -46,9 +46,6 @@ export interface ServerWorkspaceContextValue {
   addReadingItem(draft: ReadingItemDraft): Promise<ReadingItem>;
   updateReadingItem(item: ReadingItem): Promise<void>;
   deleteReadingItem(itemId: string): Promise<void>;
-  replaceWorkspaceData(nextData: WorkspaceData): void;
-  importWorkspaceBackup(): Promise<void>;
-  restoreDemoData(): void;
 }
 
 export const ServerWorkspaceContext = createContext<ServerWorkspaceContextValue | null>(null);
@@ -203,10 +200,6 @@ export function ServerWorkspaceProvider({ children }: { children: React.ReactNod
     addTask, updateTask, deleteTask, duplicateTask, toggleTaskCompleted, addTaskFromContent,
     addStudyPlan, updateStudyPlan, deleteStudyPlan, addStudySession, addReadingItem, updateReadingItem,
     deleteReadingItem,
-    replaceWorkspaceData: () => { throw new Error("服务器模式禁止整份 Workspace 覆盖；请使用迁移入口。"); },
-    importWorkspaceBackup: async () => { throw new Error("服务器模式请通过迁移入口处理旧备份。"); },
-    restoreDemoData: () => { setNotice({ id: Date.now(), title: "服务器模式不可恢复演示数据",
-      description: "旧浏览器数据仍保留；请使用独立迁移入口。" }); },
   }), [data, snapshot, isHydrated, domainRevision, error, reload, mutateEntity, dispatch,
     addTask, updateTask, deleteTask, duplicateTask, toggleTaskCompleted, addTaskFromContent,
     addStudyPlan, updateStudyPlan, deleteStudyPlan, addStudySession, addReadingItem, updateReadingItem, deleteReadingItem]);
@@ -221,9 +214,6 @@ export function ServerWorkspaceProvider({ children }: { children: React.ReactNod
   </main>;
 
   return <ServerWorkspaceContext.Provider value={value}>
-    {!snapshot.hasServerRecords && <div className="border-b border-amber-200 bg-amber-50 px-4 py-2 text-center text-xs text-amber-900">
-      服务器暂无业务记录。旧浏览器数据仍保留；请先到 <Link href="/migration" className="font-semibold underline">迁移页</Link> 预检查并核对，不会自动上传。
-    </div>}
     {children}
     <ActionToast notice={notice} onDismiss={() => setNotice(null)} />
   </ServerWorkspaceContext.Provider>;

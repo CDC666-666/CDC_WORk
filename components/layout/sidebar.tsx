@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable @next/next/no-img-element -- cropped workspace images are private data URLs */
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -29,6 +30,7 @@ import {
 
 import { getNavigationItemByPathname, navigationGroups, type NavigationIconKey } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
+import { useBranding } from "@/components/providers/branding-provider";
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -60,6 +62,7 @@ const navigationIcons: Record<NavigationIconKey, LucideIcon> = {
 
 export function Sidebar({ isCollapsed, isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
+  const { branding } = useBranding();
   const activeItem = getNavigationItemByPathname(pathname);
 
   return (
@@ -87,12 +90,12 @@ export function Sidebar({ isCollapsed, isOpen, onClose }: SidebarProps) {
             className="flex min-w-0 flex-1 items-center gap-3 rounded-sm"
             onClick={onClose}
           >
-            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-blue-600 text-white shadow-sm">
-              <BrainCircuit className="h-[18px] w-[18px]" />
+            <div className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-md bg-blue-600 text-white shadow-sm">
+              {branding.workspaceIcon ? <img src={branding.workspaceIcon} alt="工作台图标" className="h-full w-full object-cover" /> : <BrainCircuit className="h-[18px] w-[18px]" />}
             </div>
             <div className={cn("min-w-0", isCollapsed && "lg:hidden")}>
-              <p className="truncate text-sm font-semibold text-slate-900">CDC AI Workspace</p>
-              <p className="mt-0.5 truncate text-[10px] text-slate-500">个人学习与工程工作台</p>
+              <p className="truncate text-sm font-semibold text-slate-900">{branding.workspaceName}</p>
+              <p className="mt-0.5 truncate text-[10px] text-slate-500">{branding.workspaceSubtitle}</p>
             </div>
           </Link>
           <button
@@ -163,14 +166,14 @@ export function Sidebar({ isCollapsed, isOpen, onClose }: SidebarProps) {
               "flex items-center gap-3 rounded-md p-2 hover:bg-slate-100",
               isCollapsed && "lg:justify-center",
             )}
-            title={isCollapsed ? "CDC · 大一学生" : undefined}
+            title={isCollapsed ? `${branding.displayName} · ${branding.bio}` : undefined}
           >
-            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-slate-900 text-[11px] font-semibold text-white">
-              CDC
+            <div className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-md bg-slate-900 text-[11px] font-semibold text-white">
+              {branding.avatar ? <img src={branding.avatar} alt="个人头像" className="h-full w-full object-cover" /> : branding.displayName.slice(0, 2)}
             </div>
             <div className={cn("min-w-0", isCollapsed && "lg:hidden")}>
-              <p className="truncate text-sm font-medium text-slate-900">CDC</p>
-              <p className="truncate text-[11px] text-slate-500">大一学生 · 电控负责人</p>
+              <p className="truncate text-sm font-medium text-slate-900">{branding.displayName}</p>
+              <p className="truncate text-[11px] text-slate-500">{branding.bio}</p>
             </div>
           </Link>
         </div>

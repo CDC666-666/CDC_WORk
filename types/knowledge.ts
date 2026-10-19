@@ -7,6 +7,14 @@ export type ExperienceEvidenceStatus = "待核实" | "历史现场反馈" | "源
 
 /** Structured conclusion attached to the existing private Knowledge entity. */
 export interface EngineeringExperience {
+  qq?: {
+    sourceGroup?: string;
+    discussionDate?: string;
+    excerpt?: string;
+    screenshot?: string;
+    verification: "待验证" | "已实测" | "部分适用";
+    supplement?: string;
+  };
   phenomenon: string;
   sourceProject: string;
   environment: string;

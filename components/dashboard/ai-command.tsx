@@ -18,7 +18,7 @@ const suggestedPrompts = [
 
 function createDemoResponse(prompt: string) {
   if (prompt.includes("RoboMaster")) {
-    return "已识别为项目复盘任务。Sprint 1 仅生成演示反馈，后续会从工程日志中提取现象、原因、方案和验证结果。";
+    return "已识别为项目复盘任务。Sprint 1 仅生成演示反馈，后续会从研发过程记录中提取现象、原因、方案和验证结果。";
   }
   if (prompt.includes("阅读")) {
     return "已识别为阅读规划任务。建议先确定目标日期、每日页数和输出笔记，本阶段不会调用外部模型。";

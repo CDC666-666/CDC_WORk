@@ -42,12 +42,6 @@ export const navigationGroups: NavigationGroup[] = [
         icon: "sparkles",
         description: "统一 AI 输入入口",
       },
-      {
-        label: "今日任务",
-        href: "/today",
-        icon: "checkSquare",
-        description: "今日执行清单",
-      },
     ],
   },
   {
@@ -105,12 +99,6 @@ export const navigationGroups: NavigationGroup[] = [
         href: "/robomaster",
         icon: "bot",
         description: "机器人研发模块",
-      },
-      {
-        label: "工程日志",
-        href: "/logs",
-        icon: "notebookPen",
-        description: "开发与调试记录",
       },
       {
         label: "工程经验",
@@ -190,7 +178,7 @@ export function getNavigationItemByPathname(pathname: string) {
 }
 
 export const placeholderSections = navigationItems
-  .filter((item) => !["/", "/content", "/today", "/learning", "/academic", "/reading", "/knowledge", "/skills", "/projects", "/robomaster", "/logs", "/experiences", "/reviews", "/reflections", "/calendar", "/reports", "/resume", "/finance", "/settings"].includes(item.href))
+  .filter((item) => !["/", "/content", "/learning", "/academic", "/reading", "/knowledge", "/skills", "/projects", "/robomaster", "/experiences", "/reviews", "/reflections", "/calendar", "/reports", "/resume", "/finance", "/settings"].includes(item.href))
   .map((item) => item.href.slice(1));
 
 export function getNavigationItemBySection(section: string) {

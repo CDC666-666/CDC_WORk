@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Edit3, Plus, Trash2 } from "lucide-react";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { Dialog } from "@/components/shared/dialog";
@@ -12,28 +12,29 @@ import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useReflections } from "@/hooks/use-reflections";
-import { toLocalDateKey } from "@/lib/date";
-import { canonicalReflectionDate, filterReflections, reflectionPeriodLabel, reflectionTypeLabels } from "@/services/reflection-period";
+import { toBeijingDateKey } from "@/lib/date";
+import { canonicalReflectionDate, filterReflections, reflectionBody, reflectionPeriodLabel, reflectionTypeLabels } from "@/services/reflection-period";
 import type { Review, ReviewType } from "@/types/review";
 
-type Draft = Omit<Review, "id"> & { id?: string };
+type Draft = Omit<Review, "id"> & { id?: string; body: string };
 const reviewTypes: ReviewType[] = ["DAILY", "WEEKLY", "MONTHLY", "PROJECT"];
 
-function emptyDraft(): Draft {
-  return { type: "DAILY", date: toLocalDateKey(), summary: "", achievement: "", problem: "", plan: "",
+function emptyDraft(date = toBeijingDateKey()): Draft {
+  return { type: "DAILY", date, summary: "", body: "", achievement: "", problem: "", plan: "",
     relatedProjectId: undefined };
 }
 
-export function ReflectionsCenter({ initialProjectId, initialReviewId }: {
-  initialProjectId: string; initialReviewId: string;
+export function ReflectionsCenter({ initialProjectId, initialReviewId, initialDate, openCreate }: {
+  initialProjectId: string; initialReviewId: string; initialDate?: string; openCreate?: boolean;
 }) {
   const reflections = useReflections();
   const [typeFilter, setTypeFilter] = useState<ReviewType | "">("");
   const [projectFilter, setProjectFilter] = useState(initialProjectId);
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
-  const [draft, setDraft] = useState<Draft | null>(null);
+  const [draft, setDraft] = useState<Draft | null>(() => openCreate ? emptyDraft(initialDate) : null);
   const [selectedId, setSelectedId] = useState(initialReviewId);
+  useEffect(() => { if (initialReviewId) setSelectedId(initialReviewId); }, [initialReviewId]);
   const [deletingId, setDeletingId] = useState("");
   const [formError, setFormError] = useState("");
   const [notice, setNotice] = useState("");
@@ -51,7 +52,7 @@ export function ReflectionsCenter({ initialProjectId, initialReviewId }: {
   const openForm = (item?: Review) => {
     reflections.clearError();
     setFormError("");
-    setDraft(item ? { ...item } : emptyDraft());
+    setDraft(item ? { ...item, body: reflectionBody(item) } : emptyDraft(initialDate));
   };
   const changeType = (type: ReviewType) => setDraft((item) => item && {
     ...item, type, date: canonicalReflectionDate(type, item.date),
@@ -61,9 +62,10 @@ export function ReflectionsCenter({ initialProjectId, initialReviewId }: {
     event.preventDefault();
     if (!draft) return;
     setFormError("");
-    const { id, ...values } = draft;
+    const { id, body, ...values } = draft;
     try {
-      const saved = id ? await reflections.update(id, values) : await reflections.create(values);
+      const next = { ...values, achievement: body, problem: "", plan: "" };
+      const saved = id ? await reflections.update(id, next) : await reflections.create(next);
       setDraft(null);
       setSelectedId(saved.id);
       setNotice("总结已保存。");
@@ -89,7 +91,7 @@ export function ReflectionsCenter({ initialProjectId, initialReviewId }: {
   if (reflections.loadError && reflections.error && !draft) return <div className="space-y-4"><EmptyState title="总结数据读取失败" description={reflections.error} /><Button onClick={() => { void reflections.reload().catch(() => undefined); }}>重试</Button></div>;
 
   return <div className="space-y-5 lg:space-y-6">
-    <PageHeader eyebrow="REFLECTIONS" title="总结与复盘" description="记录每天、每周、每月的成长，以及项目阶段的经验。记录保存在本地 Workspace v4。"
+    <PageHeader eyebrow="REFLECTIONS" title="总结与复盘" description="记录每天、每周、每月的成长，以及项目阶段的经验。记录保存在私人服务器。"
       actions={<Button onClick={() => openForm()}><Plus />新增总结</Button>} />
     {(reflections.error || formError) && <p role="alert" className="rounded border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">{formError || reflections.error}</p>}
     {notice && <p role="status" className="rounded border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">{notice}</p>}
@@ -113,7 +115,7 @@ export function ReflectionsCenter({ initialProjectId, initialReviewId }: {
       footer={<><Button variant="outline" onClick={() => setSelectedId("")}>关闭</Button>{selected && <Button onClick={() => { openForm(selected); setSelectedId(""); }}>编辑总结</Button>}</>}>
       {selected && <div className="space-y-4 text-sm"><p className="text-xs text-slate-500">{reflectionPeriodLabel(selected.type, selected.date)} · {projectName(selected.relatedProjectId)}</p>
         {selected.relatedProjectId && projects.some((item) => item.id === selected.relatedProjectId) && <Link className="text-xs text-blue-700 hover:underline" href={`/projects/${selected.relatedProjectId}`}>查看关联项目</Link>}
-        {([ ["总结", selected.summary], ["收获", selected.achievement], ["问题", selected.problem], ["计划", selected.plan] ] as const).map(([label, content]) => <section key={label}><h3 className="font-semibold">{label}</h3><p className="mt-1 whitespace-pre-wrap break-words leading-6 text-slate-600">{content || "未填写"}</p></section>)}</div>}
+        <section><h3 className="font-semibold">{selected.summary}</h3><p className="mt-1 whitespace-pre-wrap break-words leading-6 text-slate-600">{reflectionBody(selected) || "未填写正文"}</p></section></div>}
     </Dialog>
 
     <Dialog open={Boolean(draft)} title={draft?.id ? "编辑总结" : "新增总结"} size="lg" onClose={() => setDraft(null)}
@@ -124,7 +126,8 @@ export function ReflectionsCenter({ initialProjectId, initialReviewId }: {
         <label className="text-xs text-slate-600">{draft.type === "WEEKLY" ? "周期起点（周一）" : draft.type === "MONTHLY" ? "周期起点（每月一日）" : draft.type === "PROJECT" ? "实际复盘日期" : "当天日期"}<Input aria-label="总结日期" type="date" value={draft.date} onChange={(event) => setDraft((item) => item && { ...item, date: event.target.value })} required /></label>
         <p className="text-xs text-blue-700 sm:col-span-2">{draft.date ? `对应周期：${reflectionPeriodLabel(draft.type, draft.date)}` : "请选择日期"}。周总结和月总结保存时自动归一到周期起点。</p>
         <label className="text-xs text-slate-600 sm:col-span-2">关联项目{draft.type === "PROJECT" ? "（必选）" : "（可选）"}<Select aria-label="总结关联项目" value={draft.relatedProjectId ?? ""} onChange={(event) => setDraft((item) => item && { ...item, relatedProjectId: event.target.value || undefined })} required={draft.type === "PROJECT"}><option value="">不关联项目</option>{projects.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</Select>{draft.type === "PROJECT" && !projects.length && <Link className="mt-1 block text-blue-700" href="/projects">请先创建项目</Link>}</label>
-        {([ ["总结", "summary"], ["收获", "achievement"], ["问题", "problem"], ["计划", "plan"] ] as const).map(([label, key]) => <label key={key} className="text-xs text-slate-600 sm:col-span-2">{label}<Textarea aria-label={label} value={draft[key]} required={key === "summary"} onChange={(event) => setDraft((item) => item && { ...item, [key]: event.target.value })} /></label>)}
+        <label className="text-xs text-slate-600 sm:col-span-2">标题<Input aria-label="总结标题" value={draft.summary} required onChange={(event) => setDraft((item) => item && { ...item, summary: event.target.value })} /></label>
+        <label className="text-xs text-slate-600 sm:col-span-2">正文<Textarea aria-label="总结正文" className="min-h-48" value={draft.body} onChange={(event) => setDraft((item) => item && { ...item, body: event.target.value })} /></label>
       </form>}
     </Dialog>
     <ConfirmDialog open={Boolean(deleting)} title="删除总结" description={`确定删除“${deleting?.summary ?? "该记录"}”吗？关联附件存在时会拒绝删除。`} onCancel={() => setDeletingId("")} onConfirm={() => { void remove(); }} />

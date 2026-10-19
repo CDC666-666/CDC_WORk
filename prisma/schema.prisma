@@ -59,6 +59,12 @@ model Workspace {
   id                  String               @id @default(cuid())
   userId              String               @unique
   user                User                 @relation(fields: [userId], references: [id], onDelete: Restrict)
+  displayName         String               @default("CDC")
+  bio                 String               @default("个人学习与工程实践")
+  avatar              String?              @db.Text
+  workspaceName       String               @default("CDC AI Workspace")
+  workspaceSubtitle   String               @default("个人学习与工程工作台")
+  workspaceIcon       String?              @db.Text
   projects            Project[]
   reviews             Review[]
   attachments         Attachment[]

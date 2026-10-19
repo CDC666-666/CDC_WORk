@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { BookMarked, BrainCircuit, Inbox, PlusCircle } from "lucide-react";
 
 import { ContentCard } from "@/components/content/content-card";
@@ -34,11 +35,13 @@ interface ContentCenterProps {
 }
 
 export function ContentCenter({ initialItems, tags }: ContentCenterProps) {
+  const searchParams = useSearchParams();
   const workspace = useWorkspaceData();
   const { items, updateItem: saveItem } = useContentItems(initialItems);
   const [filters, setFilters] = useState<ContentFilters>(defaultContentFilters);
   const [viewMode, setViewMode] = useState<ContentViewMode>("card");
-  const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+  const [selectedItemId, setSelectedItemId] = useState<string | null>(() => searchParams.get("record"));
+  useEffect(() => { const id = searchParams.get("record"); if (id) setSelectedItemId(id); }, [searchParams]);
   const [notice, setNotice] = useState<ToastNotice | null>(null);
 
   const filteredItems = useMemo(
@@ -102,9 +105,9 @@ export function ContentCenter({ initialItems, tags }: ContentCenterProps) {
       return;
     }
     showNotice(
-      wasAdded ? "已加入今日任务" : "任务已存在",
+      wasAdded ? "已创建学习任务" : "任务已存在",
       wasAdded
-        ? "已创建内容学习任务，可在今日任务和工作台首页查看。"
+        ? "已创建内容学习任务，可在日历中查看。"
         : "同一内容已经存在学习任务，未重复添加。",
     );
   };
