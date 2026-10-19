@@ -1,6 +1,10 @@
 # Public domain deployment
 
-## Pending private workspace release, checked 2026-10-19
+## Private workspace release, 2026-10-19
+
+The private workspace release is live from integration commit `7d498bdda2d37f7438679626cec1bb7359e975c3`, image `sha256:5a6675a927c5c628dccd589f12fae73bbbf00047e42ff8cc0016f08d75a2e46f`. It preserves the already deployed portfolio media/contact commits. Before migration and Web switch, the existing backup service created `cdc_workspace_20261019T004959Z_3391111.dump`; isolated restore and the full comparator returned MATCH across 39 tables, seven prior migrations, owner relationship and two engineering experiences. The protected rollback directory is `/var/backups/cdc-work/pre-private-7d498bd-20261019T005106Z/`, and the old image is tagged `cdc-work-rollback:pre-7d498bd`. Only `20261018010000_workspace_branding` was applied to the production database; eight migrations are now complete. Old Workspace and Knowledge row digests stayed equal to the backup clone before and after the Web switch. Web and DB are healthy; the public portfolio and media return 200, the login page returns 200, anonymous private APIs return 401, and the private host blocks the portfolio media path with 404. Authenticated production UI writes still require the owner's manual acceptance.
+
+## Pre-release private workspace baseline, checked 2026-10-19
 
 The running Web container is healthy on revision `4a6c502001aeb7a73867b53e979f21b5e8211089`, image `sha256:2177710d4c248176d93b54f024210c249297ec7741e0b1faa83a57ad591cef5a`. It includes `ab5fc0b` and `4a6c502` portfolio media/contact work after `origin/main@4e49100`. A release of the private workspace changes must include those deployed commits as well as the new task commit; building this task branch directly from main would remove currently served media and contact changes. The production database still has seven migrations and has not received the new branding migration.
 
