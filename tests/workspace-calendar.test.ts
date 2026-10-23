@@ -4,7 +4,7 @@ import test from "node:test";
 import { createInitialWorkspaceData } from "@/data/initial-workspace-data";
 import { normalizeWorkspaceData } from "@/lib/storage/workspace-normalization";
 import { parseWorkspaceBackup } from "@/services/workspace-data-service";
-import { selectCalendarEventsForProject, selectDerivedCalendarEvents } from "@/services/workspace-selectors";
+import { selectDerivedCalendarEvents } from "@/services/workspace-selectors";
 import { reflectionBody } from "@/services/reflection-period";
 import { toBeijingDateKey } from "@/lib/date";
 import { workspaceReducer } from "@/services/workspace-service";
