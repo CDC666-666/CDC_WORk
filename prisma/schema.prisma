@@ -92,6 +92,7 @@ model Workspace {
   resumeMaterials     ResumeMaterial[]
   calendarEvents      CalendarEvent[]
   financeTransactions FinanceTransaction[]
+  financeCategories   FinanceCategorySetting[]
   contentStates       ContentState[]
   migrationBatches    MigrationBatch[]
   migrationEntityMaps MigrationEntityMap[]
@@ -628,6 +629,17 @@ model FinanceTransaction {
   updatedAt        DateTime  @updatedAt
 
   @@unique([workspaceId, id])
+  @@index([workspaceId])
+}
+
+model FinanceCategorySetting {
+  id          String    @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+  name        String
+  color       String
+
+  @@unique([workspaceId, name])
   @@index([workspaceId])
 }
 

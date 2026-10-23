@@ -8,8 +8,8 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit --incremental false",
-    "test": "tsx --test tests/workspace-calendar.test.ts tests/repository-data.test.ts tests/domain-persistence.test.ts tests/academic-flow.test.ts tests/reflections-flow.test.ts tests/server/auth-policy.test.ts tests/server/auth-logging.test.ts tests/server/review-domain.test.ts tests/migration-dependencies.test.ts tests/engineering-experience.test.ts tests/server/experience-snapshot.test.ts tests/server/portfolio-analytics-policy.test.ts tests/server/site-metadata.test.ts",
-    "test:browser": "node --import tsx --test --test-concurrency=1 tests/browser/migration-preservation.test.ts tests/browser/engineering-experience-navigation.test.ts tests/browser/engineering-experience-project.test.ts tests/browser/branding-navigation.test.ts tests/browser/reflection-qq-search.test.ts tests/browser/engineering-log-compat.test.ts",
+    "test": "tsx --test tests/workspace-calendar.test.ts tests/finance-analysis.test.ts tests/repository-data.test.ts tests/domain-persistence.test.ts tests/academic-flow.test.ts tests/reflections-flow.test.ts tests/server/auth-policy.test.ts tests/server/auth-logging.test.ts tests/server/review-domain.test.ts tests/migration-dependencies.test.ts tests/engineering-experience.test.ts tests/server/experience-snapshot.test.ts tests/server/portfolio-analytics-policy.test.ts tests/server/site-metadata.test.ts",
+    "test:browser": "node --import tsx --test --test-concurrency=1 tests/browser/migration-preservation.test.ts tests/browser/engineering-experience-navigation.test.ts tests/browser/engineering-experience-project.test.ts tests/browser/branding-navigation.test.ts tests/browser/reflection-qq-search.test.ts tests/browser/engineering-log-compat.test.ts tests/browser/finance-calendar-acceptance.test.ts",
     "test:db": "node --conditions=react-server --import tsx --test tests/server/database-flow.test.ts tests/server/migration-flow.test.ts tests/server/daily-entity-flow.test.ts tests/server/linked-accumulation-concurrency.test.ts tests/server/experience-flow.test.ts tests/server/experience-snapshot-db.test.ts tests/server/auth-configuration.test.ts tests/server/portfolio-analytics-db.test.ts",
     "test:api": "tsx --test tests/server/http-flow.test.ts tests/server/experience-http.test.ts",
     "test:search": "node --conditions=react-server --import tsx --test tests/server/global-search.test.ts",
@@ -32,6 +32,7 @@
     "prisma": "6.19.3",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
+    "recharts": "^3.10.1",
     "server-only": "0.0.1",
     "tailwind-merge": "^2.6.0",
     "tsx": "^4.23.1"

@@ -1,7 +1,7 @@
 "use client";
 /* eslint-disable @next/next/no-img-element -- private screenshot data URLs are rendered directly */
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Check, Plus } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ActionToast, type ToastNotice } from "@/components/layout/action-toast";
@@ -26,8 +26,10 @@ export function EngineeringExperienceCenter() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const selectedId = searchParams.get("record") ?? "";
+  const routeProjectId = searchParams.get("projectId") ?? "";
   const [query, setQuery] = useState("");
-  const [project, setProject] = useState(() => searchParams.get("projectId") ?? "");
+  const [project, setProject] = useState(routeProjectId);
+  useEffect(() => { setProject(routeProjectId); }, [routeProjectId]);
   const [tag, setTag] = useState("");
   const [evidenceStatus, setEvidenceStatus] = useState<ExperienceEvidenceStatus | "全部">("全部");
   const [qqStatus, setQqStatus] = useState<"全部" | "待验证" | "已实测" | "部分适用">("全部");
@@ -40,10 +42,11 @@ export function EngineeringExperienceCenter() {
   const projects = useMemo(() => [...new Set(data.knowledgeItems.filter(isEngineeringExperience)
     .map((item) => item.experience.sourceProject))].sort(), [data.knowledgeItems]);
   const items = useMemo(() => filterExperiences(data.knowledgeItems, { query, project, tag, evidenceStatus })
+    .filter((item) => !data.projects.some((candidate) => candidate.id === project) || item.projectId === project)
     .filter((item) => tab === "all" || tab === "experience" && !item.experience?.qq || tab === "qq" && Boolean(item.experience?.qq))
     .filter((item) => tab !== "qq" || qqStatus === "全部" || item.experience?.qq?.verification === qqStatus)
     .filter((item) => !item.sourceId || !data.workLogs.some((log) => log.id === item.sourceId)),
-    [data.knowledgeItems, data.workLogs, evidenceStatus, project, query, tag, tab, qqStatus]);
+    [data.knowledgeItems, data.projects, data.workLogs, evidenceStatus, project, query, tag, tab, qqStatus]);
   const selected = data.knowledgeItems.find((item) => item.id === selectedId && isEngineeringExperience(item)) ?? null;
   const selectedQq = selected?.experience?.qq ? selected : null;
 
@@ -86,8 +89,8 @@ export function EngineeringExperienceCenter() {
       <Input aria-label="搜索工程经验" placeholder="搜索标题、现象、排查和结论" value={query}
         onChange={(event) => setQuery(event.target.value)} />
       <Select aria-label="来源项目筛选" value={project} onChange={(event) => setProject(event.target.value)}>
-        <option value="">全部来源项目</option>{projects.map((value) => <option key={value} value={value}>{value}</option>)}
-        {data.projects.filter((item) => !projects.includes(item.id)).map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+        <option value="">全部来源项目</option>{data.projects.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+        {projects.filter((value) => !data.projects.some((item) => item.id === value)).map((value) => <option key={value} value={value}>{value}</option>)}
       </Select>
       <Input aria-label="标签筛选" placeholder="筛选标签" value={tag} onChange={(event) => setTag(event.target.value)} />
       <Select aria-label="证据状态筛选" value={evidenceStatus}

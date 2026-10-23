@@ -1,5 +1,5 @@
-export type CalendarEventType = "课程" | "任务" | "学习" | "阅读" | "项目" | "比赛" | "个人" | "总结";
-export type CalendarSourceType = "manual" | "task" | "studyPlan" | "reading" | "milestone" | "assignment" | "reflection";
+export type CalendarEventType = "课程" | "任务" | "学习" | "阅读" | "项目" | "比赛" | "个人" | "总结" | "研发";
+export type CalendarSourceType = "manual" | "task" | "studyPlan" | "reading" | "milestone" | "assignment" | "reflection" | "engineeringLog";
 
 export interface CalendarEvent {
   id: string;

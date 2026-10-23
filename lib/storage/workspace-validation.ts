@@ -253,10 +253,10 @@ export function isCalendarEvent(value: unknown): value is CalendarEvent {
 
 export function isFinanceTransaction(value: unknown): value is FinanceTransaction {
   if (!isRecord(value)) return false;
-  return hasEntityBase(value) && isOneOf(value.type, ["收入", "支出"] as const) &&
-    isOneOf(value.category, ["生活", "学习", "交通", "设备", "RoboMaster", "项目", "娱乐", "奖学金", "兼职", "其他"] as const) &&
+  return hasEntityBase(value) && isOneOf(value.type, ["收入", "支出", "转账"] as const) &&
+    isString(value.category) && value.category.trim().length > 0 &&
     isFiniteNumber(value.amount) && value.amount > 0 && isString(value.date) && isString(value.account) &&
-    isString(value.description) && isStringArray(value.tags);
+    isString(value.description) && hasOptionalString(value, "note") && isStringArray(value.tags);
 }
 
 export function isWorkspaceData(value: unknown): value is WorkspaceData {

@@ -4,7 +4,7 @@ import test from "node:test";
 import { createInitialWorkspaceData } from "@/data/initial-workspace-data";
 import { normalizeWorkspaceData } from "@/lib/storage/workspace-normalization";
 import { parseWorkspaceBackup } from "@/services/workspace-data-service";
-import { selectDerivedCalendarEvents } from "@/services/workspace-selectors";
+import { selectCalendarEventsForProject, selectDerivedCalendarEvents } from "@/services/workspace-selectors";
 import { reflectionBody } from "@/services/reflection-period";
 import { toBeijingDateKey } from "@/lib/date";
 import { workspaceReducer } from "@/services/workspace-service";
@@ -106,6 +106,26 @@ test("同一源实体不会产生重复派生日程", () => {
   const task = data.tasks[0];
   const events = selectDerivedCalendarEvents({ ...data, tasks: [...data.tasks, { ...task }] });
   assert.equal(events.filter((event) => event.sourceType === "task" && event.sourceId === task.id).length, 1);
+});
+
+test("研发记录按实际日期派生，编辑、补写和删除与日历保持同一来源", () => {
+  const base = createData();
+  const original = { ...base.workLogs[0], id: "calendar-log", date: "2026-04-03",
+    title: "完成 DT7 遥控器控制", createdAt: "2026-10-21T08:00:00.000Z" };
+  const data = { ...base, workLogs: [original, { ...original, id: "calendar-log-2", title: "同日第二条" }] };
+  const projected = selectDerivedCalendarEvents(data).filter((item) => item.sourceType === "engineeringLog");
+  assert.equal(projected.length, 2);
+  assert.equal(projected[0].title, "完成 DT7 遥控器控制");
+  assert.equal(toBeijingDateKey(new Date(projected[0].startAt)), "2026-04-03");
+  assert.equal(projected[0].sourceId, original.id);
+  const changed = workspaceReducer(data, { type: "work-log/updated", workLog: { ...original,
+    title: "改后标题", date: "2026-05-09" } });
+  const updated = selectDerivedCalendarEvents(changed).find((item) => item.sourceId === original.id);
+  assert.equal(updated?.title, "改后标题");
+  assert.equal(toBeijingDateKey(new Date(updated!.startAt)), "2026-05-09");
+  const deleted = workspaceReducer(changed, { type: "work-log/deleted", workLogId: original.id });
+  assert.equal(selectDerivedCalendarEvents(deleted).some((item) => item.sourceId === original.id), false);
+  assert.equal(selectDerivedCalendarEvents(deleted).filter((item) => item.sourceType === "engineeringLog").length, 1);
 });
 
 test("删除项目后该项目的全部里程碑派生日程消失", () => {

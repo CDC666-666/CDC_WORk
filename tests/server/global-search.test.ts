@@ -43,3 +43,17 @@ test("unified engineering view keeps the original log identity and suppresses a 
   assert.deepEqual(result.map((item) => item.href), [`/experiences?record=${log.id}`]);
   assert.equal(withLog.engineeringLogs[0].id, log.id);
 });
+
+test("private global search finds a bill outside the current month and links directly to its detail", () => {
+  const withBill = migrateWorkspaceV3(createEmptyWorkspaceData());
+  withBill.legacy.financeTransactions = [{ id: "bill-old", type: "支出", date: "2025-03-02", category: "电子元器件",
+    amount: 12.34, account: "微信", description: "DT7 遥控器配件", note: "接收机线束", tags: ["控制"],
+    createdAt: "2025-03-02T00:00:00Z", updatedAt: "2025-03-02T00:00:00Z" }];
+  const privateSnapshot = { ...snapshot, domain: withBill };
+  const result = searchServerWorkspace(privateSnapshot, "线束", { type: "账单" });
+  assert.equal(result.length, 1);
+  assert.equal(result[0].href, "/finance?record=bill-old");
+  assert.match(result[0].source, /2025-03-02.*电子元器件.*12\.34/);
+  withBill.legacy.financeTransactions = [];
+  assert.equal(searchServerWorkspace(privateSnapshot, "线束", { type: "账单" }).length, 0);
+});

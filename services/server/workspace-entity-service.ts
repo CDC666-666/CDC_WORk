@@ -121,8 +121,16 @@ function normalizeInput(collection: MigrationCollection, value: unknown, id?: st
     const experienceIssues = experienceValidationIssues(item);
     if (experienceIssues.length) throw new ApiError(422, experienceIssues.join("；"));
   }
-  if (collection === "financeTransactions" && Number(item.amount) <= 0) {
-    throw new ApiError(422, "金额必须大于零。");
+  if (collection === "financeTransactions") {
+    const amount = Number(item.amount);
+    if (!Number.isFinite(amount) || amount <= 0 || !Number.isSafeInteger(Math.round(amount * 100)) ||
+      Math.abs(amount * 100 - Math.round(amount * 100)) > 0.000001) throw new ApiError(422, "金额须大于零且最多两位小数。");
+    if (!["收入", "支出", "转账"].includes(String(item.type))) throw new ApiError(422, "收支方向无效。");
+    if (typeof item.category !== "string" || !item.category.trim()) throw new ApiError(422, "分类不能为空。");
+    const date = String(item.date);
+    const parsed = new Date(`${date}T00:00:00.000Z`);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || Number.isNaN(parsed.getTime()) ||
+      parsed.toISOString().slice(0, 10) !== date) throw new ApiError(422, "账单日期无效。");
   }
   if (collection === "assignments" && (typeof item.deadline !== "string" ||
     !/^\d{4}-\d{2}-\d{2}$/.test(item.deadline) ||
@@ -213,7 +221,7 @@ export const serverWorkspaceEntityService = {
         extractDomain(result, collection, rows.map((row) => payloadOf(collection, row)));
       }
       return result;
-    });
+    }, { timeout: 30_000 });
   },
 
   async create(workspaceId: string, collection: MigrationCollection, input: unknown): Promise<EntityMutationResult> {
@@ -323,6 +331,6 @@ export const serverWorkspaceEntityService = {
         throw new ApiError(409, "记录已在其他设备修改，请重新加载后重试。");
       }
       return { collection, id };
-    });
+    }, { timeout: 30_000 });
   },
 };

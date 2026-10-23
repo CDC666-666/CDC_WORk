@@ -1,5 +1,7 @@
-export type FinanceTransactionType = "收入" | "支出";
-export type FinanceCategory = "生活" | "学习" | "交通" | "设备" | "RoboMaster" | "项目" | "娱乐" | "奖学金" | "兼职" | "其他";
+export type FinanceTransactionType = "收入" | "支出" | "转账";
+export type FinanceCategory = string;
+
+export interface FinanceCategorySetting { name: string; color: string }
 
 export interface FinanceTransaction {
   id: string;
@@ -9,6 +11,7 @@ export interface FinanceTransaction {
   date: string;
   account: string;
   description: string;
+  note?: string;
   tags: string[];
   createdAt: string;
   updatedAt: string;

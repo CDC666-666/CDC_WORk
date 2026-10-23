@@ -48,6 +48,10 @@ export function searchServerWorkspace(snapshot: ServerWorkspaceSnapshot, query: 
   for (const item of data.technicalIssues) add("技术问题", item.id, item.title, JSON.stringify(item), `/reviews?record=${encoded(item.id)}`, item.projectId, [], item.severity);
   for (const item of data.testRecords) add("测试记录", item.id, item.title, JSON.stringify(item), `/reviews?record=${encoded(item.id)}`, item.projectId);
   for (const item of data.readingItems) add("阅读", item.id, item.title, JSON.stringify(item), `/reading?record=${encoded(item.id)}`, undefined, item.tags, item.author);
+  for (const item of data.financeTransactions) add("账单", item.id, item.description || "未填写用途",
+    `${item.date} · ${item.category} · ${item.type} ${item.type === "收入" ? "+" : item.type === "支出" ? "-" : ""}¥${Number(item.amount).toFixed(2)} · ${item.note ?? ""} · ${item.account} · ${(item.tags ?? []).join(" ")}`,
+    `/finance?record=${encoded(item.id)}`, undefined, item.tags ?? [],
+    `${item.date} · ${item.category} · ${item.type} ${item.type === "收入" ? "+" : item.type === "支出" ? "-" : ""}¥${Number(item.amount).toFixed(2)}`);
   for (const item of mockContentItems) {
     add(item.contentType === "video" ? "视频内容" : "技术内容", item.id, item.title,
       `${item.rawDescription} ${item.aiSummary.overview} ${item.aiSummary.keyPoints.join(" ")}`,

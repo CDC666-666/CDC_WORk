@@ -77,7 +77,7 @@ export function Topbar({
 }: TopbarProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const { data } = useWorkspaceData();
+  const { data, domainRevision } = useWorkspaceData();
   const { branding } = useBranding();
   const quickRef = useRef<HTMLDivElement>(null);
   const quickButtonRef = useRef<HTMLButtonElement>(null);
@@ -130,7 +130,7 @@ export function Topbar({
       } finally { if (current === requestId.current) setSearchLoading(false); }
     }, 280);
     return () => { controller.abort(); window.clearTimeout(timer); };
-  }, [isSearchOpen, query, typeFilter, projectFilter, tagFilter]);
+  }, [isSearchOpen, query, typeFilter, projectFilter, tagFilter, domainRevision]);
 
   const date = formatDate(now);
   const currentItem = getNavigationItemByPathname(pathname);
@@ -156,7 +156,7 @@ export function Topbar({
     <div className="rounded-lg border border-border bg-white p-2 shadow-[0_18px_55px_rgba(15,23,42,0.16)]">
       <div className="grid gap-2 border-b p-2 sm:grid-cols-3">
         <select aria-label="搜索内容类型" className="rounded border p-2 text-xs" value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)}>
-          <option value="">全部类型</option>{["项目", "任务", "课程", "课程记录", "作业", "总结", "工程经验", "技术问题", "测试记录", "知识库", "阅读", "视频内容", "技术内容", "日历事项"].map((type) => <option key={type}>{type}</option>)}
+          <option value="">全部类型</option>{["项目", "任务", "课程", "课程记录", "作业", "总结", "工程经验", "技术问题", "测试记录", "知识库", "阅读", "账单", "视频内容", "技术内容", "日历事项"].map((type) => <option key={type}>{type}</option>)}
         </select>
         <select aria-label="搜索关联项目" className="rounded border p-2 text-xs" value={projectFilter} onChange={(event) => setProjectFilter(event.target.value)}>
           <option value="">全部项目</option>{data.projects.map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}

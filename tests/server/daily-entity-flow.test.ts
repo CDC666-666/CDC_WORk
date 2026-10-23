@@ -76,7 +76,7 @@ test("daily entity API persists native rows, checks versions and relations, and 
     await service.delete(id, "assignments", assignmentId, 2);
     assert.equal((await service.snapshot(id)).domain.academic.assignments.length, 0);
     await assert.rejects(() => service.create(id, "financeTransactions", { id: `bad-${marker}`,
-      type: "支出", date: "2026-02-30", amount: 1.234 }), /日期|amount/);
+      type: "支出", date: "2026-02-30", amount: 1.234 }), /日期|金额|amount/);
     await assert.rejects(() => service.create(id, "reviews", { id: `orphan-${marker}`,
       type: "PROJECT", date: "2026-10-04", summary: "无效", relatedProjectId: "missing" }), /不存在/);
   } finally {
