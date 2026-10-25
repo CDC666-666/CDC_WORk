@@ -2,10 +2,11 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Bar, BarChart, CartesianGrid, Cell, Legend, Line, LineChart, Pie, PieChart,
+import { Bar, BarChart, CartesianGrid, Legend, Line, LineChart,
   ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Edit3, Plus, Trash2 } from "lucide-react";
 import { FinanceDialog } from "@/components/finance/finance-dialog";
+import { FinanceCategoryDonut } from "@/components/finance/finance-category-donut";
 import { FinanceCategoryManager } from "@/components/finance/finance-category-manager";
 import { ActionToast, type ToastNotice } from "@/components/layout/action-toast";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
@@ -18,16 +19,16 @@ import { Select } from "@/components/ui/select";
 import { useWorkspaceData } from "@/hooks/use-workspace-data";
 import { toBeijingDateKey } from "@/lib/date";
 import { dateOffset, formatCents, monthEnd, monthStart, type FinanceReport,
-  type FinanceSort, type FinanceTrendUnit } from "@/services/finance-analysis";
+  type FinanceSort, type FinanceTagMode, type FinanceTrendUnit } from "@/services/finance-analysis";
 import { createFinanceTransaction } from "@/services/finance-service";
 import type { FinanceCategorySetting, FinanceTransaction, FinanceTransactionDraft } from "@/types/finance";
 
 type Preset = "month" | "previous" | "three" | "year" | "six" | "twelve" | "custom";
 type Filters = { start: string; end: string; type: string; category: string; account: string;
-  min: string; max: string; sort: FinanceSort; trendUnit: FinanceTrendUnit; page: number };
+  tagMode: FinanceTagMode; tag: string; min: string; max: string; sort: FinanceSort; trendUnit: FinanceTrendUnit; page: number };
 const todayKey = () => toBeijingDateKey();
 const initial = (): Filters => ({ start: monthStart(todayKey()), end: todayKey(), type: "",
-  category: "", account: "", min: "", max: "", sort: "date-desc", trendUnit: "day", page: 1 });
+  category: "", account: "", tagMode: "", tag: "", min: "", max: "", sort: "date-desc", trendUnit: "day", page: 1 });
 const fallbackColors = ["#2563eb", "#0d9488", "#7c3aed", "#f59e0b", "#e11d48", "#0891b2", "#db2777", "#64748b"];
 const money = (cents: number) => "¥" + formatCents(cents);
 function presetDates(preset: Preset, today: string): { start: string; end: string } {
@@ -55,12 +56,19 @@ export function FinanceCenter() {
   const [error, setError] = useState("");
   const [editing, setEditing] = useState<FinanceTransaction | null>(null);
   const [formOpen, setFormOpen] = useState(false);
+  const [closedRecordId, setClosedRecordId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<FinanceTransaction | null>(null);
   const [notice, setNotice] = useState<ToastNotice | null>(null);
   const [monthlyView, setMonthlyView] = useState<"compare" | "stack">("compare");
   const requestId = useRef(0);
-  const selected = data.financeTransactions.find((item) => item.id === searchParams.get("record")) ?? null;
-  const closeSelected = () => router.replace(pathname, { scroll: false });
+  const recordId = searchParams.get("record");
+  const selected = recordId && recordId !== closedRecordId ?
+    data.financeTransactions.find((item) => item.id === recordId) ?? null : null;
+  const closeSelected = () => {
+    setClosedRecordId(recordId);
+    router.replace(pathname, { scroll: false });
+  };
+  useEffect(() => { if (!recordId) setClosedRecordId(null); }, [recordId]);
   const update = (change: Partial<Filters>) => setFilters((previous) => ({ ...previous, ...change, page: change.page ?? 1 }));
   const setRange = (start: string, end: string) => {
     setPreset("custom");
@@ -81,6 +89,8 @@ export function FinanceCenter() {
     if (query) params.set("q", query);
     if (filters.type) params.set("type", filters.type);
     if (filters.category) params.set("category", filters.category);
+    if (filters.tagMode) params.set("tagMode", filters.tagMode);
+    if (filters.tag) params.set("tag", filters.tag);
     if (filters.account) params.set("account", filters.account);
     if (filters.min) params.set("min", filters.min);
     if (filters.max) params.set("max", filters.max);
@@ -115,15 +125,14 @@ export function FinanceCenter() {
     setNotice({ id: Date.now(), title: "账单已保存", description: "统计与搜索将使用最新记录。" });
   };
   const clear = () => { setFilters(initial()); setPreset("month"); setQueryInput(""); setQuery(""); };
-  const pieData = report ? report.categories.slice(0, 7).map((item) => ({ name: item.key,
-    value: item.amountCents / 100, color: categoryColor(item.key) })) : [];
-  if (report && report.categories.length > 7) pieData.push({ name: "其余分类", value:
-    report.categories.slice(7).reduce((sum, item) => sum + item.amountCents, 0) / 100, color: "#cbd5e1" });
   const trendData = report?.trend.map((item) => ({ key: item.key, amount: item.amountCents / 100 })) ?? [];
   const monthData = report?.monthly.map((item) => ({ key: item.key, income: item.incomeCents / 100,
     expense: item.expenseCents / 100, ...Object.fromEntries(item.categories.map((entry) => ["category:" + entry.key, entry.amountCents / 100])) })) ?? [];
   const activeConditions = [rangeLabel(filters), filters.type && "方向：" + filters.type,
-    filters.category && "分类：" + filters.category, filters.account && "账户：" + filters.account,
+    filters.category && "分类：" + filters.category,
+    filters.tagMode && "统计标签：" + (filters.tagMode === "named" ? filters.tag :
+      filters.tagMode === "unset" ? "未设置标签" : "未指定主要标签"),
+    filters.account && "账户：" + filters.account,
     query && "关键词：" + query, filters.min && "最低 ¥" + filters.min, filters.max && "最高 ¥" + filters.max].filter(Boolean);
   const chartRange = (key: string, unit: FinanceTrendUnit) => {
     if (!key) return;
@@ -158,7 +167,7 @@ export function FinanceCenter() {
           onChange={(event) => setQueryInput(event.target.value)} />
         <Select aria-label="收支方向筛选" value={filters.type} onChange={(event) => update({ type: event.target.value })}>
           <option value="">全部收支</option><option>收入</option><option>支出</option><option>转账</option></Select>
-        <Select aria-label="账单分类筛选" value={filters.category} onChange={(event) => update({ category: event.target.value })}>
+        <Select aria-label="账单分类筛选" value={filters.category} onChange={(event) => update({ category: event.target.value, tagMode: "", tag: "" })}>
           <option value="">全部分类</option>{categoryNames.map((item) => <option key={item}>{item}</option>)}</Select>
         <Select aria-label="账户或支付方式筛选" value={filters.account} onChange={(event) => update({ account: event.target.value })}>
           <option value="">全部账户</option>{report?.accounts.map((item) => <option key={item}>{item}</option>)}</Select>
@@ -170,7 +179,12 @@ export function FinanceCenter() {
           <option value="date-desc">日期从新到旧</option><option value="date-asc">日期从旧到新</option>
           <option value="amount-desc">金额从高到低</option><option value="amount-asc">金额从低到高</option></Select>
       </div>
-      <div className="flex flex-wrap gap-1 text-xs">{activeConditions.map((item) => <span key={item} className="rounded bg-slate-100 px-2 py-1">{item}</span>)}</div>
+      <div className="flex flex-wrap items-center gap-1 text-xs">{activeConditions.map((item) => <span key={item} className="rounded bg-slate-100 px-2 py-1">{item}</span>)}
+        {filters.tagMode && <button type="button" onClick={() => update({ tagMode: "", tag: "" })}
+          className="rounded bg-blue-50 px-2 py-1 text-blue-700 hover:bg-blue-100">取消标签筛选 ×</button>}
+        {filters.category && <button type="button" onClick={() => update({ category: "", tagMode: "", tag: "" })}
+          className="rounded bg-blue-50 px-2 py-1 text-blue-700 hover:bg-blue-100">取消类别筛选 ×</button>}
+      </div>
     </section>
     {error && <p role="alert" className="rounded border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">{error}</p>}
     {loading && <p role="status" className="text-sm text-slate-500">正在读取账单与统计…</p>}
@@ -213,21 +227,13 @@ export function FinanceCenter() {
         </LineChart></ResponsiveContainer></div> : <EmptyState title="暂无已发生日期" description="未来日期不会显示为零消费。" />}
         <p className="mt-2 text-xs text-slate-500">点击折线点筛选该日、周或月；选择分类可查看其趋势。</p>
       </article>
-      <article className="min-w-0 rounded-lg border bg-white p-4"><h2 className="font-semibold">消费类别占比</h2>
-        {report.expenseCents ? <div className="grid gap-2 sm:grid-cols-[200px_1fr]">
-          <div className="h-52"><ResponsiveContainer width="100%" height="100%"><PieChart><Pie data={pieData}
-            dataKey="value" nameKey="name" innerRadius={48} outerRadius={78}>
-            {pieData.map((entry, index) => <Cell key={entry.name + index} fill={entry.color}
-              onClick={() => { if (index < 7) update({ category: entry.name }); }} />)}
-          </Pie><Tooltip formatter={(value) => money(Math.round(Number(value) * 100))} /></PieChart></ResponsiveContainer></div>
-          <div className="max-h-56 space-y-1 overflow-y-auto">{report.categories.map((item) =>
-            <button key={item.key} type="button" onClick={() => update({ category: item.key })}
-              className="flex w-full items-center gap-2 rounded px-2 py-1 text-left text-xs hover:bg-slate-50">
-              <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: categoryColor(item.key) }} />
-              <span className="min-w-0 flex-1 truncate">{item.key}</span><span>{money(item.amountCents)}</span>
-              <span className="w-10 text-right text-slate-500">{(item.amountCents / report.expenseCents * 100).toFixed(1)}%</span>
-            </button>)}</div></div> : <EmptyState title="此范围没有支出" description="调整筛选范围或记一笔支出。" />}
-      </article>
+      <FinanceCategoryDonut composition={report.composition} categoryColor={categoryColor}
+        selection={filters.category ? { category: filters.category,
+          ...(filters.tagMode ? { kind: filters.tagMode, tag: filters.tagMode === "named" ? filters.tag :
+            filters.tagMode === "unset" ? "未设置标签" : "未指定主要标签" } : {}) } : null}
+        onCategory={(category) => update({ category, tagMode: "", tag: "" })}
+        onTag={(category, tagMode, tag) => update({ category, tagMode, tag: tagMode === "named" ? tag : "" })}
+        onClear={() => update({ category: "", tagMode: "", tag: "" })} />
     </section>
     <section className="min-w-0 rounded-lg border bg-white p-4"><div className="flex flex-wrap items-center justify-between gap-2">
       <h2 className="font-semibold">月度收支与分类构成</h2><div className="flex flex-wrap gap-2">
@@ -267,7 +273,8 @@ export function FinanceCenter() {
           {item.account && <p className="mt-1 text-xs text-slate-400">{item.account}</p>}</div>
         <div className="flex shrink-0 items-center gap-1"><b className={item.type === "收入" ? "mr-2 text-emerald-700" : "mr-2 text-rose-700"}>
           {item.type === "收入" ? "+" : item.type === "支出" ? "-" : ""}{money(Math.round(item.amount * 100))}</b>
-          <Button size="sm" variant="outline" onClick={() => router.push(pathname + "?record=" + encodeURIComponent(item.id), { scroll: false })}>查看</Button>
+          <Button size="sm" variant="outline" onClick={() => { setClosedRecordId(null);
+            router.push(pathname + "?record=" + encodeURIComponent(item.id), { scroll: false }); }}>查看</Button>
           <Button size="sm" variant="ghost" aria-label={"编辑" + item.description} onClick={() => { setEditing(item); setFormOpen(true); }}><Edit3 /></Button>
           <Button size="sm" variant="destructive" aria-label={"删除" + item.description} onClick={() => setDeleting(item)}><Trash2 /></Button>
         </div></article>)}</div> : <EmptyState title={report.allCount ? "没有匹配结果" : "尚无账单"}
@@ -280,13 +287,14 @@ export function FinanceCenter() {
     </section></>}
     <FinanceCategoryManager categories={categories} onChanged={async () => { await loadCategories(); await reload(); }} />
     <FinanceDialog open={formOpen} transaction={editing} categories={categories} onClose={() => setFormOpen(false)} onSubmit={save} />
-    <Dialog open={Boolean(selected)} title={selected?.description || "账单详情"} onClose={closeSelected}
+    <Dialog open={Boolean(selected) && !formOpen} title={selected?.description || "账单详情"} onClose={closeSelected}
       footer={<><Button variant="outline" onClick={closeSelected}>关闭</Button>{selected && <Button onClick={() => {
         setEditing(selected); setFormOpen(true); closeSelected(); }}>编辑账单</Button>}</>}>
       {selected && <div className="space-y-2 break-words text-sm"><p>{selected.date} · {selected.category} · {selected.type}</p>
         <p className="text-lg font-semibold">{selected.type === "收入" ? "+" : selected.type === "支出" ? "-" : ""}{money(Math.round(selected.amount * 100))}</p>
         {selected.account && <p>账户：{selected.account}</p>}{selected.note && <p className="whitespace-pre-wrap">备注：{selected.note}</p>}
-        {selected.tags.length > 0 && <p>标签：{selected.tags.join("、")}</p>}</div>}
+        {selected.tags.length > 0 && <p>标签：{selected.tags.join("、")}</p>}
+        {selected.tags.length > 1 && <p>主要统计标签：{selected.primaryTag || "未指定"}</p>}</div>}
     </Dialog>
     <ConfirmDialog open={Boolean(deleting)} title="删除账单" description="删除后统计与搜索会立即更新。"
       onCancel={() => setDeleting(null)} onConfirm={() => { if (!deleting) return;

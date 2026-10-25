@@ -3,7 +3,7 @@ import { ApiError, apiFailure, privateJson } from "@/lib/server/api-response";
 import { requirePrivateApi } from "@/lib/server/private-api";
 import { prisma } from "@/lib/server/prisma";
 import { toBeijingDateKey } from "@/lib/date";
-import { analyzeFinance, monthStart, validDateKey, type FinanceFilters, type FinanceSort,
+import { analyzeFinance, monthStart, validDateKey, type FinanceFilters, type FinanceSort, type FinanceTagMode,
   type FinanceTrendUnit } from "@/services/finance-analysis";
 import type { FinanceTransaction } from "@/types/finance";
 
@@ -41,13 +41,18 @@ export async function GET(request: NextRequest) {
     const type = params.get("type") ?? "";
     const category = params.get("category") ?? "";
     const account = params.get("account") ?? "";
-    if ([query, category, account].some((value) => value.length > 100) || !["", "收入", "支出", "转账"].includes(type)) {
+    const tagMode = params.get("tagMode") ?? "";
+    const tag = params.get("tag") ?? "";
+    if ([query, category, account, tag].some((value) => value.length > 100) ||
+      !["", "收入", "支出", "转账"].includes(type) || !["", "named", "unset", "unassigned"].includes(tagMode) ||
+      (tagMode === "named" && !tag) || (tagMode !== "named" && tag) || (tagMode && !category)) {
       throw new ApiError(400, "筛选条件无效。");
     }
     const minCents = cents(params.get("min"));
     const maxCents = cents(params.get("max"));
     if (minCents !== undefined && maxCents !== undefined && minCents > maxCents) throw new ApiError(400, "最低金额不能大于最高金额。");
-    const filters: FinanceFilters = { start, end, query, type, category, account, minCents, maxCents,
+    const filters: FinanceFilters = { start, end, query, type, category, account,
+      tagMode: tagMode as FinanceTagMode, tag, minCents, maxCents,
       sort: sort as FinanceSort, trendUnit: trendUnit as FinanceTrendUnit, page, pageSize };
     // The workspace scope is enforced in SQL before any search, grouping or pagination.
     const rows = await prisma.financeTransaction.findMany({ where: { workspaceId }, select: { payload: true } });

@@ -256,7 +256,9 @@ export function isFinanceTransaction(value: unknown): value is FinanceTransactio
   return hasEntityBase(value) && isOneOf(value.type, ["收入", "支出", "转账"] as const) &&
     isString(value.category) && value.category.trim().length > 0 &&
     isFiniteNumber(value.amount) && value.amount > 0 && isString(value.date) && isString(value.account) &&
-    isString(value.description) && hasOptionalString(value, "note") && isStringArray(value.tags);
+    isString(value.description) && hasOptionalString(value, "note") && isStringArray(value.tags) &&
+    hasOptionalString(value, "primaryTag") &&
+    (!value.primaryTag || (value.tags as string[]).includes(value.primaryTag as string));
 }
 
 export function isWorkspaceData(value: unknown): value is WorkspaceData {

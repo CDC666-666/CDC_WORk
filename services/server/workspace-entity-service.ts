@@ -127,6 +127,10 @@ function normalizeInput(collection: MigrationCollection, value: unknown, id?: st
       Math.abs(amount * 100 - Math.round(amount * 100)) > 0.000001) throw new ApiError(422, "金额须大于零且最多两位小数。");
     if (!["收入", "支出", "转账"].includes(String(item.type))) throw new ApiError(422, "收支方向无效。");
     if (typeof item.category !== "string" || !item.category.trim()) throw new ApiError(422, "分类不能为空。");
+    if (item.primaryTag !== undefined && (typeof item.primaryTag !== "string" ||
+      (item.primaryTag && (!Array.isArray(item.tags) || !item.tags.includes(item.primaryTag))))) {
+      throw new ApiError(422, "主要统计标签必须属于账单标签。");
+    }
     const date = String(item.date);
     const parsed = new Date(`${date}T00:00:00.000Z`);
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || Number.isNaN(parsed.getTime()) ||

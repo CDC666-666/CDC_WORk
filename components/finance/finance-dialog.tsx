@@ -14,15 +14,15 @@ export function FinanceDialog({ open, transaction, categories, onClose, onSubmit
   onClose: () => void; onSubmit: (draft: FinanceTransactionDraft, current: FinanceTransaction | null) => Promise<unknown>;
 }) {
   const [form, setForm] = useState({ type: "支出" as FinanceTransactionType, category: "其他", amount: "",
-    date: toBeijingDateKey(), account: "", description: "", note: "", tags: "" });
+    date: toBeijingDateKey(), account: "", description: "", note: "", tags: "", primaryTag: "" });
   const [error, setError] = useState("");
   useEffect(() => {
     if (!open) return;
     setForm(transaction ? { type: transaction.type, category: transaction.category, amount: transaction.amount.toFixed(2),
       date: transaction.date, account: transaction.account, description: transaction.description,
-      note: transaction.note ?? "", tags: transaction.tags.join(", ") } : {
+      note: transaction.note ?? "", tags: transaction.tags.join(", "), primaryTag: transaction.primaryTag ?? "" } : {
       type: "支出", category: "其他", amount: "", date: toBeijingDateKey(),
-      account: "", description: "", note: "", tags: "",
+      account: "", description: "", note: "", tags: "", primaryTag: "",
     });
     setError("");
   }, [open, transaction]);
@@ -30,9 +30,10 @@ export function FinanceDialog({ open, transaction, categories, onClose, onSubmit
     event.preventDefault();
     if (!/^\d+(?:\.\d{1,2})?$/.test(form.amount) || Number(form.amount) <= 0 || !form.category ||
       !/^\d{4}-\d{2}-\d{2}$/.test(form.date)) { setError("请填写有效金额、分类与日期；金额最多两位小数。"); return; }
+    const tags = [...new Set(form.tags.split(/[,，]/).map((tag) => tag.trim()).filter(Boolean))];
     try {
       await onSubmit({ ...form, amount: Number(form.amount), description: form.description.trim(),
-        note: form.note.trim(), tags: form.tags.split(/[,，]/).map((tag) => tag.trim()).filter(Boolean) }, transaction);
+        note: form.note.trim(), tags, primaryTag: tags.length > 1 && tags.includes(form.primaryTag) ? form.primaryTag : "" }, transaction);
       onClose();
     } catch (cause: unknown) { setError(cause instanceof Error ? cause.message : "服务器保存失败。"); }
   };
@@ -55,7 +56,18 @@ export function FinanceDialog({ open, transaction, categories, onClose, onSubmit
       <FormField label="账户或支付方式" htmlFor="finance-account"><Input id="finance-account" value={form.account}
         onChange={(event) => setForm({ ...form, account: event.target.value })} /></FormField>
       <FormField label="标签（逗号分隔）" htmlFor="finance-tags"><Input id="finance-tags" value={form.tags}
-        onChange={(event) => setForm({ ...form, tags: event.target.value })} /></FormField>
+        onChange={(event) => {
+          const tags = event.target.value.split(/[,，]/).map((tag) => tag.trim());
+          setForm({ ...form, tags: event.target.value, primaryTag: tags.includes(form.primaryTag) ? form.primaryTag : "" });
+        }} /></FormField>
+      {form.tags.split(/[,，]/).map((tag) => tag.trim()).filter(Boolean).length > 1 &&
+        <FormField label="主要统计标签" htmlFor="finance-primary-tag"><Select id="finance-primary-tag"
+          value={form.primaryTag} onChange={(event) => setForm({ ...form, primaryTag: event.target.value })}>
+          <option value="">未指定（归入“未指定主要标签”）</option>
+          {[...new Set(form.tags.split(/[,，]/).map((tag) => tag.trim()).filter(Boolean))].map((tag) =>
+            <option key={tag} value={tag}>{tag}</option>)}
+        </Select></FormField>}
+      <p className="text-xs text-slate-500 sm:col-span-2">用途用于描述账单；多个标签仍会保留，统计只计入一个主要标签。</p>
       <div className="sm:col-span-2"><FormField label="备注" htmlFor="finance-note"><Textarea id="finance-note"
         value={form.note} onChange={(event) => setForm({ ...form, note: event.target.value })} /></FormField></div>
     </form>

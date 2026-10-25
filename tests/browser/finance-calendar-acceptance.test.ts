@@ -184,7 +184,7 @@ test("isolated browser acceptance: research calendar and finance", {
       await page.getByText("匹配 1 笔").waitFor();
       assert.equal(await page.getByRole("article").filter({ hasText: "分页稀有账单" }).count(), 1);
       await page.getByRole("button", { name: "清空全部筛选" }).click();
-      await page.getByRole("heading", { name: "消费类别占比" }).locator("..").getByRole("button", { name: /餐饮/ }).click();
+      await page.getByRole("button", { name: "筛选类别 餐饮" }).click();
       await page.getByText("分类：餐饮").waitFor();
       assert.match(await card("总支出").textContent() ?? "", /¥12\.30/);
       actual = await report("category=餐饮");

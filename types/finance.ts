@@ -13,6 +13,8 @@ export interface FinanceTransaction {
   description: string;
   note?: string;
   tags: string[];
+  /** Only used to allocate multi-tag expenses to one statistical slice. */
+  primaryTag?: string;
   createdAt: string;
   updatedAt: string;
 }

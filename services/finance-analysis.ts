@@ -2,16 +2,21 @@ import type { FinanceTransaction } from "@/types/finance";
 
 export type FinanceTrendUnit = "day" | "week" | "month";
 export type FinanceSort = "date-desc" | "date-asc" | "amount-desc" | "amount-asc";
+export type FinanceTagMode = "" | "named" | "unset" | "unassigned";
 export interface FinanceFilters {
   start: string; end: string; query: string; type: string; category: string; account: string;
+  tagMode?: FinanceTagMode; tag?: string;
   minCents?: number; maxCents?: number; sort: FinanceSort; page: number; pageSize: number;
   trendUnit: FinanceTrendUnit;
 }
 export interface FinanceAmountGroup { key: string; amountCents: number }
+export interface FinanceTagGroup extends FinanceAmountGroup { kind: Exclude<FinanceTagMode, ""> }
+export interface FinanceCategoryGroup extends FinanceAmountGroup { tags: FinanceTagGroup[] }
 export interface FinanceReport {
   items: FinanceTransaction[]; totalCount: number; page: number; pageSize: number;
   incomeCents: number; expenseCents: number; balanceCents: number; dailyExpenseCents: number | null;
   trend: FinanceAmountGroup[]; categories: FinanceAmountGroup[];
+  composition: { expenseCents: number; categories: FinanceCategoryGroup[] };
   monthly: { key: string; incomeCents: number; expenseCents: number; categories: FinanceAmountGroup[] }[];
   accounts: string[]; allCount: number;
 }
@@ -46,19 +51,50 @@ function trendKey(date: string, unit: FinanceTrendUnit): string {
   return dateOffset(date, 1 - weekday);
 }
 
+export function statisticalTag(item: FinanceTransaction): Pick<FinanceTagGroup, "key" | "kind"> {
+  const tags = [...new Set((item.tags ?? []).map((tag) => tag.trim()).filter(Boolean))];
+  if (!tags.length) return { key: "未设置标签", kind: "unset" };
+  if (tags.length === 1) return { key: tags[0], kind: "named" };
+  if (item.primaryTag && tags.includes(item.primaryTag)) return { key: item.primaryTag, kind: "named" };
+  return { key: "未指定主要标签", kind: "unassigned" };
+}
+
 export function analyzeFinance(transactions: FinanceTransaction[], filters: FinanceFilters, today: string): FinanceReport {
   const query = filters.query.trim().toLocaleLowerCase("zh-CN");
   const terms = query.split(/\s+/).filter(Boolean);
-  const matched = transactions.filter((item) => {
+  const baseMatched = transactions.filter((item) => {
     if (!validDateKey(item.date) || item.date < filters.start || item.date > filters.end) return false;
-    if (filters.type && item.type !== filters.type || filters.category && item.category !== filters.category ||
-      filters.account && item.account !== filters.account) return false;
+    if (filters.type && item.type !== filters.type || filters.account && item.account !== filters.account) return false;
     const cents = amountCents(item.amount);
     if (filters.minCents !== undefined && cents < filters.minCents ||
       filters.maxCents !== undefined && cents > filters.maxCents) return false;
     const haystack = [item.description, item.note ?? "", item.category, item.account, ...(item.tags ?? [])]
       .join(" ").toLocaleLowerCase("zh-CN");
     return terms.every((term) => haystack.includes(term));
+  });
+  const compositionMap = new Map<string, { amountCents: number; tags: Map<string, FinanceTagGroup> }>();
+  let compositionExpenseCents = 0;
+  for (const item of baseMatched) {
+    if (item.type !== "支出") continue;
+    const cents = amountCents(item.amount);
+    compositionExpenseCents += cents;
+    const category = compositionMap.get(item.category) ?? { amountCents: 0, tags: new Map() };
+    category.amountCents += cents;
+    const tag = statisticalTag(item);
+    const groupKey = tag.kind + "\u0000" + tag.key;
+    category.tags.set(groupKey, { ...tag, amountCents: (category.tags.get(groupKey)?.amountCents ?? 0) + cents });
+    compositionMap.set(item.category, category);
+  }
+  const composition: FinanceReport["composition"] = { expenseCents: compositionExpenseCents,
+    categories: [...compositionMap].map(([key, value]) => ({ key, amountCents: value.amountCents,
+      tags: [...value.tags.values()].sort((a, b) => b.amountCents - a.amountCents || a.key.localeCompare(b.key, "zh-CN")) }))
+      .sort((a, b) => b.amountCents - a.amountCents || a.key.localeCompare(b.key, "zh-CN")) };
+  const matched = baseMatched.filter((item) => {
+    if (filters.category && item.category !== filters.category) return false;
+    if (!filters.tagMode) return true;
+    if (item.type !== "支出") return false;
+    const tag = statisticalTag(item);
+    return tag.kind === filters.tagMode && (tag.kind !== "named" || tag.key === filters.tag);
   });
   const incomeCents = matched.reduce((sum, item) => sum + (item.type === "收入" ? amountCents(item.amount) : 0), 0);
   const expenseCents = matched.reduce((sum, item) => sum + (item.type === "支出" ? amountCents(item.amount) : 0), 0);
@@ -108,6 +144,6 @@ export function analyzeFinance(transactions: FinanceTransaction[], filters: Fina
   return { items: sorted.slice((filters.page - 1) * filters.pageSize, filters.page * filters.pageSize),
     totalCount: matched.length, page: filters.page, pageSize: filters.pageSize, incomeCents, expenseCents,
     balanceCents: incomeCents - expenseCents, dailyExpenseCents: elapsedDays ? Math.round(expenseCents / elapsedDays) : null,
-    trend, categories, monthly, accounts: [...new Set(transactions.map((item) => item.account).filter(Boolean))].sort(),
+    trend, categories, composition, monthly, accounts: [...new Set(transactions.map((item) => item.account).filter(Boolean))].sort(),
     allCount: transactions.length };
 }
