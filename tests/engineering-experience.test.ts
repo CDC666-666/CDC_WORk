@@ -21,7 +21,7 @@ test("shared case keeps a stable identity and separate review/evidence states", 
 test("experience search and three filters find the source case", () => {
   const imported = parseAutoAimCase(syntheticCase, "workspace-one");
   const items = [imported];
-  assert.equal(filterExperiences(items, { query: "机械对齐", project: "auto_aim", tag: "初始化",
+  assert.equal(filterExperiences(items, { query: "回读校验", project: "auto_aim", tag: "合成标记",
     evidenceStatus: "历史现场反馈" }).length, 1);
   assert.equal(filterExperiences(items, { query: "", project: "auto_aim", tag: "",
     evidenceStatus: "实测验证" }).length, 0);
