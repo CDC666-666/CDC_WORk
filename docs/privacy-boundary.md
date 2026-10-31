@@ -26,6 +26,8 @@
 
 候选 Markdown 的本地链接检查通过；Git 忽略矩阵的 25 个私人路径和 5 个源码/公开媒体反例通过。常规测试 51/51（0 跳过）、lint 和生产构建通过，构建使用不可连接的合成数据库配置。PR #4～#14 的可编辑描述已去除私人运行细节；现有评论仅说明提交整合关系，无需修改。
 
+CI 的首次完整检查通过 Compose 的 API、数据库及重启持久性验证，但 quality 在浏览器安装处失败：ubuntu-latest 已变为 Ubuntu 26.04，锁定的 Playwright 1.56.1 不支持该系统。quality 作业改为该版本包含依赖映射的 Ubuntu 24.04；依据为 [Playwright 1.56.1 官方源码](https://github.com/microsoft/playwright/blob/v1.56.1/packages/playwright-core/src/server/registry/nativeDeps.ts)。这是测试环境修正，不更新业务代码、生产配置或依赖。
+
 历史残留位置仅列工程入口，不复述私人内容：
 
 | 位置 | 本次处理 |
