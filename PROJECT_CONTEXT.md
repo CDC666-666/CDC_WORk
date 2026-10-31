@@ -1,105 +1,32 @@
-# 个人工作台开发分支背景（2026-10-07）
+# 项目背景与版本边界
 
-**正式展示素材发布（2026-10-17；部署提交 `codex/portfolio-media-and-contact@4a6c502001aeb7a73867b53e979f21b5e8211089`；来源：GitHub PR #14 CI、服务器 Docker/Caddy/备份及本机外部 Chrome）：** 用户看到旧画面时生产仍运行 `a2e765c` 镜像；现已从独立 release worktree 构建并切换为 `sha256:2177710d4c248176d93b54f024210c249297ec7741e0b1faa83a57ad591cef5a`。首页步兵与机械臂视频在可见轮播卡片内静音自动循环，自瞄片段在 RoboMaster 详情；公开邮箱与微信号已上线。Caddy 仅在主域放行 `/media/portfolio/*`，私人子域屏蔽该路径；两域名的登录/API 边界未放宽。PR #14 新 head 的 `quality`、`compose` 通过，仍为 Draft、未合并 main。发布前归档 `cdc_workspace_20261017T033506Z_1449041.dump`（99,809 字节，SHA-256 `85a9459043a16b107feeac097cc8d5517a4b9043bddcd805fdcf0d2f88743d1e`）经既有任务的列表/完整解码及清单摘要验证；旧镜像和配置另存可回滚。原数据库容器未重建；部署后为 1 User、1 Account、1 Workspace、2 Knowledge、7 条成功迁移。外部 Chrome 在固定已核实 IP 的 DNS 规则下验证公开视频、无点击播放、联系复制、390px 布局和匿名访问边界；本机默认 DNS 一度报服务器失败，独立解析器仍将两域名解析至 `114.215.174.39`。本轮没有用真实 GitHub 会话重新登录或写入业务记录，先前真实登录结果属于旧镜像，不算新镜像的实测。发布步骤与回滚位置见[正式域名部署说明](docs/public-deployment.md)。
+核对日期：2026-10-31。此次清理起点为远端 `main@8dc9128d6f3a683adc8b07d5f615bcd051648639`；证据为 GitHub PR API、提交比较及独立 checkout 的源码。这里仅记录公开工程状态，不记录私人 Workspace 的内容、数量、状态、时间、ID 或指纹。
 
-**公开视频自动循环（2026-10-17；本地 `codex/portfolio-media-and-contact@4e49100b1ddd334e9ae0ff451967e0442bf1bd22` 加待提交改动；来源：源码、生产构建和 Chrome 预览）：** 用户在 `cdc666.cn/portfolio` 看到旧画面，是因为上一轮媒体改动仅在本地 worktree，生产仍运行 `a2e765c` 镜像。轮播内当前可见的项目视频已改为静音自动播放、循环，离开视野或切到后台即暂停；项目详情视频进入视野后同样自动播放，保留暂停控制。减少动态效果偏好下保持静止。`lint`、`typecheck`、51 项单元测试、`build` 及 Chrome 无点击播放／手机布局检查通过；此处是本地验证，不能代表生产发布完成。
+## 主线与未整合分支
 
-**公开联系方式与现场素材（2026-10-17；本地 `codex/portfolio-media-and-contact@4e49100b1ddd334e9ae0ff451967e0442bf1bd22` 加未提交修改；来源：用户本轮提供的联系信息及按顺序标注的三段视频、原片抽帧与转码核对）：** 在独立公开内容模型配置用户明确提供的邮箱和微信号，二维码仍未提供；未读取私人 Workspace 数据。第一段全向轮步兵画面用于 RoboMaster 项目轮播及详情，第二段机械臂画面用于机械臂项目，第三段自瞄现场画面作为 RoboMaster 项目内的补充片段；公开项目仍只有三项。原片为 HEVC 且带音轨，网页副本转为 1280×720 H.264、无音轨并去除元数据；首段裁掉已检测出的末尾约 25 秒黑屏。视频只记录现场画面，不证明自瞄接管、控制性能或具体个人职责。原片留在用户原位置；网页副本位于本 worktree 的 `public/media/portfolio/`。本轮为本地预览准备，`origin/main@4e49100` 与服务器实际运行镜像 `a2e765c` 尚无这些公开内容变更，未部署。
+| 对象 | 核对结果 |
+| --- | --- |
+| PR #3～#9 | 已通过 [整合 PR #10](https://github.com/CDC666-666/CDC_WORk/pull/10) 进入 main；#4～#9 因 head 已被包含而关闭，无需重复合并 |
+| PR #11～#14 | 已合并；#14 的合并提交是本次 main 基线 |
+| `codex/private-workspace-release@1ae8a58` | 相对上述 main 分叉，ahead 2 / behind 2，未建立独立 PR；私人界面、资料与搜索改动尚未全数进入 main |
+| `codex/finance-calendar-release@c997822` | 相对上述 main 分叉，ahead 5 / behind 2，未建立独立 PR；包含后续日历、理财及界面改动 |
 
-**主线整理（2026-10-17；来源：GitHub PR 状态和 main CI、服务器 Docker/数据库只读核对、本机旧 Edge 数据预检）：** [PR #12](https://github.com/CDC666-666/CDC_WORk/pull/12) 以 merge commit `65069a9aa7a566e7a6789b31854189251f1d6f41`、[PR #13](https://github.com/CDC666-666/CDC_WORk/pull/13) 以 merge commit `9905746f31c6f3b6cbb417ca0c470db15da9a007` 顺序合入 main。推荐新的干净日常 worktree `D:/Workplace/CDC_WORK_MAIN_CURRENT@codex/main-current`，从 `origin/main@9905746` 建立；旧 `CDC_WORK_MAIN@2eb7087` 的 `PROJECT_CONTEXT.md` 未提交修改保留原样。与服务器已验收 Web 构建提交 `a2e765c76114bd25bf3ce745971d5f5c056f52f9` 相比，main 仅新增项目/部署文档及 `ops/compare-restored-database.py` 的恢复核对兼容修复，未改变 Web 运行文件；继续使用健康镜像 `sha256:bce2fd5af68229a94cb72d448ff942f98c9581fccec80ea4dd317ed30cd433f3`。最新服务器归档 `cdc_workspace_20261016T191512Z_1147921.dump` 已完整解包核对，且在全新独立库实际恢复并与源库匹配（39 表、7 迁移、2 工程经验）；演练库已删除，生产库未重置。旧 Edge v3 的 9 条预检待审技能与内置演示基线字段值相同，因浏览器 JSON 省略可选 `parentId` 被列入待审；本人逐条决定前不导入。九条标题、时间及服务端相似性只在受限私人清单 `D:/Workplace/.private-db-backups/legacy-skills-review-20261017.md`，不提交公开仓库。自动异地备份、备案网站名称/公安备案号、公开联系方式及项目素材仍待补。
+上述 ahead/behind 是核对时的提交关系，不能直接当成功能差异数量。后续业务整合需单独审查；此次不合入发布分支。核对时现有 PR 均已关闭，随后创建的隐私清理 PR 单独交付。
 
-**PR 依赖整合核对（2026-10-17；来源：GitHub PR #12/#13、`origin/main`、服务器隔离恢复演练）：** PR #12 已以 merge commit `65069a9aa7a566e7a6789b31854189251f1d6f41` 合入 main；PR #13 的 base 已从 `codex/launch-prep` 调整为 main，无冲突。#12 的恢复比较脚本原先固定断言 37 表、6 条迁移和 1 条工程经验，当前生产库已有 39 表、7 条迁移和 2 条工程经验；本分支移除这些随业务变化失效的固定数量/状态断言，继续要求源库与独立恢复库的全部表主键、整行摘要、迁移、获准账户归属和经验内容/版本完全相同。服务器对最新完整归档 `cdc_workspace_20261016T191512Z_1147921.dump` 实际执行单事务恢复到全新 `cdc_restore_verify_20261017T005034Z`，比较返回 MATCH（39 表、7 迁移、2 经验），随后只删除该演练库；生产库没有执行恢复或重置。此项是备份**恢复演练**，不同于先前的归档解包校验。实际生产 Web 镜像仍为 `a2e765c` 构建版本；本分支变动仅影响运维恢复核对脚本，Web 运行代码未改变。
+## 当前实现
 
-**次日收尾（2026-10-17；来源：GitHub PR API、服务器 systemd/Docker 与 PostgreSQL 归档、本机 SHA-256）：** [PR #13](https://github.com/CDC666-666/CDC_WORk/pull/13) 在 `codex/portfolio-v1@429c88be39a84a1dab32e846f1cf9ef6b0d1edb9` 的 `quality`、`compose` 均成功后已从 Draft 转为可审查，base 仍为 `codex/launch-prep`；其依赖 [PR #12](https://github.com/CDC666-666/CDC_WORk/pull/12) 仍是 Draft，均未合并。生产 Web 仍运行由 `a2e765c` 构建的健康镜像，Caddy 和每日备份 timer active；2026-10-17 03:15（Asia/Shanghai）的最新归档 `cdc_workspace_20261016T191512Z_1147921.dump` 为 99,398 字节，经 `pg_restore --list` 与完整解码通过，SHA-256 `907f4b517c36a70b523109d013d3e5f0173c60647822b4f1b84494727107a3dc`。同名副本已复制至受限且 Git 忽略的本机 `.private-db-backups/` 并逐字节摘要核对。此为人工异机副本，自动异地目标与取回恢复演练仍未配置；未改生产数据库或运行镜像。备案名称、公安备案状态、第二个真实未授权 GitHub 账号验证及旧浏览器数据迁移仍待完成。
+main 包含服务器 Workspace、GitHub 数字 ID 准入、私有页面/API、完整领域模型、显式旧数据迁移、工程经验和手动只读快照。公开作品集与私人工作台的数据来源分开，公开统计仅返回聚合。模块范围见 [服务器覆盖](docs/sprint-5-2b-server-workspace.md)。
 
-**最终镜像上线收尾复核（2026-10-16，实际运行 `codex/portfolio-v1@a2e765c76114bd25bf3ce745971d5f5c056f52f9`）：** 用户在 `https://work.cdc666.cn/login` 的独立 Chrome 窗口亲自完成生产 GitHub 登录；同一真实会话读取原 Workspace 与两条既有知识记录，创建一条明确标记的临时工程经验，重读详情并刷新后仍可读，仅删除该临时记录，退出后私人 Workspace API 返回 401。服务器前后只读核对均为一个 User、Account、Workspace 及准入归属关系、两条 Knowledge、七条迁移，既有 Knowledge 摘要 `79a9c7e6cec9e0ef3d62fb8328af9d49` 未变。隔离 CI 的虚构未授权身份被拒绝，不等于第二个真实 GitHub 账号实测。最新自动完整归档已复制至本机受限且 Git 忽略的 `D:/Workplace/.private-db-backups/`，源/副本 SHA-256 一致、完整解码成功；尚无自动化独立存储目标。两个域名的实际页脚均显示已核准 ICP 号并链接工信部，网站名称和公安备案号仍未核实。旧 Edge `127.0.0.1:3000` 浏览器 v3 数据只读盘点为 75 条，预检识别 66 条演示、9 条待人工判断、0 条确认个人记录；本轮未迁移，原数据未改。具体边界见[正式域名部署说明](docs/public-deployment.md)。
+工程经验复用 `Knowledge`，审核与证据状态独立。日常实体使用版本化事务和工作区关系检查；日期和时间戳的协议见 [接口说明](app/api/private/README.md)。
 
-**当前生产状态（2026-10-16，来源：PR #13 CI、服务器 Docker/Prisma/Caddy、外部 Chrome 与数据库只读核对）：** 实际 Web 由 `codex/portfolio-v1@a2e765c76114bd25bf3ce745971d5f5c056f52f9` 构建，镜像 `sha256:bce2fd5af68229a94cb72d448ff942f98c9581fccec80ea4dd317ed30cd433f3`；该提交的 `quality`、`compose` 均通过。服务器干净的 `/opt/cdc-work/app` 仍为 `main@2eb70879cc47e984839f59cf694aa3605e597908`，二者不可混同。`cdc666.cn` 与 `work.cdc666.cn` 已解析至 `114.215.174.39` 并由 Caddy 提供有效 HTTPS；生产专用 GitHub OAuth 已使获准账号的真实会话进入原有 Workspace，刷新后保持会话。外部桌面和 390px 浏览器对公开页面的导航、静态资源、响应式布局及未知项目路径 HTTP 404 检查通过；私有经验创建、编辑、详情刷新和删除一条明确标记的临时记录后，原有数据数量与摘要不变；退出后私人 API 为 401。第七条 Prisma 迁移只新增公开统计表。上线起点固定为 `2026-10-16T13:55:05Z`，公开流量与本地测试库分离。ICP备案号为 `苏ICP备2026078441号-1`，备案网站名称、公安备案号及异地备份仍待核实。以下早期“未部署/仅隧道”段落是按日期保留的历史记录，不能覆盖本段实际状态。详见[正式域名部署说明](docs/public-deployment.md)。
+## 部署与本机边界
 
-**正式域名部署准备（2026-10-16，`codex/portfolio-v1@20c2f8a` 加未提交改动）：** 用户确认 ICP 已办结并授权正式部署。服务器实例元数据仍给出公网 IPv4 `114.215.174.39`；实际运行 Web 镜像仍是 `795f7cd` 的 `sha256:828110ce…`，Caddy 未启用，Web/DB 仅回环监听。2026-10-16 运行现有备份服务生成 94,009 字节归档 `cdc_workspace_20261016T084835Z_770610.dump`，SHA-256 `76008bbe3f4a53489f0a5c5cde4eb2dea2e245c729c29e3af6caaf7d2b1b5620`，经 PostgreSQL 16.14 `pg_restore --list` 和完整解码成功；原 `.env`、Compose override 与 Caddyfile 已另存于服务器 root-only `pre-public-20261016T131746Z/`（0600）。公共 DNS 当前无 A 记录，生产专用 OAuth 尚未确认，备案截图可读到“苏ICP备2026078441号-1”但未显示备案网站名称。当前没有切换镜像或公开服务；方案与回滚边界见[正式域名部署说明](docs/public-deployment.md)。
+main 合并不等于生产版本切换。历史发布分支包含生产发布记录，但本轮未连接服务器，不能据此宣布当前镜像、数据库或真实登录已复验。部署与恢复的一般流程见 [部署说明](docs/public-deployment.md) 和 [备份操作](docs/server-backup-operations.md)。
 
-**首页精简（2026-10-12，`codex/portfolio-v1@20c2f8a` 加本地未提交改动）：** 按用户截图保留首页导航、介绍文字与三项目透视轮播；移除首屏下方重复的精选项目网格、实践方向、联系和统计摘要，并在首页隐藏共享页脚。项目列表、详情、关于、统计和联系仍由导航进入，私人工作台入口未改。来源：本分支 `app/(public)/portfolio/page.tsx` 与 `components/portfolio/portfolio-shell.tsx`；本轮构建与浏览器核对结果见 `docs/portfolio-v1.md`。
+本次从远端 main 创建独立清理 checkout，保留原开发目录及未提交内容。不使用原工作区的环境文件、数据库、浏览器会话或快照运行清理检查。
 
-**展示站到私人工作台入口修复（2026-10-12，本地 `codex/portfolio-v1@20c2f8a` 加未提交改动）：** 预览页在 `127.0.0.1:3100`，原导航链接 `href="/login"` 会落到预览进程，而既有私人服务器及 GitHub OAuth 使用 `localhost:3000` 的 SSH 隧道；本轮检查时两个本地监听都未启动。已重新建立隧道与预览进程，并在展示站导航加入构建时可配置的 `NEXT_PUBLIC_PRIVATE_WORKSPACE_URL`，本地被忽略的 `.env` 指向 `http://localhost:3000/login`；正式分域名部署时须单独配置私人子域名登录地址，未配置时同源应用仍使用 `/login`。来源：本机监听、SSH 上的服务器登录 HTTP 200、本机浏览器从 3100 点击后到 3000 登录页、匿名私人 API 401，以及本分支 `lint`/`build`。本轮验证了登录入口与权限边界，没有代用户完成 GitHub 授权或声称真实会话已登录。隧道停止后需按[日常命令](docs/tunnel-and-future-domain.md)重开；无公网发布或私人数据改动。
+## 公开文档规则
 
-**首页与统计视觉调整（2026-10-12，本地 `D:/Workplace/CDC_WORK_PORTFOLIO@codex/portfolio-v1`，基线提交 `20c2f8aeb465f58ff762560f6b1ba98df3fbaf75`，本轮改动未提交）：** 依据用户提供的首屏局部截图及先前三张统计参考图，首屏移除前景工作台示意框和三个行动按钮，改以仅对应三个已确认项目的可点击轮播卡片为视觉主体；上一段所述“前景工作台”是此前版本描述。统计页改为四项总览、左列趋势与时段热力、右列环形分布与热门页面比例条，图形只使用既有匿名聚合，不改变采集口径或私人数据边界。来源：本 worktree 源码差异、`lint`／`build`、隔离 `portfolio_preview` 库及 1440px／390px Chrome 浏览器回归；页面无横向溢出与控制台错误，轮播切换／详情和减少动效偏好已验收。服务器仍为旧镜像，本轮未部署；详细证据见[展示站说明](docs/portfolio-v1.md)。
+公开仓库保留源码、通用说明、合成测试和获准公开的展示资料。私人运行记录及验收清单留在受限、被忽略的位置；去除正文后仍可能泄露内容的标题、标签、计数和指纹同样不能公开。
 
-**后续轮播校正（2026-10-12，同一分支和基线，未提交）：** 用户反馈分步换位不像原有滚动效果。当前卡片改为持续三维转动，卡面以工程封面或未来本人提供的视频为主，底下仅列短标题和一句说明；自瞄卡片用“RoboMaster 步兵自瞄项目”作为展示标题。自拍视频未提供、未配置，因此当前不显示播放器。生产构建的 Chrome 自动化确认连续位置变化、悬停继续运动、卡片详情可达、390px 无溢出、减少动效时静止；不把这些页面结果写成视频播放已验收。
-
-**第一版动效恢复（2026-10-12，同一分支和基线，未提交）：** 按最新反馈对照 `git show 20c2f8a:components/portfolio/hero-showcase.tsx`，恢复第一版 21 张重复项目封面沿半径 670px 圆环、每秒 1.5° 连续掠过的透视运动；实际项目仍只有三项。首屏工作台示意框和三个按钮继续移除，卡片保留简短介绍与未来本人视频的配置入口。来源：本地源码、`npm run lint`、`npm run build`、生产预览的 Chrome 桌面 1440px/手机 390px 截图和交互检查。轮播持续移动、悬停继续移动、可进入项目详情；减少动效偏好时静止，手机无水平溢出。当前无实际视频，未验收视频播放；服务器仍为旧镜像。
-
-**展示站重构（2026-10-12，本地 `D:/Workplace/CDC_WORK_PORTFOLIO@codex/portfolio-v1`，本轮提交前基线 `5ea325d34cdc21a6e1336fdacaea9b0aaf56b54e`）：** 以用户提供的风格文档和三张站点统计截图为参考，把 `/portfolio` 改成深色工程作品集，并新增公开统计与联系页。只保留 RoboMaster 全向轮步兵电控、三轴机械臂与达妙电机控制、个人工作台三个项目；成长时间线和“当前关注”已从公开页面移除。项目起止时间没有已核准来源，显示待补；只有 GitHub 联系方式已配置，邮箱/微信及正式上线时间均待本人提供。前景工作台是自绘示意，不包含私人内容。公开访问统计复用 PostgreSQL 新表，仅采集白名单展示页，匿名 Cookie HMAC 去重，公开接口只返回聚合；本地独立 `portfolio_preview` 库与未来线上数据隔离。来源与口径见[展示站说明](docs/portfolio-v1.md)。
-
-**本轮本地证据（2026-10-12，来源：本 worktree 构建命令、隔离 PostgreSQL 16.14 和 Chrome）：** 7 个迁移应用到 `127.0.0.1:5544/portfolio_preview`；lint、typecheck、50 条常规测试、18 条数据库测试与生产构建通过。桌面 1440px 和手机 390px 的公开页面、菜单、详情、筛选均可访问且无横向溢出/控制台错误。新匿名浏览器访问后，刷新增加一次 PV 但 UV 不变，SPA 导航增加一次 PV，筛选参数变化不额外计数；跨日去重、重复事件及每分钟 20 次限制有数据库回归。断开隔离库时统计接口为 503/error，公开首页仍为 200；恢复后已有统计保留。未登录私人 API 为 401。当前本地预览为 `http://127.0.0.1:3100/portfolio`；服务器仍是旧 `795f7cd` 镜像，**未部署本轮代码**。GitHub 贡献专用只读凭据、真实邮箱/微信交互及本分支真实私人 OAuth 尚未验收，不沿用旧镜像结果冒充通过。下文 2026-10-11 的展示站段落为历史版本记录，其时间线/浅色界面描述已过期。
-
-**个人展示站第一版开发（2026-10-11）：** 独立 `D:/Workplace/CDC_WORK_PORTFOLIO@codex/portfolio-v1` 从 Draft PR #12 已通过 CI 的 `c4d00deb1d88dc20d1c18884a1fbc4ec8f95c627` 建立；远端 `main` 与日常 `CDC_WORK_MAIN` 仍为 `2eb7087`，后者原有本地背景修改未动。服务器当前镜像由 PR #12 较早的 `795f7cd` 构建，本分支仅本地预览，不属于实际部署。公开入口 `/portfolio` 与原有私人 `/`、`/login` 并存；本版只展示 RoboMaster 全向轮步兵电控、三轴机械臂与达妙电机控制、个人工作台三个项目。公开字段由独立内容文件维护，不读取私人 Workspace。机械臂细节与图片待补，Fluent 项目不进入公开内容。GitHub 官方贡献日历可用服务器端公开只读凭据按小时读取，失败时只保留链接；不使用工作台账户令牌。页面、证据范围、未来域名映射及本地验收见[展示站说明](docs/portfolio-v1.md)。下文历史分支章节按当时状态保留。
-
-**本地验收（2026-10-11，`codex/portfolio-v1` 基于 `c4d00de`，来源：本 worktree 命令与本机 Chrome）：** 独立依赖安装与 Prisma 生成后，lint、typecheck、47 条现有测试、生产构建通过。1440px 和 390px 共 14 次公开路由加载、项目与时间线筛选、详情和返回均通过；页面无横向溢出，真实 GitHub 官方贡献图在本机服务端临时凭据下显示。未登录私人页面仍跳登录、私人 API 401。真实 OAuth 与私人数据增删改查沿用 PR #12 已部署镜像的先前验收，尚未对本展示站本地进程复测，不能混为同一版本通过。生产域名与服务器均未改变，详细证据与截图路径见[展示站说明](docs/portfolio-v1.md)。
-
-**日常入口（2026-10-09）：** 推荐在 `D:/Workplace/CDC_WORK_MAIN` 继续主分支工作。`D:/Workplace/CDC_WORK_DB_BACKUP@codex/personal-db-backup` 是从 `origin/main@f4c173a` 建立的本轮备份与恢复历史演练目录；本文件保留原连续开发分支的历史章节，演练事实与范围见文末对应小节。历史段落中的“本目录”仅适用于当时的 worktree。
-
-**上线准备入口（2026-10-11）：** 本 worktree 为 `D:/Workplace/CDC_WORK_LAUNCH_PREP@codex/launch-prep`，基于 `origin/main@2eb70879cc47e984839f59cf694aa3605e597908`。日常主分支入口仍为 `CDC_WORK_MAIN`。下述候选镜像首次验收时由尚未提交的依赖修复构建，不能称为当时的 main 镜像；后续提交与重新部署须按实际 Git SHA 和镜像摘要另行记录。详见 [备份操作与演练](docs/server-backup-operations.md)、[依赖审计](docs/dependency-audit-20261011.md)及[隧道与域名方案](docs/tunnel-and-future-domain.md)。下文的历史分支状态保持当时语境。
-
-**本轮实际验收（2026-10-11）：** 服务器 systemd 备份计时器每天 03:15（Asia/Shanghai）运行，保留 30 天且至少最近两份成功归档。`pg_dump -Fc -b` 的完整解码及 SHA-256 校验、失败日志与旧归档保留已实测；首份归档在独立库单事务恢复，37 张表的数量、主键、整行摘要、六条迁移、GitHub Account/User/Workspace 归属及唯一案例的版本、内容摘要、审核/证据状态均匹配。数据库内整行摘要涵盖认证字段，令牌明文未返回脚本或输出。Prisma Client 能读取恢复库；隔离恢复库和合成测试库已删除，个人源库仍在。同机备份不是异地备份，独立存储目标与访问方式仍待提供。
-
-**候选运行与访问控制（2026-10-11）：** 候选 Web 镜像摘要为 `sha256:31320a567035ddf48525068cad5e70441149ff6cc4b26bf605c7e02a6e3a54a0`，Web 与数据库容器健康，仅监听服务器回环地址，Caddy 未发布域名。依赖审计从 19 个受影响包条目（15 高、4 中）降为完整开发依赖图 7 高、运行时生产依赖图 0；余下为 Tailwind 3/ESLint 开发链，需单独升级。隔离构建的 lint、typecheck、47 条常规测试、17 条数据库测试、六个迁移和 build 通过。用户经 SSH 隧道在独立 Chrome 窗口亲自登录；真实会话私人 API 200，原案例可读；仅对本轮一条临时经验完成新增、编辑、刷新、搜索和删除。退出后 API 401，经验页返回登录页。清理后的只读清单显示原案例 ID、版本 1、正文摘要、待审核/历史现场反馈、来源及更新时间与备份前基线一致；本轮会话表因登录发生变化，不能称整库字节级不变。正式域名/ICP备案、生产专用 OAuth、旧浏览器数据迁移、异地备份与公网验收仍待完成。
-
-**提交版部署（2026-10-11，来源：PR #12 CI、服务器 Docker/Prisma、只读数据库清单）：** 首次 CI 发现新增脚本的 CommonJS lint 与运行镜像缺少 Compose 验证所需的 `tsx`，经修复后的代码提交 `795f7cdab1c539a4c633cf915c73dd0f9f34d56c` 的 quality、compose 均通过。服务器从该提交的独立 release worktree 及仓库 Dockerfile 构建并部署 Web 镜像 `sha256:828110ce4ce7837f5465fb22ba076328f8cf5a614350482c52f9c105d5a46429`，OCI revision 标签指向上述完整 SHA；旧候选镜像和先前 Compose override 留作回滚。服务器干净的 `/opt/cdc-work/app` 仍为 `main@2eb7087`，不能把备份清单中的 checkout `applicationCommit` 当成实际 Web 构建提交。Web 健康，生产依赖审计 0、迁移已应用、匿名私有 API 401；部署前后 37 表、迁移、归属和真实案例的只读摘要完全一致。提交版备份任务再次成功、计时器有效，最新归档 SHA-256 与镜像摘要见[备份操作说明](docs/server-backup-operations.md)。真实 GitHub 登录后的页面复验须按本轮浏览器结果另记，不由健康检查推断通过。用户决定暂缓 ICP，继续只用 SSH 隧道；域名/HTTPS/生产 OAuth 仅有[未启用的配置方案](docs/tunnel-and-future-domain.md)。
-
-**提交版真实会话与页面复验（2026-10-11，`codex/launch-prep@1c3a15f` 文档 HEAD，运行 Web 代码 `795f7cd`；来源：同一 Chrome 窗口的私人 API 与页面操作、服务器只读数据库清单）：** 用户亲自点击 GitHub 登录后直接进入工作台，没有再次输入账号密码。既有 GitHub 浏览器会话和 OAuth 授权是可能解释，单凭跳转现象不能证明身份归属。该窗口的私人 Workspace API 实测 200；数据库只读查询显示有效会话均关联准入数字 ID `248133835` 的 User、GitHub Account 与 Workspace，其他数字 ID 的有效会话计数为 0。原有唯一自瞄经验可读，详情显示版本 1、待审核/历史现场反馈。仅新建一条标明合成验收的临时经验，完成编辑、刷新和标题搜索后按该记录 ID 删除；刷新后列表恢复为一条。退出后私人 API 为 401，访问经验页跳转登录页。服务器只读复核仍为 37 张表、6 条迁移和一条工程经验；原案例的 ID、版本、正文摘要、来源、状态与更新时间以及 Knowledge 行摘要均与部署前基线一致。浏览器登录会改变 Session 表，不能据此声称全库未变。本次复验使用 1280px 浏览器窗口；390px 布局通过的是前一候选镜像的验收，提交版未重新做窄屏复验。此结论只覆盖 localhost SSH 隧道，不是公网域名或生产专用 OAuth 验收。
-
-**文档归属（2026-10-08）：** 本背景与本分支的 `AGENTS.md` 由 `CDC_WORK` 仓库的 `codex/engineering-experience` 分支管理。`6b3e20d` 是工程经验功能开发前的代码基线；本轮验收前本地 HEAD 为 `7ca934b`。验收记录只适用于本机功能分支源码和隔离测试库，不构成生产部署或实车验证。
-
-## 位置、版本与职责
-
-本目录 `D:/Workplace/CDC_WORK_ENGINEERING_EXPERIENCE/` 是从远端 `origin/codex/sprint-5-2b-server-workspace@6b3e20d2c082f37555ad1b08c662f45d9d606f71` 建立的独立 worktree，当前开发分支为 `codex/engineering-experience`。原 `D:/Workplace/CDC_WORK/` 仍在 `codex/sprint-4-3-domain-persistence@d45f199`，含原有未提交和未跟踪工作；不得把两处工作区混同。2026-10-07 `git fetch --prune origin` 后，远端 `main@a9de174`，Sprint 5.2B head 仍为 `6b3e20d`。这些是 Git 引用，不是生产部署证明；PR 状态和实际登录仍待复核。
-
-工作台面向学习、工程实践、知识与个人管理，RoboMaster 只是一个模块。Next.js/React/TypeScript 私有页面通过 NextAuth/GitHub 准入；Sprint 5.2B 服务器工作区以 Prisma/PostgreSQL 存储日常实体。项目整体版本与旧工作区的详细差异见 [Workplace 背景](../WORKSPACE_CONTEXT.md)。跨项目案例由 [共享经验索引](../shared-memory/INDEX.md)进入；当前自瞄案例在 [切入突转案例](../shared-memory/cases/auto-aim-init-alignment.md)。
-
-## 本分支：工程经验最小可用版本
-
-工程经验是从日志、测试或技术问题中提炼的可复用结论，复用现有 `Knowledge` 私有数据库实体和服务端 Workspace API，新增结构化 `experience` 内容与 `/experiences` 页面。审核状态和证据状态是两个独立字段；历史现场反馈不会因为审核或导入自动变成实车验证。字段、访问路径和限定范围导入见 [实现与导入说明](docs/engineering-experience.md)。本分支中的工具只读取 `../shared-memory/cases/auto-aim-init-alignment.md`；案例正文仍在 Workplace 本地文件，不进入公开代码仓库。
-
-**验证口径（2026-10-08，本机 `codex/engineering-experience`，验收前 HEAD `7ca934b`）：** 本 worktree 独立 `npm ci` 后生成 Prisma Client，`lint`、`typecheck`、`test`（42/42）、`build` 通过；构建路由表包含 `/experiences`。隔离 PostgreSQL 16.14 测试库应用现有 5 个迁移，`test:db` 14/14 通过。合成案例的写入、另一个数据库连接读取、编辑后重读、搜索及三类筛选、审核与证据状态独立、重复导入及不覆盖服务器编辑、版本 409 均通过。构建后的本机 HTTP 测试 2/2 通过：未登录无法访问私有页面及 API；使用合成数据库会话验证私有 API 创建、编辑及刷新读取。证据和限制详见[工程经验验收记录](docs/engineering-experience.md)。真实 GitHub OAuth 配置缺失，实际登录后的桌面/窄屏页面未验收；首条真实自瞄案例只预览，目标个人 Workspace 归属未核对，尚未正式入库。测试数据不代表个人数据。上述结果不代表部署。
-
-**PR #7 修复核对（2026-10-08，`codex/engineering-experience`，修复前 HEAD `2069e87`）：** 项目关联的清除请求现明确发送空值，服务端在合并后清理 payload、索引列与 `relationRefs`；详情弹窗改由 URL `record` 参数驱动。使用隔离 PostgreSQL、合成会话及本机 Chrome 验证了关联→取消→刷新→删除旧项目，搜索 A/B、同页参数切换、关闭后再打开、历史前进/后退、缺失 ID 和 390px 布局。修复后的 `lint`、`typecheck`、`build`、42 条常规测试、14 条数据库测试、2 条 HTTP 测试和 3 条浏览器测试均通过。详见[验收记录](docs/engineering-experience.md)；真实 OAuth 与首案例正式入库状态不变。
-
-**真实 OAuth 本地验收（2026-10-08，`codex/engineering-experience@0980943` 加当时尚未提交的修复）：** 在独立 PostgreSQL 开发库应用第 6 个迁移后，GitHub 授权回调成功建立数据库账户、Workspace 与会话；只核对数字账号与准入值相等、Workspace 用户关系一致，不记录个人资料。用户在 Chrome 确认进入工作台、刷新后仍保持登录，能打开 `/experiences`，退出后再次访问该页面被带回登录页。第一次回调暴露了 Account 模型缺少 GitHub 返回的刷新令牌过期字段；后续回调暴露了 Node.js 直连 GitHub 的超时/连接重置，改用本机现有代理后成功。失败回调的错误日志曾包含 OAuth 令牌；用户反馈已在 GitHub 撤销该次授权，之后重新授权。首条共享案例只做目标 Workspace 的只读预览，库中 Knowledge 记录仍为 0，未正式导入。详细证据和限制见[OAuth 与工程经验验收记录](docs/engineering-experience.md)。
-
-**真实会话页面复验（2026-10-08，同一分支、基于 `0980943` 的本轮修复）：** NextAuth 错误日志改为只输出受限错误代码和类别，丢弃可能含令牌的元数据；日志脱敏单测及数据库层配置/字段投影测试通过。用户在隔离 Chrome 窗口亲自完成 GitHub 登录后，本机 Playwright 沿该真实会话验证一条明确标记的临时经验：新增、详情、搜索、刷新读取、编辑后数据库重读、390px 详情布局无水平溢出、退出后私有页跳转；记录已仅按本轮 ID 删除，Knowledge 数量回到 0。窄屏截图由本机检查，未包含真实案例。独立回归库应用 6 个迁移，14 条原数据库测试、1 条认证字段投影测试及 2 条 HTTP API 测试通过；43 条常规测试、lint、typecheck、build 通过。上述均不代表生产部署或自瞄实车验证。
-
-**首条真实案例入库（2026-10-08，`codex/engineering-experience@fa6291f`，本机个人开发库）：** 重新确认本地 `cdc_workspace` 是此前真实 OAuth 验收使用的开发库，不是自动化回归库；配置的 GitHub 数字 ID 与 Account、User 和唯一 Workspace 的用户关联一致。限定脚本对 `../shared-memory/cases/auto-aim-init-alignment.md` 的只读预览通过，随后正式导入一条 Knowledge，版本 1；解析出的章节和证据边界与原文件逐字段一致。再次执行同源导入返回 `already_exists`，数量、版本、正文摘要及更新时间未变。审核仍为“待审核”，证据仍为“历史现场反馈”；2026-10-07 的源码静态复核不等于当次固件或本轮实车验证。应用重启后数据库与服务层重读仍一致，匿名私有 API 返回 401；真实浏览器列表、详情、全局搜索和窄屏验收因未取得本轮手动登录会话而待完成，见[验收记录](docs/engineering-experience.md)。案例正文只保留在共享文件和本机数据库，不写入代码仓库。
-
-**实际案例真实页面验收（2026-10-08，`codex/engineering-experience` 基于 `6feb6b4`）：** 恢复此前的本机个人开发库并再次核对 OAuth 用户、Workspace 和案例基线；用户在持续打开的独立 Chrome 窗口亲自完成 GitHub 登录。沿同一真实会话只读核对实际案例的列表、完整详情、全局搜索进入详情和刷新；桌面 1280px、窄屏 390px（844px 与 600px 高）均可滚动到长文末尾，按钮可见且无水平溢出。发现共享 Dialog 被父容器间距下移并产生外层第二滚动条，已修正根页面滚动锁、弹窗边距和响应式高度；构建及应用重启后复验通过。数据库数量仍为 1、版本仍为 1，正文摘要与更新时间、审核“待审核”和证据“历史现场反馈”均未变化。本轮只是软件页面验收，未复测实车或核实历史 C 板/Ubuntu 二进制版本；详见[验收记录](docs/engineering-experience.md)。
-
-## 下一轮边界
-
-服务器数据库是新模块唯一运行时数据源；`shared-memory` 原文件保持原样。未来单向同步应按来源稳定 ID、SHA-256 来源摘要、数据库实体版本和证据状态比较差异，先人工审阅，再显式写入；禁止自动双向覆盖。真实 QQ 群接入、部署与 PR 合并均不属于本分支当前任务。
-
-## 独立快照分支（2026-10-09）
-
-`D:/Workplace/CDC_WORK_ENGINEERING_SNAPSHOT` 在 `codex/engineering-experience-snapshot`，从 PR #7 最新的 `c3737a1` 建立；原 `codex/engineering-experience` worktree 保持不变。本分支提供手动 `npm.cmd run snapshot:experience`，只读核对本机个人开发库、允许的 GitHub 数字 ID 和 Workspace 归属，将唯一已入库自瞄经验写为 `../shared-memory/server-snapshots/` 的本机派生 Markdown 与索引。快照目录被根文档仓库忽略，不包含在公开代码提交；原共享案例不修改。重复运行、失败保留、归档/删除失效和本机真实数据库内容/版本未变化的证据见[快照说明](docs/engineering-experience-snapshot.md)。待审核与历史现场反馈继续分开；快照并未增加实车证据。
-
-**2026-10-09 本轮核查（本地 `codex/engineering-experience-snapshot@1c75f37` 加待提交修复）：** Windows/Node/PostgreSQL 当前 UTC 时钟一致；个人库 `Knowledge.updatedAt` 为无时区列，旧原生写入路径受 PostgreSQL 上海时区转换影响，使该历史索引值比正文 UTC 时间约晚八小时。修正了后续原生写入及浏览器数据迁移的 UTC 口径，不改历史案例；快照将生成、最近成功核对及原始数据库更新时间分开记录。隔离库 15 条数据库检查、47 条常规测试、lint、typecheck、build 通过；个人库快照重读一致，重复执行无重复、失败保留原内容，个人案例数量/版本/正文摘要不变。独立只读会话已实际读取根规则、索引和快照并给出有边界的排查建议，**检索验收通过**；默认文件执行器仍故障，经授权的只读重试可用。详情与具体错误见[快照说明](docs/engineering-experience-snapshot.md)。
-
-## 多项目只读快照分支（2026-10-09）
-
-本 worktree D:/Workplace/CDC_WORK_ENGINEERING_MULTI_SNAPSHOT 位于 codex/engineering-experience-multi-snapshot，从 PR #8 最新提交 3c8d408 建立；原工程经验和快照 worktree 未切换。手动命令 npm.cmd run snapshot:experiences 在只读可重复读事务中核对本机个人开发库、允许的 GitHub 数字 ID、Account/User/Workspace 关联，选择本人 Workspace 下全部未归档工程经验（手动及 sharedMemory）。它不查询其他知识类型、账户令牌或会话。输出按来源项目分组，按实体 ID 哈希命名独立 Markdown；来源标识和来源摘要缺失时明确为“未提供”。文件批量生成完成后才切换索引，重复读取只更新最近成功核对时间；删改/归档/改类型在成功刷新后撤下旧入口。详细命令、元数据及边界见[多项目快照说明](docs/engineering-experience-multi-snapshot.md)。
-
-2026-10-09 本机隔离 PostgreSQL 16.14 的合成测试：两个项目、手动和共享来源、错误数据库/归属、非经验和其他 Workspace 排除、版本编辑、归档删除、重复运行、内容漂移修复、批量失败恢复均通过；另显式设置会话时区 Asia/Shanghai 验证 UTC 写入回读。单元测试 47/47，数据库测试 17/17，lint 与 typecheck 通过。个人开发库只读生成格式 4 快照，当前真实记录仍仅一条自瞄经验，版本 1，审核“待审核”、证据“历史现场反馈”；升级前后与入库基线比对，数量、版本、正文摘要和更新时间未变。错误允许账号预检失败时索引哈希不变，恢复后返回 unchanged。合成的两项目案例不能当作个人 Workspace 已有跨项目经验，也不代表实车验证。独立新会话 01a11f49-9561-7ba3-9b4f-ef15b3f18aec 已实际打开根规则、共享索引、快照状态/索引/案例，正确引用版本 1 与审核/证据边界；首个文件执行器调用失败，重试成功。build 通过；Draft PR #9 以 codex/engineering-experience-snapshot 为 base，功能提交 24cb050 的 GitHub Actions quality 与 compose 于 2026-10-09 均通过。PR 保持未合并、未部署。
-## main 整合候选（历史阶段，2026-10-09）
-
-本 worktree D:/Workplace/CDC_WORK_MAIN_INTEGRATION 位于 codex/workplace-main-integration，从 PR #9 最新提交 ce4594f 建立。2026-10-09 获取远端后，origin/main@a9de174 是该提交的祖先；PR #3～#9 的 head 均沿同一提交链，故无需合并 main、没有冲突，也未重置或改写历史。新分支相对 main 的业务实现与通过 CI 的 PR #9 相同；本轮只更新整合背景和说明。原分支与 worktree 全部保留。
-
-整合内容按依赖顺序为：#3 总结复盘；#4 GitHub 认证、PostgreSQL 和服务器总结；#5 全领域 Prisma 模型及显式浏览器旧数据迁移；#6 日常模块服务器数据源；#7 工程经验管理和真实 OAuth/页面验收；#8 手动只读数据库快照及 UTC 时间口径；#9 多项目工程经验快照。六个 SQL 迁移及 migration_lock.toml 随代码提交，部署前须在备份和环境核对后执行 db:deploy，不能直接假定个人开发库或生产库已迁移。新整合 PR 的完整 CI 结果以 GitHub Actions 为准。
-
-状态须分别看待：origin/main@a9de174 只有已合并的 Sprint 4.3/4.4；本整合分支包含上述未合并实现；本机个人开发库只读核查时有一条真实自瞄经验，属于本机数据，不进入公开仓库；生产部署及真实旧浏览器数据迁移均未验证完成。后续整合 PR 的审查与修复推荐在本 worktree 进行；合入 main 后的新开发应从更新后的 main 建立工作区。快照输出仍位于 Workplace 根目录下被 Git 忽略的 shared-memory/server-snapshots/，不是代码提交内容。
-## 已合入 main，尚未部署（2026-10-09）
-
-[整合 PR #10](https://github.com/CDC666-666/CDC_WORk/pull/10) 从已审查 head a918ca7 以 merge commit 43fde8b 合入 origin/main。该提交的两个父提交分别是合并前 main@a9de174 和 a918ca7；PR #3 自动成为 merged，#4～#9 的 head 均为新 main 的祖先，已附 #10 链接关闭，但原分支及 worktree 保留。合并后 main 的 GitHub Actions CI 在 43fde8b 上通过 quality 和 compose。上述是源码与 CI 状态，不是生产环境状态。
-
-推荐主分支工作目录为 D:/Workplace/CDC_WORK_MAIN：它在合并提交上保持干净，使用跟踪 origin/main 的 codex/main-synced 分支。原本地 main@9e5d91f 与远端分叉，含一笔独有历史提交，故未重置或覆盖；旧 CDC_WORK checkout 的 24 项现场改动保留。后续从此目录的最新远端 main 建立功能分支。个人开发数据库未因合并改变，之前核对的一条自瞄经验仍属本机私有数据，不能由源码合并推定生产数据库已有该记录。生产数据库备份与迁移、真实浏览器旧数据迁移、生产 OAuth 配置和部署验收仍待执行。
-
-## 本机数据库备份演练（2026-10-09）
-
-本 worktree `D:/Workplace/CDC_WORK_DB_BACKUP` 位于 `codex/personal-db-backup`，从最新 `origin/main@f4c173a` 独立建立；`CDC_WORK_MAIN`、旧 `CDC_WORK` 的 24 项修改及原本地 `main@9e5d91f` 保留。原 PostgreSQL 16.14 数据目录经文件和连接身份双重核对后重新启动，原 `cdc_workspace` 的 GitHub Account、User 与 Workspace 归属一致。只读基线、PostgreSQL 16.15 `pg_dump -Fc -b` 自定义归档、全新演练库的 `pg_restore --single-transaction` 均已完成。37 张表的数量、主键及整行摘要、6 条 Prisma 迁移、唯一工程经验的版本/审核/证据状态与内容摘要在源库和恢复库一致；应用现有数据访问函数可从恢复库读取。恢复后源库再次只读核对，整库指纹与备份前相同。私人归档和详细清单留在被 Git 忽略且受本机 ACL 保护的目录，不在本仓库保存正文或凭据；流程与限制见[备份恢复说明](docs/database-backup-restore.md)。本机备份已验证，服务器迁移、旧浏览器数据迁移和部署仍未执行；历史时间字段原值未改。
+本次只修改 Markdown、Git/Docker 忽略规则及可编辑 PR 描述。历史提交、旧分支、旧 PR 差异与已有克隆不会因此消失，残留范围见 [隐私说明](docs/privacy-boundary.md)。

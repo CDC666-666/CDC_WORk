@@ -1,25 +1,29 @@
-# Server database backup and recovery drill
+# PostgreSQL 定时备份与隔离恢复
 
-Status checked 2026-10-11 for `codex/launch-prep` based on `main@2eb70879cc47e984839f59cf694aa3605e597908`. The server is accessed through an SSH tunnel; these archives include personal and authentication data and must remain outside Git.
+本说明介绍仓库脚本的行为，不包含生产数据清单或实际备份结果。定时服务是否已安装、最近成功时间及独立副本状态须在私人运行环境核查。
 
-The server-only installation copies `ops/backup-database.sh` to `/opt/cdc-work/ops/` and the two systemd units to `/etc/systemd/system/`. The timer runs at **03:15 Asia/Shanghai daily** with `Persistent=true`. It writes `pg_dump -Fc -b` archives to `/var/backups/cdc-work/automatic/` (directory 0700; archives, manifests and log 0600). Each run checks `pg_restore --list`, fully decodes the archive with `pg_restore --file=/dev/null`, records SHA-256, size, PostgreSQL version, the server Git **checkout** commit, and the deployed Web image digest, then publishes the complete archive and manifest. When Web runs from a release image while `/opt/cdc-work/app` remains at main, `applicationCommit` in the manifest is the checkout commit, **not** the Web build commit; inspect the image's `org.opencontainers.image.revision` label for the latter. Failed runs write a timestamped `FAILED` entry to `backup.log` and remove partial files; systemd also records the failed service. A lock prevents overlapping runs. Successful runs retain all archives for 30 days and at least the newest two. Monitor available disk space; the script refuses to start below 1 GiB free.
+## 服务与归档
 
-Useful checks on the server:
+`ops/backup-database.sh` 供服务器使用，应用目录为 `/opt/cdc-work/app`，归档目录为 `/var/backups/cdc-work/automatic`。安装单元见 `ops/cdc-work-db-backup.service` 和 `.timer`；计时器配置每日 03:15 Asia/Shanghai，启用 `Persistent=true`。
 
-```sh
-systemctl list-timers cdc-work-db-backup.timer --no-pager
-systemctl status cdc-work-db-backup.service --no-pager
-tail -n 20 /var/backups/cdc-work/automatic/backup.log
-```
+脚本使用 `pg_dump -Fc -b`，检查归档列表和完整解码，并记录文件长度、SHA-256、PostgreSQL 版本、源码 checkout 与实际 Web 镜像。目录权限为 0700，归档、清单及日志为 0600；锁防止并发，空闲空间低于 1 GiB 时拒绝备份。
 
-The first manual run on 2026-10-11 produced a 93,706-byte archive. Its SHA-256 was `8cdc91635dc52addb9eda8fd9ae3a8ae6ad9059026f90e29b169bb68b0490653`. `ops/restore-backup-drill.sh` verified the manifest and restored this archive with `pg_restore --single-transaction --exit-on-error` into a **new database**, never `cdc_workspace`. `ops/compare-restored-database.py` matched all 37 public tables, row counts, primary keys, database-side row hashes, 6 migration records, the GitHub Account/User/Workspace owner relation, and the sole engineering experience's version, payload hash and review/evidence status. The deployed Prisma Client read the restored database successfully. Database-side row hashes include authentication table fields; token plaintext was not returned to the comparison script or printed. A simulated `docker` failure returned code 97, logged `FAILED`, removed the partial file and kept the last successful archive. The isolated restoration and synthetic test databases were dropped after verification; `cdc_workspace` was left intact. A second archive after the candidate image was deployed had SHA-256 `7c94ad51e68cb82171ee63d9cf9877c0db9c3900d44aad771e3e6ab5ef8393f8` and recorded the deployed image digest. Both completed archives remain in the protected server directory.
+完整归档和整行指纹涵盖认证及私人业务数据，禁止上传 GitHub。日志也可能包含归档名、摘要或运行错误，不能直接粘贴到 PR。仅保留通用测试结论。
 
-This is an **on-server backup**, not an offsite copy. On 2026-10-11 the server had no configured OSS/S3 target, remote backup mount, `rclone`, `restic`, `ossutil` or cloud CLI. Before enabling offsite replication, provide a separate bucket/region or other remote target, an access method with scoped write/read/list/delete permission, encryption and retention requirements, and a safe way to install credentials without sending them in chat or committing them. Then test upload checksum, retrieval and a separate restore. The existing archive must never be uploaded to a public Git repository.
+成功归档保留 30 天且至少最近两份。失败清理本次临时产物，记录失败状态并保留已有完整归档；不能把存在归档文件当作恢复成功。
 
-The deployment still needs the reviewed domain and ICP status, a production-specific GitHub OAuth App with its final callback URL, old browser data migration, and a full public-domain acceptance run. Until then the SSH tunnel and loopback-only bindings remain in use.
+## 隔离恢复
 
-## Committed release check, 2026-10-11
+在另行授权的运行任务中，`ops/restore-backup-drill.sh` 从受限清单选择归档、验证长度和摘要，创建新的 `cdc_restore_verify_*` 数据库，用单事务恢复。它不能指向业务源库，也不自动完成全部应用级比较。
 
-PR #12's code commit `795f7cdab1c539a4c633cf915c73dd0f9f34d56c` passed quality and compose CI before the server built `/opt/cdc-work/releases/795f7cdab1c539a4c633cf915c73dd0f9f34d56c` with the committed Dockerfile. The running Web image is `sha256:828110ce4ce7837f5465fb22ba076328f8cf5a614350482c52f9c105d5a46429`, with that full commit in its OCI revision label. The prior image `sha256:31320a567035ddf48525068cad5e70441149ff6cc4b26bf605c7e02a6e3a54a0` is retained as `cdc-work-rollback:pre-795f7cd`; the previous Compose override is also retained on the server. This deployment did not modify the database container, volume, or the clean main checkout at `2eb70879cc47e984839f59cf694aa3605e597908`.
+使用 `ops/compare-restored-database.py` 比较源基线与恢复结果，覆盖表、主键、整行摘要、迁移和归属，再通过 `ops/check-restored-prisma.mjs` 检查应用读取。脚本参数应按当前源码核对，输出只存私人目录。
 
-Post-deploy, Web was healthy, Prisma reported all migrations applied, anonymous private API returned 401, and the production dependency audit reported zero findings. A read-only pre/post inventory matched all 37 tables, six migrations, owner relationship and original experience exactly. The backup service was run again successfully at 2026-10-11 02:23:49 UTC: a 93,706-byte archive with SHA-256 `689f515b8a7d3a9c65ae5b2fae0e6b69e0e6a692a0bbd42cc1c2791708cfbc21`. Its manifest recorded the main checkout SHA and **new Web image digest** separately; the archive hash and mode 0600 were confirmed. The next timer fire was listed as 2026-10-12 03:15 Asia/Shanghai. This latest archive was integrity-decoded; the independent restore drill applies to the earlier archive, so do not describe the latest one as separately restored.
+活跃站点可能在备份后产生新记录或会话；必须比较同一时点基线或安排协调窗口。先区分时点变化和恢复错误，不以固定业务记录数作为通用成功条件。
+
+成功后只清理明确命名且已核对的演练库。恢复失败保留源库与原归档，不改向源库重试。
+
+## 独立副本与监控
+
+同机备份不是异地备份，手工复制也不等于自动独立备份。独立目标需要明确存储位置、受限凭据、保留策略及取回权限，并实际验证取回、校验和隔离恢复。
+
+监控定时器、最后成功时间、失败日志、磁盘余量和恢复演练结果。这些运行信息留在私人运维记录；公开仓库只维护步骤和能力边界。

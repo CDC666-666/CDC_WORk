@@ -1,23 +1,39 @@
-# 多项目工程经验只读快照（2026-10-09）
+# 多项目工程经验只读快照
 
-适用分支：codex/engineering-experience-multi-snapshot，基线为 PR #8 的 codex/engineering-experience-snapshot@3c8d408。数据库仍是主数据源；此命令没有页面按钮、定时任务、回写或双向覆盖。旧单案例命令保留为同一实现的别名。
+## 当前命令
 
-## 手动运行与边界
+```powershell
+npm.cmd run snapshot:experiences
+```
 
-在 D:/Workplace/CDC_WORK_ENGINEERING_MULTI_SNAPSHOT 独立执行 npm ci、npm run db:generate，使用本机被 Git 忽略的 .env，然后运行：
+`snapshot:experience` 是同一实现的兼容别名。命令只把已配置的本机开发库中、获准 Workspace 下未归档的工程经验派生为本地 Markdown；数据库仍是主数据源。没有页面按钮、定时任务、回写或双向同步。
 
-    npm.cmd run snapshot:experiences
+运行前需自行核对本地 `.env`、数据目录及代码中固定的账号/数据库限制；本说明不提供私人配置。此命令不接受任意 Workspace、数据库、记录或输出路径参数，也不用于生产备份。此次文档清理不运行它。
 
-命令不接受任意 Workspace、数据库或输出路径参数。预检限定 ALLOWED_GITHUB_USER_ID 为 248133835，DATABASE_URL 为本机 localhost:5432/cdc_workspace；在 PostgreSQL 可重复读、只读事务中再次核对 current_database()、GitHub 数字 ID、GitHub Account、User 和唯一 Workspace 的所属关系。Account 仅投影 providerAccountId；不查询令牌或 Session。仅查询本人 Workspace 下 payload.itemType 为“工程经验”且未归档的 Knowledge，包含手动录入与 sharedMemory 来源；其他知识类型和其他 Workspace 不纳入。
+## 读取范围与文件协议
 
-输出为 ../shared-memory/server-snapshots/INDEX.md、STATUS.md 及 .versions/ 下按实体 ID SHA-256 命名的独立 Markdown。索引按来源项目分组，列标题、标签、审核、证据、版本、稳定实体 ID、来源标识和摘要以及数据库内容摘要。缺失来源标识或来源摘要显示“未提供”。同一来源的多个版本不是独立证据。正文包含完整经验字段及适用限制。生成器拒绝常见凭据形态文本；实际快照正文被 Workplace 根 Git 仓库忽略，不能提交到公开代码仓库。
+预检限制本机 `localhost` / `127.0.0.1`、端口 `5432`、库名 `cdc_workspace` 和预期准入账号。事务采用可重复读和只读模式，再检查 GitHub Account → User → Workspace 归属。Account 只投影所需标识，不查询令牌或 Session。
 
-先渲染整批、写入隐藏版本目录，再一次性切换当前 INDEX.md；中途失败保留旧完整索引和案例，STATUS.md 标记现状未知。成功刷新会撤下已删除、归档或改为其他知识类型的记录，清理旧版本目录。重复读取同一内容返回 unchanged，不复制记录；STATUS.md 的最近成功核对时间仍前进，当前快照生成时间与数据库原始更新时间保持独立。历史个人案例的数据库索引时间存在已知时区偏差，保留原值，不以该时间单独判断事件顺序。
+选择 `payload.itemType=工程经验` 且未归档的 Knowledge，包含手动与共享来源；不选择其他知识类型或其他 Workspace。
 
-## 验证证据与局限
+输出相对代码仓库根目录为 `../shared-memory/server-snapshots/`：
 
-2026-10-09 在隔离 PostgreSQL 的合成记录上验证了两项目、手动和 sharedMemory 来源、账号归属失败、其他知识类型/其他 Workspace 排除、编辑版本更新、归档与删除撤下；只读事务不写入个人库。批量文件测试验证重复运行、内容漂移重建、失败时旧完整批次保留、凭据形态文本拒绝。显式在 PostgreSQL 会话执行 SET LOCAL TIME ZONE 'Asia/Shanghai' 后，原生实体写入/重读的 UTC 时间一致；该测试列入 test:db，CI 的 quality 与 compose 作业均运行此脚本。
+- `INDEX.md` 按来源项目分组，引用当前实体文件。
+- `STATUS.md` 分别记录最近成功核对、生成及数据库原始更新时间。
+- `.versions/` 保存按稳定实体 ID 哈希命名的批次文件。
 
-本机个人开发库在升级前后由原始入库基线工具比对：仍只有一条自瞄工程经验，版本 1，规范化正文摘要与更新时间未变，审核“待审核”，证据“历史现场反馈”。新格式 4 快照实际输出一条当前记录；再次运行返回 unchanged，错误允许账号返回 GITHUB_ALLOWLIST_MISMATCH 且索引哈希不变，恢复后仍返回 unchanged。两项目合成测试不表示真实个人 Workspace 已有底盘或其他项目经验。该案例未做本轮实车验证，具体应用仍需核对车辆模式、参考/反馈及运行版本。独立新会话 01a11f49-9561-7ba3-9b4f-ef15b3f18aec 仅收到“自瞄切入时云台突然转动，应先检查什么？”一句，工作目录 D:/Workplace。首个文件执行器调用在进程创建前报 setup refresh had errors；只读重试后实际打开根 AGENTS.md、共享索引、STATUS.md、格式 4 快照索引及索引指向的独立案例文件。读取输出显示实体版本 1、审核“待审核”、证据“历史现场反馈”；回答区分历史机械对齐案例与当前车辆尚需确认的模式、参考/反馈、实际固件及 Ubuntu 程序版本。该独立检索验收通过；默认执行器仍有间歇性环境错误，重试可用。
+索引和正文包含私人记录及其元数据，全部属于私人派生数据。先确认输出所在仓库的忽略规则；只在代码仓库添加忽略规则不能保护父目录所属的另一仓库。不要复制输出到文档、PR、Actions 日志或附件。
 
-Draft PR #9：https://github.com/CDC666-666/CDC_WORk/pull/9，base 为 codex/engineering-experience-snapshot；2026-10-09 功能提交 24cb050 的 GitHub Actions quality 与 compose 均通过。未合并或部署。
+## 发布与失败语义
+
+先渲染并写完完整批次，再切换当前索引。失败保留上一次完整批次并标记现状未知；成功刷新会撤下被删除、归档或改变类型的记录。相同内容返回 `unchanged`，只推进最近核对时间；漂移内容会重建。
+
+缺失来源显示“未提供”。原案例与快照是同一来源的不同版本，不构成独立证据。渲染器拒绝常见凭据形态，但这不表示私人业务内容适合公开。
+
+历史无时区数据库列可能与 payload UTC 时间口径不一致；保留原值，不能只按该列判断事件顺序。后续实体与迁移写入采用显式 UTC 口径。通用背景见 [历史单案例说明](engineering-experience-snapshot.md)。
+
+## 合成回归范围
+
+隔离数据库测试覆盖多项目、手动/共享来源、错误归属、非经验排除、编辑、归档、删除及 UTC 写入；文件测试覆盖幂等、漂移重建、完整批次切换、失败保留和敏感形态拒绝。
+
+这些是测试范围，不是私人数据库的记录清单或当次执行结果。读取派生资料前应在私人环境核对状态文件，失效快照只能作为历史线索。
