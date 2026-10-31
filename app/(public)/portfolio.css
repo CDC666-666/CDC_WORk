@@ -161,3 +161,12 @@
   .portfolio-orbit-caption{font-size:8px}
 }
 .portfolio-home-legal{position:relative;z-index:1;padding:12px 20px 22px;text-align:center;color:#7892a1;font-size:11px}.portfolio-home-legal a,.portfolio-footer-stats a{color:#9adfea}.portfolio-home-legal a:hover,.portfolio-footer-stats a:hover{text-decoration:underline}
+
+/* User-provided footage shares the existing project layout and leaves text readable. */
+.portfolio-project-poster{display:block;width:100%;height:auto;aspect-ratio:1.51;object-fit:cover;background:#06121d}
+.portfolio-detail-visual video{display:block;width:100%;max-height:400px;aspect-ratio:16/9;object-fit:contain;background:#02070b}
+.portfolio-supporting-media{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.55fr);align-items:center;gap:clamp(24px,5vw,72px);margin-top:24px;padding:clamp(20px,3vw,36px);border:1px solid var(--line);border-radius:18px;background:rgba(12,24,36,.82)}
+.portfolio-supporting-media h2{margin:10px 0;color:#effaff;font-size:clamp(20px,2.5vw,30px)}
+.portfolio-supporting-media p:last-child{color:var(--muted);font-size:13px;line-height:1.8}
+.portfolio-supporting-media video{display:block;width:100%;aspect-ratio:16/9;border-radius:10px;background:#02070b}
+@media(max-width:760px){.portfolio-supporting-media{grid-template-columns:1fr}}
