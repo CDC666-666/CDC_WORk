@@ -15,7 +15,8 @@ concurrency:
 
 jobs:
   quality:
-    runs-on: ubuntu-latest
+    # Playwright 1.56.1 has Ubuntu 24.04 dependencies, but does not support 26.04.
+    runs-on: ubuntu-24.04
     services:
       postgres:
         image: postgres:16.14

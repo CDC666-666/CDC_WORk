@@ -1,42 +1,23 @@
-# SSH tunnel today; public domain plan for later
+# SSH 隧道与正式域名的访问边界
 
-Checked 2026-10-11 against `codex/launch-prep` based on `origin/main@2eb70879cc47e984839f59cf694aa3605e597908`, `lib/server/auth.ts`, `app/api/auth/[...nextauth]/route.ts`, server instance metadata, and the server's listening sockets. Domain registration is user-reported; ICP filing has not been verified and the user plans to defer it. The server reports `cn-hangzhou` (mainland China). Caddy is inactive; Web and PostgreSQL bind only to server `127.0.0.1:3000` and `127.0.0.1:5432`.
+标题保留用于兼容旧链接。历史“仅隧道、域名尚未启用”是早期阶段，不能覆盖已合入 main 的分域配置。当前生产连接状况须在独立运行任务核实。
 
-On 2026-10-11, a local `A`-record lookup for `work.cdc666.cn` did not resolve. This is a point-in-time DNS observation, not proof of registration or filing status. No record is being added during tunnel-only use.
+## 私人维护隧道
 
-## Daily private access
-
-In a **new PowerShell window on the user's Windows machine**, check that local port 3000 is free or reuse the existing project tunnel. Then run:
+在已授权维护任务中，可将仅绑定本机回环的端口转发至服务器回环。下面是占位命令，不含真实私钥路径或服务器地址：
 
 ```powershell
-ssh -i "D:\01_CDC666\CZU\cdc-work-server.pem" -o ExitOnForwardFailure=yes -o ServerAliveInterval=30 -N -L 127.0.0.1:3000:127.0.0.1:3000 root@114.215.174.39
+ssh -i "<私钥文件>" -o ExitOnForwardFailure=yes -o ServerAliveInterval=30 -N -L 127.0.0.1:3000:127.0.0.1:3000 <管理账号>@<服务器地址>
 ```
 
-Keep that PowerShell window open and browse to `http://localhost:3000/login` (use `localhost`, not `127.0.0.1`, for the browser cookie). Stop only that tunnel with Ctrl+C. The command reads the local key through SSH; do not copy the key or its contents into documents. Port 3000 must be available locally; `Get-NetTCPConnection -LocalPort 3000 -State Listen` can identify an existing listener. Do not kill an unrelated process to free it.
+核对本机端口是否已被其他服务使用，不终止未知进程。私钥和具体连接配置留在受限环境；不将数据库监听端口开放到公网。
 
-This tunnel preserves the existing local GitHub OAuth App and `NEXTAUTH_URL=http://localhost:3000`. Nothing in this plan changes the running `.env`, public firewall, DNS, or Caddy.
+通过隧道使用 OAuth 时必须匹配配置的 `NEXTAUTH_URL` 和回调主机；`localhost` 与 `127.0.0.1` 的 Cookie 不共享。不要在正在运行的生产服务中临时切换 OAuth 地址以满足本地测试。
 
-On 2026-10-11 the committed Web image from `795f7cdab1c539a4c633cf915c73dd0f9f34d56c` was tested through this tunnel. GitHub login entered directly without another password or consent prompt; the existing browser login/authorization can explain that behavior. The same browser's private Workspace API returned 200, and a read-only database check found active sessions only for the allowed GitHub numeric ID with its Account and Workspace relation. A temporary synthetic experience passed create, edit, reload and search, then was deleted by its ID. After logout the private API returned 401 and `/experiences` redirected to `/login`. This verifies the tunnel session, not the future public OAuth App.
+## 正式域名
 
-## Future public cutover (inactive plan)
+公开作品集为 `cdc666.cn`，私人工作台为 `work.cdc666.cn`。生产 OAuth 使用独立 App，回调 `https://work.cdc666.cn/api/auth/callback/github`，不使用通配回调。
 
-The NextAuth handler is `app/api/auth/[...nextauth]/route.ts` with GitHubProvider in `lib/server/auth.ts`, so the future GitHub OAuth App settings are:
+正式发布需核实 DNS、HTTPS、已核准备案字段和防火墙，保留 Web/数据库回环绑定。公开站点不能成为访问私人 API 的替代入口。具体流程见 [部署说明](public-deployment.md)。
 
-| Setting | Future value |
-|---|---|
-| Application homepage URL | `https://work.cdc666.cn` |
-| Authorization callback URL | `https://work.cdc666.cn/api/auth/callback/github` |
-
-Disable wildcard callback matching. In the server's protected `.env`, the future cutover would set `NEXTAUTH_URL=https://work.cdc666.cn`, the **new production OAuth App's** `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET`, retain `ALLOWED_GITHUB_USER_ID=248133835`, and supply a protected `NEXTAUTH_SECRET`. Keep database credentials and OAuth values out of Git and chat. The `cdc666.cn` apex is reserved for a later personal site; do not point it at the private workspace as a shortcut.
-
-After ICP filing is confirmed and a cutover is authorized, recheck the instance's public IP (currently reached through SSH at `114.215.174.39`), then create a DNS `A` record for host `work` pointing to that address. Allow inbound 80/443 in both the instance firewall and host firewall. Keep 3000 and 5432 bound to loopback. A future Caddyfile site block would be:
-
-```caddyfile
-work.cdc666.cn {
-    reverse_proxy 127.0.0.1:3000
-}
-```
-
-Caddy's automatic HTTPS needs working DNS and public reachability on 80/443 for normal certificate issuance. Do not install this block or start its public site while the filing is deferred. The existing Caddy installation remains inactive. At cutover, first back up the database and current `.env`, install the separate OAuth App values through a protected file, validate Caddy configuration, then verify real login, cookie session, private API authorization, reverse proxy headers, HTTPS renewal, logout, and rollback through the tunnel.
-
-For a mainland `cn-hangzhou` server, domain registration alone does not authorize opening a public website. Alibaba Cloud's [ICP filing guidance](https://help.aliyun.com/zh/icp-filing/basic-icp-service/product-overview/icp-filing-requirements-for-a-regular-website) says HTTP and HTTPS sites require filing before public access. [Caddy's HTTPS guide](https://caddyserver.com/docs/quick-starts/https) describes port 80/443 reachability, and [GitHub's OAuth guidance](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps) describes callback matching. ICP status remains unverified and the public cutover is deferred by the user.
+仅建立隧道不证明身份归属、数据迁移或生产登录通过；私有页面与 API 仍须检查数据库会话和 Workspace 归属。

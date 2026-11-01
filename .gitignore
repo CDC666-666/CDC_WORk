@@ -23,6 +23,33 @@
 *.pem
 /shared-memory/server-snapshots/
 
+# private runtime data (public portfolio media remains tracked)
+/.private-db-backups/
+/.private-data/
+/backups/
+/private-exports/
+/pgdata/
+/.local-db/
+/.local-databases/
+/browser-profiles/
+/.chrome-profile*/
+/shared-memory/
+**/server-snapshots/
+*.dump
+*.backup
+*.sql.gz
+*.sqlite
+*.sqlite3
+*.sqlite-wal
+*.sqlite-shm
+*.db
+cdc-workspace-backup-*.json
+playwright/.auth/
+/test-results/
+/playwright-report/
+*.har
+*.log
+
 # debug
 npm-debug.log*
 yarn-debug.log*

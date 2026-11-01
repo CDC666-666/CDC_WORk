@@ -32,17 +32,17 @@ test("database experience persists edits, filters, protects evidence and version
           "database updatedAt must use UTC wall time, independent of the PostgreSQL session time zone");
         const snapshot = await serverWorkspaceEntityService.snapshot(workspace.id);
         const found = filterExperiences(snapshot.domain.knowledge as KnowledgeItem[], {
-          query: "机械对齐", project: "auto_aim", tag: "初始化", evidenceStatus: "历史现场反馈",
+          query: "回读校验", project: "auto_aim", tag: "合成标记", evidenceStatus: "历史现场反馈",
         });
         assert.equal(found.length, 1);
         assert.equal(filterExperiences(snapshot.domain.knowledge as KnowledgeItem[], {
-          query: "机械对齐", project: "other", tag: "初始化", evidenceStatus: "历史现场反馈",
+          query: "回读校验", project: "other", tag: "合成标记", evidenceStatus: "历史现场反馈",
         }).length, 0);
         assert.equal(filterExperiences(snapshot.domain.knowledge as KnowledgeItem[], {
-          query: "机械对齐", project: "auto_aim", tag: "missing", evidenceStatus: "历史现场反馈",
+          query: "回读校验", project: "auto_aim", tag: "missing", evidenceStatus: "历史现场反馈",
         }).length, 0);
         assert.equal(filterExperiences(snapshot.domain.knowledge as KnowledgeItem[], {
-          query: "机械对齐", project: "auto_aim", tag: "初始化", evidenceStatus: "实测验证",
+          query: "回读校验", project: "auto_aim", tag: "合成标记", evidenceStatus: "实测验证",
         }).length, 0);
         const reviewed = withExperienceReviewStatus(found[0], "已审核");
         const updated = await serverWorkspaceEntityService.update(workspace.id, "knowledge", first.id,
@@ -50,7 +50,7 @@ test("database experience persists edits, filters, protects evidence and version
         assert.equal((updated.item?.experience as { reviewStatus: string }).reviewStatus, "已审核");
         assert.equal((updated.item?.experience as { evidenceStatus: string }).evidenceStatus, "历史现场反馈");
         assert.ok(updated.version);
-        const edited = createExperienceKnowledge({ title: "测试案例：服务器编辑", tags: ["初始化", "反馈延迟"],
+        const edited = createExperienceKnowledge({ title: "合成案例：服务器编辑", tags: ["合成标记", "合成替换"],
           experience: { ...reviewed.experience!, phenomenon: "编辑后的现象", environment: "编辑后的环境",
             sourceVersion: "编辑后的版本", investigation: "编辑后的排查", failedAttempts: "编辑后的失败尝试",
             cause: "编辑后的原因", resolution: "编辑后的方案", verificationResult: "编辑后的验证",
@@ -71,7 +71,7 @@ test("database experience persists edits, filters, protects evidence and version
         assert.deepEqual(reloadedItem.experience, edited.experience);
         assert.equal(reloadedItem.experience?.reviewStatus, "已审核");
         assert.equal(reloadedItem.experience?.evidenceStatus, "历史现场反馈");
-        const third = await importAutoAimCase(workspace.id, syntheticCase.replace("核对模式。", "核对另一种模式。"));
+        const third = await importAutoAimCase(workspace.id, syntheticCase.replace("核对合成标记。", "核对另一种合成标记。"));
         assert.equal(third.result, "already_exists");
         assert.equal(third.sourceChanged, true);
         const afterReimport = (await serverWorkspaceEntityService.get(workspace.id, "knowledge", first.id)).item as unknown as KnowledgeItem;
